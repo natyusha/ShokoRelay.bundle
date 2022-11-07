@@ -126,7 +126,7 @@ class ShokoCommonAgent:
                 airdate = try_get(ep_data['anidb'], 'AirDate', None)
                 year = airdate.split('-')[0] if airdate is not None else None
 
-                score = 100 if series_data['shoko']['Name'] == name else 100 - int(result['Distance'] * 100) # TODO: Improve this to respect synonyms./
+                score = 100 # TODO: Improve this to respect synonyms./
 
                 meta = MetadataSearchResult(str(ep_id), full_title, year, score, lang)
                 results.Append(meta)
@@ -403,7 +403,7 @@ class ShokoCommonAgent:
                         series_titles[item['Language']] = item['Name']
                                    
                     title = series_titles[lang.lower()] # Get series title according to the preference above
-                    if title is None: title = ep_titles['en'] # If not found, fallback to EN series title
+                    if title is None: title = series_titles['en'] # If not found, fallback to EN series title
 
                 # TvDB episode title fallback
                 if title.startswith('Episode ') and try_get(ep_data['tvdb'], 'Title') != '':
