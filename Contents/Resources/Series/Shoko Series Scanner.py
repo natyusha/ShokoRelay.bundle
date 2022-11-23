@@ -149,6 +149,9 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
                     ep_data = {}
                     ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
+                    
+                    # Ignore multi episode files of differing types (anidb episode relations)
+                    if ep > 0 and ep_type != ep_data['anidb']['Type']: continue
 
                     # Get season number
                     ep_type = ep_data['anidb']['Type']
