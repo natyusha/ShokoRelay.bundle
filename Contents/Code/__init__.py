@@ -104,32 +104,34 @@ class ShokoCommonAgent:
                 series_data['anidb'] = HttpReq('api/v3/Series/%s/AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/AniDB
 
                 # Get episode data
-                ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][0]['ID'] # Taking the first
-                ep_data = {}
-                ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
+                ep_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
+                for ep in range(ep_multi):
+                    ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
+                    ep_data = {}
+                    ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
 
-                # Make a dict of language -> title for all titles in anidb data
-                ep_titles = {}
-                for item in ep_data['anidb']['Titles']:
-                    ep_titles[item['Language']] = item['Name']
+                    # Make a dict of language -> title for all titles in anidb data
+                    ep_titles = {}
+                    for item in ep_data['anidb']['Titles']:
+                        ep_titles[item['Language']] = item['Name']
 
-                # Get episode title according to the preference
-                title = None
-                for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
-                    lang = lang.strip()
-                    title = ep_titles[lang.lower()]
-                    if title is not None: break
-                if title is None: title = ep_titles['en'] # If not found, fallback to EN title
-                full_title = series_data['shoko']['Name'] + ' - ' + title
+                    # Get episode title according to the preference
+                    title = None
+                    for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
+                        lang = lang.strip()
+                        title = try_get(ep_titles, lang.lower(), None)
+                        if title is not None: break
+                    if title is None: title = ep_titles['en'] # If not found, fallback to EN title
+                    full_title = series_data['shoko']['Name'] + ' - ' + title
 
-                # Get year from air date
-                airdate = try_get(ep_data['anidb'], 'AirDate', None)
-                year = airdate.split('-')[0] if airdate is not None else None
+                    # Get year from air date
+                    airdate = try_get(ep_data['anidb'], 'AirDate', None)
+                    year = airdate.split('-')[0] if airdate is not None else None
 
-                score = 100 # TODO: Improve this to respect synonyms./
+                    score = 100 # TODO: Improve this to respect synonyms./
 
-                meta = MetadataSearchResult(str(ep_id), full_title, year, score, lang)
-                results.Append(meta)
+                    meta = MetadataSearchResult(str(ep_id), full_title, year, score, lang)
+                    results.Append(meta)
 
             else: # For manual searches
 
@@ -161,7 +163,7 @@ class ShokoCommonAgent:
                         title = None
                         for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                             lang = lang.strip()
-                            title = ep_titles[lang.lower()]
+                            title = try_get(ep_titles, lang.lower(), None)
                             if title is not None: break
                         if title is None: title = ep_titles['en'] # If not found, fallback to EN title
                         full_title = series_data['shoko']['Name'] + ' - ' + title
@@ -237,7 +239,7 @@ class ShokoCommonAgent:
                 title = None
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()
-                    title = ep_titles[lang.lower()]
+                    title = try_get(ep_titles, lang.lower(), None)
                     if title is not None: break
                 if title is None: title = ep_titles['en'] # If not found, fallback to EN title
                 movie_name = series_data['shoko']['Name'] + ' - ' + title
@@ -390,7 +392,7 @@ class ShokoCommonAgent:
                 title = None
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()
-                    title = ep_titles[lang.lower()]
+                    title = try_get(ep_titles, lang.lower(), None)
                     if title is not None: break
                 if title is None: title = ep_titles['en'] # If not found, fallback to EN title
 
@@ -401,9 +403,17 @@ class ShokoCommonAgent:
                     series_titles = {}
                     for item in series_data['anidb']['Titles']:
                         series_titles[item['Language']] = item['Name']
-                                   
-                    title = series_titles[lang.lower()] # Get series title according to the preference above
-                    if title is None: title = series_titles['en'] # If not found, fallback to EN series title
+                    
+                    # Get series title according to the preference
+                    singleTitle = title
+                    for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
+                        lang = lang.strip()                                   
+                        title = try_get(series_titles, lang.lower(), title)
+                        if title is not singleTitle: break
+                    if title is singleTitle: # If not found, fallback to EN series title
+                        title = try_get(series_titles, 'en', title)
+                    if title is singleTitle: # Fallback to TvDB title as a last resort
+                        if try_get(ep_data['tvdb'], 'Title') != '': title = try_get(ep_data['tvdb'], 'Title')
 
                 # TvDB episode title fallback
                 if title.startswith('Episode ') and try_get(ep_data['tvdb'], 'Title') != '':
