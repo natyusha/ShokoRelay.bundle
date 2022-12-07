@@ -52,13 +52,11 @@ if not os.path.isdir(LOG_PATH):
 LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Metadata Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
 set_logging("Root", LOG_FILE_LIBRARY)
 
-
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}
     
     req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
     return json.load(urllib2.urlopen(req, postdata))
-
 
 def HttpReq(url, authenticate=True, retry=True):
     global API_KEY
@@ -69,8 +67,11 @@ def HttpReq(url, authenticate=True, retry=True):
 
     myheaders = {'Accept': 'application/json'}
     
+    if authenticate:
+        myheaders['apikey'] = GetApiKey()
+    
     try:
-        req = urllib2.Request('http://%s:%s/%s%s' % (Prefs['Hostname'], Prefs['Port'], url, api_string), headers=myheaders)
+        req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
     except Exception, e:
         if not retry:
@@ -79,20 +80,21 @@ def HttpReq(url, authenticate=True, retry=True):
         API_KEY = ''
         return HttpReq(url, authenticate, False)
 
-
 def GetApiKey():
     global API_KEY
 
     if not API_KEY:
-        data = '{"user":"%s", "pass":"%s", "device":"%s"}' % (
-            Prefs['Username'], Prefs['Password'] if Prefs['Password'] != None else '', 'Shoko Series Scanner For Plex')
+        data = json.dumps({
+            'user': Prefs['Username'],
+            'pass': Prefs['Password'] if Prefs['Password'] != None else '',
+            'device': 'Shoko Series Scanner For Plex'
+        })
         resp = HttpPost('api/auth', data)['apikey']
         Log.info( "Got API KEY: %s", resp)
         API_KEY = resp
         return resp
 
     return API_KEY
-
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('path: %s', path)
@@ -111,38 +113,75 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info('file: %s', file)
                 # http://127.0.0.1:8111/api/ep/getbyfilename?apikey=d422dfd2-bdc3-4219-b3bb-08b85aa65579&filename=%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
 
-                episode_data = HttpReq("api/ep/getbyfilename?filename=%s" % (urllib.quote(os.path.basename(file))))
-                if len(episode_data) == 0: continue
-                if (try_get(episode_data, "code", 200) == 404): continue
+                # Get file data using filename
+                # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Clannad/%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
+                filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
+                file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename)))
+                if len(file_data) == 0: continue # Skip if file data is not found
 
-                series_data = HttpReq("api/serie/fromep?id=%d&nocast=1&notag=1" % episode_data['id'])
-                showTitle = series_data['name'].encode("utf-8") #no idea why I need to do this.
-                Log.info('show title: %s', showTitle)
+                # Take the first file. As we are searching with both parent folder and filename, there should be only one result.
+                if len(file_data) > 1:
+                    Log.info('File search has more than 1 result. HOW DID YOU DO IT?')
+                file_data = file_data[0]
+                
+                # Ignore unrecognized files
+                if 'SeriesIDs' not in file_data or file_data['SeriesIDs'] is None:
+                    Log.info('Unrecognized file. Skipping!')
+                    continue
 
-                seasonNumber = 0
-                seasonStr = try_get(episode_data, 'season', None)
-                if episode_data['eptype'] == 'Credits': seasonNumber = -1 #season -1 for OP/ED
-                elif episode_data['eptype'] == 'Trailer': seasonNumber = -2 #season -2 for Trailer
-                elif Prefs['SingleSeasonOrdering'] or seasonStr == None:
-                    if episode_data['eptype'] == 'Episode': seasonNumber = 1
-                    elif episode_data['eptype'] == 'Special': seasonNumber = 0
-                else:
-                    seasonNumber = int(seasonStr.split('x')[0])
-                    if seasonNumber <= 0 and episode_data['eptype'] == 'Episode': seasonNumber = 1
-                    elif seasonNumber > 0 and episode_data['eptype'] == 'Special': seasonNumber = 0
+                # Get series data
+                series_id = file_data['SeriesIDs'][0]['SeriesID']['ID'] # Taking the first matching anime. Not supporting multi-anime linked files for now. eg. Those two Toriko/One Piece episodes
+                series_data = {}
+                series_data['shoko'] = HttpReq('api/v3/Series/%s' % series_id) # http://127.0.0.1:8111/api/v3/Series/24
+                series_data['anidb'] = HttpReq('api/v3/Series/%s/AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/AniDB
 
-                if seasonNumber == 0 and Prefs['IncludeSpecials'] == False: continue
-                if seasonNumber < 0 and Prefs['IncludeOther'] == False: continue #Ignore this by choice.
+                # Get preferred/overriden title. Preferred title is the one shown in Desktop.
+                show_title = series_data['shoko']['Name'].encode('utf-8') #no idea why I need to do this.
+                Log.info('Show Title: %s', show_title)
 
-                if (try_get(series_data, "ismovie", 0) == 1 and seasonNumber >= 1): continue # Ignore movies in preference for Shoko Movie Scanner, but keep specials as Plex sees specials as duplicate
-                Log.info('season number: %s', seasonNumber)
-                episodeNumber = int(episode_data['epnumber'])
-                Log.info('episode number: %s', episodeNumber)
+                # Get episode data
+                ep_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
+                for ep in range(ep_multi):
+                    ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
+                    ep_data = {}
+                    ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
 
-                vid = Media.Episode(showTitle, seasonNumber, episodeNumber)
-                Log.info('vid: %s', vid)
-                vid.parts.append(file)
-                mediaList.append(vid)
+                    # Ignore multi episode files of differing types (anidb episode relations)
+                    if ep > 0 and ep_type != ep_data['anidb']['Type']: continue
+
+                    # Get season number
+                    ep_type = ep_data['anidb']['Type']
+                    season = 0
+                    if ep_type == 'Normal': season = 1
+                    elif ep_type == 'Special': season = 0
+                    elif ep_type == 'ThemeSong': season = -1
+                    elif ep_type == 'Trailer': season = -2
+                    elif ep_type == 'Parody': season = -3
+                    elif ep_type == 'Unknown': season = -4
+                    if not Prefs['SingleSeasonOrdering']:
+                        ep_data['tvdb'] = HttpReq('api/v3/Episode/%s/TvDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/TvDB
+                        ep_data['tvdb'] = try_get(ep_data['tvdb'], 0, None) # Take the first link, as explained before
+                        if ep_data['tvdb'] is not None:
+                            season = ep_data['tvdb']['Season']
+
+                    # Ignore these by choice.
+                    if season == 0 and Prefs['IncludeSpecials'] == False: continue
+                    if season < 0 and Prefs['IncludeOther'] == False: continue
+
+                    Log.info('Season: %s', season)
+
+                    if ep_data['tvdb'] is not None and not Prefs['SingleSeasonOrdering']:
+                        episode_number = ep_data['tvdb']['Number']
+                    else:
+                        episode_number = ep_data['anidb']['EpisodeNumber']
+
+                    Log.info('Episode Number: %s', episode_number)
+
+                    vid = Media.Episode(show_title, season, episode_number)
+                    if ep_multi > 1: vid.display_offset = (ep * 100) / ep_multi # required for multi episode files
+                    Log.info('vid: %s', vid)
+                    vid.parts.append(file)
+                    mediaList.append(vid)
             except Exception as e:
                 Log.error("Error in Scan: '%s'" % e)
                 continue
@@ -190,7 +229,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             Log.info('=' * 100)
             Log.info('Completed subfolder scan: %s', full_path)
             Log.info('=' * 100)
-
 
 def try_get(arr, idx, default=""):
     try:
