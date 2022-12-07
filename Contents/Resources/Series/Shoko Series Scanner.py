@@ -9,7 +9,7 @@ Prefs = {
     'Username': 'Default',
     'Password': '',
     'IncludeSpecials': True,
-    'IncludeOther': False,
+    'IncludeOther': True,
     'SingleSeasonOrdering': False
 }
 
@@ -52,13 +52,11 @@ if not os.path.isdir(LOG_PATH):
 LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Metadata Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
 set_logging("Root", LOG_FILE_LIBRARY)
 
-
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}
     
     req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
     return json.load(urllib2.urlopen(req, postdata))
-
 
 def HttpReq(url, authenticate=True, retry=True):
     global API_KEY
@@ -82,7 +80,6 @@ def HttpReq(url, authenticate=True, retry=True):
         API_KEY = ''
         return HttpReq(url, authenticate, False)
 
-
 def GetApiKey():
     global API_KEY
 
@@ -98,7 +95,6 @@ def GetApiKey():
         return resp
 
     return API_KEY
-
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('path: %s', path)
@@ -149,7 +145,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
                     ep_data = {}
                     ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
-                    
+
                     # Ignore multi episode files of differing types (anidb episode relations)
                     if ep > 0 and ep_type != ep_data['anidb']['Type']: continue
 
@@ -171,11 +167,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     # Ignore these by choice.
                     if season == 0 and Prefs['IncludeSpecials'] == False: continue
                     if season < 0 and Prefs['IncludeOther'] == False: continue
-
-                    # Ignore movies in preference for Shoko Movie Scanner, but keep specials as Plex sees specials as duplicate
-                    if (try_get(series_data['anidb'], 'Type', 'Unknown') == 'Movie' and season >= 1 and Prefs['CombineSeriesAndMovies'] == False):
-                        Log.info('It\'s a movie. Skipping!')
-                        continue
 
                     Log.info('Season: %s', season)
 
@@ -238,7 +229,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             Log.info('=' * 100)
             Log.info('Completed subfolder scan: %s', full_path)
             Log.info('=' * 100)
-
 
 def try_get(arr, idx, default=""):
     try:
