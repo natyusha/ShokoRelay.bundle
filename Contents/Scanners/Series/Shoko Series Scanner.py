@@ -145,6 +145,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     ep_id = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
                     ep_data = {}
                     ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
+                    ep_data['tvdb'] = HttpReq('api/v3/Episode/%s/TvDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/TvDB
 
                     # Ignore multi episode files of differing types (anidb episode relations)
                     if ep > 0 and ep_type != ep_data['anidb']['Type']: continue
@@ -159,7 +160,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif ep_type == 'Parody': season = -3
                     elif ep_type == 'Unknown': season = -4
                     if not Prefs['SingleSeasonOrdering']:
-                        ep_data['tvdb'] = HttpReq('api/v3/Episode/%s/TvDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/TvDB
                         ep_data['tvdb'] = try_get(ep_data['tvdb'], 0, None) # Take the first link, as explained before
                         if ep_data['tvdb'] is not None:
                             season = ep_data['tvdb']['Season']
