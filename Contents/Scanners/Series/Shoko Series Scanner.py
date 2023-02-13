@@ -170,7 +170,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                     Log.info('Season: %s', season)
 
-                    if ep_data['tvdb'] is not None and not Prefs['SingleSeasonOrdering']:
+                    if not Prefs['SingleSeasonOrdering'] and len(ep_data['tvdb']) != 0:
                         episode_number = ep_data['tvdb']['Number']
                     else:
                         episode_number = ep_data['anidb']['EpisodeNumber']
