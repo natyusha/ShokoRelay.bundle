@@ -1,7 +1,7 @@
 [
     {
         "id": "Username",
-        "label": "The username to log into shoko server",
+        "label": "The username to log into Shoko server",
         "type": "text",
         "default": "Default"
     },

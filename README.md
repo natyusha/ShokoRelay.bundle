@@ -13,7 +13,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Add a `TV Shows` library in Plex and configure the following options under `Advanced`:
 	- Scanner: `Shoko Series Scanner`
 	- Agent: `ShokoTV`
-	- The username to log into shoko server
+	- The username to log into Shoko server
 	- The password for above username
 	- The host for Shoko
 	- The port for Shoko
@@ -29,6 +29,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Will apply ratings like 'TV-14' or 'TV-Y' to series and movie entries (if the corresponding anidb tags are present)
 - Allows the user to configure what language they want for episode titles
 - Will use TheTVDB descriptions and episode titles if AniDB is missing that information
+- Will replace ambiguous AniDB episode titles with the series title
 - Allows movies and series to be in the same library at once
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
 - Support for files which contain more than one episode
@@ -41,6 +42,16 @@ Due to custom agent limitations certain season names which contain special files
 - Season -3 → Parodies
 - Season -4 → Other
 
+#### Ambiguous Title Replacement
+In cases where AniDB uses ambiguous episode titles the series title will be used instead. A list of the titles considered ambiguous by the agent are as follows: 
+- Complete Movie
+- Music Video
+- OAD
+- OVA
+- Short Movie
+- TV Special
+- Web
+
 #### Combining Series
 If you have TheTVDB matching enabled in Shoko the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
 
@@ -51,7 +62,7 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 - Fairy Tail (2018)
 
 #### Assumed Ratings
-If assumed ratings are enabled in the agent settings the tags which will trigger a rating change are listed below:
+If assumed ratings are enabled in the agent settings the tags which will trigger a rating change are in the table below:
 | Tag             | Rating |
 | --------------- | ------ |
 | kodomo          | TV-Y   |
