@@ -4,6 +4,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 
 ### Installation
 - Unzip [this repository](https://github.com/natyusha/ShokoMetadata.bundle/archive/refs/heads/master.zip) into `\Plex Media Server\Plug-ins`
+- Remove `-master` from the end of the resulting folder name (the folder name should be `ShokoMetadata.bundle`)
 - Move the `Scanners` folder located in `Contents` to `\Plex Media Server\`
 - Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Series Scanner.py` with a text editor:
 	- Hostname
