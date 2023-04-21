@@ -71,7 +71,7 @@ class ShokoCommonAgent:
         name = media.show
 
         # Search for series using the name
-        prelimresults = HttpReq('api/v3/Series/Search/%s?fuzzy=%s' % (urllib.quote_plus(name.encode('utf8')), Prefs['Fuzzy'])) # http://127.0.0.1:8111/api/v3/Series/Search/Clannad?fuzzy=true
+        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=%s&limit=10' % (urllib.quote_plus(name.encode('utf8')), Prefs['Fuzzy'])) # http://127.0.0.1:8111/api/v3/Series/Search/Clannad?fuzzy=true
 
         for result in prelimresults:
             # Get series data
