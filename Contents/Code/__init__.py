@@ -49,12 +49,11 @@ def HttpPost(url, postdata):
         HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders,
                      data=postdata).content)
 
-def HttpReq(url, authenticate=True, retry=True):
+def HttpReq(url, retry=True):
     global API_KEY
     Log("Requesting: %s" % url)
 
-    if authenticate:
-        myheaders = {'apikey': GetApiKey()}
+    myheaders = {'apikey': GetApiKey()}
 
     try:
         return JSON.ObjectFromString(
@@ -64,7 +63,7 @@ def HttpReq(url, authenticate=True, retry=True):
             raise e
 
         API_KEY = ''
-        return HttpReq(url, authenticate, False)
+        return HttpReq(url, False)
 
 class ShokoCommonAgent:
     def Search(self, results, media, lang, manual):
@@ -76,9 +75,8 @@ class ShokoCommonAgent:
         for index, result in enumerate(prelimresults):
             # Get series data
             series_id = result['IDs']['ID']
-            series_data = {}
-            series_data['shoko'] = result # Just to make it uniform across every place it's used
-            series_data['anidb'] = HttpReq('api/v3/Series/%s/AniDB' % series_id)
+            # Just to make it uniform across every place it's used
+            series_data = {'shoko': result, 'anidb': HttpReq('api/v3/Series/%s/AniDB' % series_id)}
 
             # Get year from air date
             airdate = try_get(series_data['anidb'], 'AirDate', None)
@@ -167,7 +165,7 @@ class ShokoCommonAgent:
         # Get cast
         cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
         metadata.roles.clear()
-        Log('Cast')
+        Log('Fetching cast data...')
         for role in cast:
             meta_role = metadata.roles.new()
             meta_role.name = role['Staff']['Name']
