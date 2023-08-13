@@ -72,19 +72,18 @@ class ShokoCommonAgent:
         # Search for series using the name
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=%s&limit=10' % (urllib.quote_plus(name.encode('utf8')), Prefs['Fuzzy'])) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
 
-        for index, result in enumerate(prelimresults):
+        for index, series_data in enumerate(prelimresults):
             # Get series data
-            series_id = result['IDs']['ID']
-            # Just to make it uniform across every place it's used
-            series_data = {'shoko': result, 'anidb': HttpReq('api/v3/Series/%s/AniDB' % series_id)}
+            series_id = series_data['IDs']['ID']
+            anidb_series_data = HttpReq('api/v3/Series/%s/AniDB' % series_id)
 
             # Get year from air date
-            airdate = try_get(series_data['anidb'], 'AirDate', None)
+            airdate = try_get(anidb_series_data, 'AirDate', None)
             year = airdate.split('-')[0] if airdate is not None else None
 
-            score = 100 if series_data['shoko']['Name'] == name else 100 - index - int(result['Distance'] * 100)
+            score = 100 if series_data['Name'] == name else 100 - index - int(series_data['Distance'] * 100)
 
-            meta = MetadataSearchResult(str(series_id), series_data['shoko']['Name'], year, score, lang)
+            meta = MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)
             results.Append(meta)
 
             # results.Sort('score', descending=True)
@@ -101,18 +100,16 @@ class ShokoCommonAgent:
         flags = flags | Prefs['hideSpoilerTags']    << 4 #0b10000 : Hide Plot Spoiler Tags
 
         # Get series data
-        series_data = {}
-        series_data['shoko'] = HttpReq('api/v3/Series/%s' % aid) # http://127.0.0.1:8111/api/v3/Series/24
-        series_data['anidb'] = HttpReq('api/v3/Series/%s/AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24/AniDB
+        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-        Log('Series Title: %s' % series_data['shoko']['Name'])
+        Log('Series Title: %s' % series_data['Name'])
 
-        metadata.summary = summary_sanitizer(try_get(series_data['anidb'], 'Description'))
-        metadata.title = series_data['shoko']['Name']
-        metadata.rating = float(series_data['anidb']['Rating']['Value']/100)
+        metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
+        metadata.title = series_data['Name']
+        metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
 
         # Get air date
-        airdate = try_get(series_data['anidb'], 'AirDate', None)
+        airdate = try_get(series_data['AniDB'], 'AirDate', None)
         if airdate is not None:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
 
@@ -122,7 +119,7 @@ class ShokoCommonAgent:
         metadata.genres = tags
 
         # Get images
-        images = try_get(series_data['shoko'], 'Images', {})
+        images = try_get(series_data, 'Images', {})
         self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
         self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
         self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
@@ -190,30 +187,28 @@ class ShokoCommonAgent:
 
         for episode in episodes['List']:
             # Get episode data
-            ep_id = episode['IDs']['ID']
-            ep_data = {}
-            ep_data['anidb'] = HttpReq('api/v3/Episode/%s/AniDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB
-            ep_data['tvdb'] = HttpReq('api/v3/Episode/%s/TvDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212/TvDB
+            episode_id = episode['IDs']['ID']
+            episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB?includeDataFrom=AniDB,TvDB
 
             # Get episode type
-            ep_type = ep_data['anidb']['Type']
+            episode_type = episode_data['AniDB']['Type']
 
             # Get season number
             season = 0
             episode_number = None
-            if ep_type == 'Normal': season = 1
-            elif ep_type == 'Special': season = 0
-            elif ep_type == 'ThemeSong': season = -1
-            elif ep_type == 'Trailer': season = -2
-            elif ep_type == 'Parody': season = -3
-            elif ep_type == 'Unknown': season = -4
-            if not Prefs['SingleSeasonOrdering'] and len(ep_data['tvdb']) != 0:
-                ep_data['tvdb'] = ep_data['tvdb'][0] # Take the first link, as explained before
-                season = ep_data['tvdb']['Season']
-                episode_number = ep_data['tvdb']['Number']
+            if episode_type == 'Normal': season = 1
+            elif episode_type == 'Special': season = 0
+            elif episode_type == 'ThemeSong': season = -1
+            elif episode_type == 'Trailer': season = -2
+            elif episode_type == 'Parody': season = -3
+            elif episode_type == 'Unknown': season = -4
+            if not Prefs['SingleSeasonOrdering'] and len(episode_data['TvDB']) != 0:
+                episode_data['TvDB'] = episode_data['TvDB'][0] # Take the first link, as explained before
+                season = episode_data['TvDB']['Season']
+                episode_number = episode_data['TvDB']['Number']
 
             if episode_number is None:
-                episode_number = ep_data['anidb']['EpisodeNumber']
+                episode_number = episode_data['AniDB']['EpisodeNumber']
 
             Log('Season: %s', season)
             Log('Episode: %s', episode_number)
@@ -221,24 +216,24 @@ class ShokoCommonAgent:
             episode_obj = metadata.seasons[season].episodes[episode_number]
 
             # Make a dict of language -> title for all titles in anidb data
-            ep_titles = {}
-            for item in ep_data['anidb']['Titles']:
-                ep_titles[item['Language']] = item['Name']
+            episode_titles = {}
+            for item in episode_data['AniDB']['Titles']:
+                episode_titles[item['Language']] = item['Name']
 
             # Get episode title according to the preference
             title = None
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
-                title = try_get(ep_titles, lang.lower(), None)
+                title = try_get(episode_titles, lang.lower(), None)
                 if title is not None: break
-            if title is None: title = ep_titles['en'] # If not found, fallback to EN title
+            if title is None: title = episode_titles['en'] # If not found, fallback to EN title
 
             # Replace Ambiguous Titles with Series Title
             SingleEntryTitles = ['Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web'] # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Make a dict of language -> title for all series titles in anidb data
                 series_titles = {}
-                for item in series_data['anidb']['Titles']:
+                for item in series_data['AniDB']['Titles']:
                     if item['Type'] != 'Short': # Exclude all short titles
                         series_titles.setdefault(item['Language'], item['Name']) # Use setdefault() to use the first title for each language
                 
@@ -251,31 +246,31 @@ class ShokoCommonAgent:
                 if title is singleTitle: # If not found, fallback to EN series title
                     title = try_get(series_titles, 'en', title)
                 if title is singleTitle: # Fallback to TvDB title as a last resort
-                    if try_get(ep_data['tvdb'], 'Title') != '': title = try_get(ep_data['tvdb'], 'Title')
+                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title')
 
             # TvDB episode title fallback
-            if title.startswith('Episode ') and try_get(ep_data['tvdb'], 'Title') != '':
-                title = try_get(ep_data['tvdb'], 'Title')
+            if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title') != '':
+                title = try_get(episode_data['TvDB'], 'Title')
 
             episode_obj.title = title
 
             Log('Episode Title: %s', episode_obj.title)
 
             # Get description
-            if try_get(ep_data['anidb'], 'Description') != '':
-                episode_obj.summary = summary_sanitizer(try_get(ep_data['anidb'], 'Description'))
+            if try_get(episode_data['AniDB'], 'Description') != '':
+                episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description'))
                 Log('Description (AniDB): %s' % episode_obj.summary)
-            elif ep_data['tvdb'] and try_get(ep_data['tvdb'], 'Description') != None: 
-                episode_obj.summary = summary_sanitizer(try_get(ep_data['tvdb'], 'Description'))
+            elif episode_data['TvDB'] and try_get(episode_data['TvDB'], 'Description') != None: 
+                episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description'))
                 Log('Description (TvDB): %s' % episode_obj.summary)
 
             # Get air date
-            airdate = try_get(ep_data['anidb'], 'AirDate', None)
+            airdate = try_get(episode_data['AniDB'], 'AirDate', None)
             if airdate is not None:
                 episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
 
             if Prefs['customThumbs']:
-               self.metadata_add(episode_obj.thumbs, [try_get(try_get(ep_data['tvdb'], 0, {}), 'Thumbnail', {})])
+               self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
             # Get writers (as original work)
             writers = HttpReq('api/v3/Series/%s/Cast?roleType=SourceWork' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=SourceWork
@@ -306,7 +301,7 @@ class ShokoCommonAgent:
 
         #adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/fb5c77a60c925dcfd60e75a945244e07ee009e7c/Contents/Code/__init__.py#L41-L45
         if Prefs["themeMusic"]:
-            for tid in try_get(series_data['shoko']['IDs'],'TvDB', []):
+            for tid in try_get(series_data['IDs'],'TvDB', []):
                 if THEME_URL % tid not in metadata.themes:
                     try:
                         metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
