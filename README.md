@@ -27,8 +27,9 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Uses Shoko's v3 API for fetching metadata
 - Series and movies will list the studio
 - Episodes and movies will list the writer and director
-- Will apply ratings like 'TV-14' or 'TV-Y' to series and movie entries (if the corresponding anidb tags are present)
-- Allows the user to configure an additional 'Original Title' language for the series title (which will be searchable in Plex)
+- Will apply ratings like 'TV-14' or 'TV-Y' to series and movie entries (if the corresponding AniDB tags are present)
+- Allows the user to configure the language for the series title (if they want a different language than in Shoko)
+- Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
 - Allows the user to configure what language they want for episode titles
 - Will use TheTVDB descriptions and episode titles if AniDB is missing that information
 - Will replace ambiguous AniDB episode titles with the series title

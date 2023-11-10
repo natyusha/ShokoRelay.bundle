@@ -37,10 +37,17 @@
     },
 
     {
-        "id": "OriginalTitleLanguagePreference",
-        "label": "The preferred languages for the original series title, separated by a comma",
+        "id": "SeriesTitleLanguagePreference",
+        "label": "The preferred languages for the series title, separated by a comma. Set to \"SHOKO\" to get preferred title",
         "type": "text",
-        "default": "EN, X-JAT"
+        "default": "SHOKO, X-JAT, EN"
+    },
+
+    {
+        "id": "SeriesAltTitleLanguagePreference",
+        "label": "The preferred languages for the series alt title, separated by a comma. Set to \"SHOKO\" to get preferred title",
+        "type": "text",
+        "default": "EN, X-JAT, SHOKO"
     },
 
     {

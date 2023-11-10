@@ -102,34 +102,54 @@ class ShokoCommonAgent:
         # Get series data
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-        Log('Series Title: %s' % series_data['Name'])
-
         metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
         metadata.title = series_data['Name']
         metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
+
+        # Get original title
+        original_title = None
+        original_title_language = None
+        for item in series_data['AniDB']['Titles']:
+            if item['Type'] == 'Main':
+                original_title = item['Name']
+                original_title_language = item['Language']
+                break
 
         # Make a dict of language -> title for all series titles in anidb data
         series_titles = {}
         for item in series_data['AniDB']['Titles']:
             if item['Type'] != 'Short': # Exclude all short titles
                 series_titles[item['Language']] = item['Name']
+        series_titles['shoko'] = series_data['Name']
+        series_titles[original_title_language] = original_title # Get main title for original language instead of synonym title
 
-        # Get original title according to the preference
+        # Get series title according to the preference
         title = None
-        for lang in Prefs['OriginalTitleLanguagePreference'].split(','):
+        for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
             if title is not None: break
+        if title is None: title = series_titles['shoko'] # If not found, fallback to preferred title in Shoko
 
-        # Append the original title to the sort title to make it searchable
-        if title is not None and title != metadata.title:
-            # Switch to using metadata.original_title instead (if Plex fixes blocking issue)
-            # metadata.original_title = title
-            metadata.title_sort = metadata.title + ' [' + title + ']'
-            Log('Original Series Title: %s' % title)
+        alt_title = None
+        for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
+            lang = lang.strip()
+            alt_title = try_get(series_titles, lang.lower(), None)
+            if alt_title == title: continue # Skip if main title is same as alt title
+            if alt_title is not None: break
+
+        metadata.title = title
+
+        if alt_title is not None:
+            # Append the alt title to the sort title to make it searchable
+            metadata.title_sort = title + ' [' + alt_title + ']'
         else:
-            # metadata.original_title = metadata.title
-            metadata.title_sort = metadata.title
+            metadata.title_sort = title
+
+        # Set metadata.original_title to main x-jat title (if Plex fixes blocking issue)
+        # metadata.original_title = original_title
+
+        Log('Series Title: %s' % title)
 
         # Get air date
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
