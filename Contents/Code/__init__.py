@@ -102,78 +102,104 @@ class ShokoCommonAgent:
         # Get series data
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-        metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
-        metadata.title = series_data['Name']
-        metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
-
-        # Get original title
-        original_title = None
-        original_title_language = None
-        for item in series_data['AniDB']['Titles']:
-            if item['Type'] == 'Main':
-                original_title = item['Name']
-                original_title_language = item['Language']
-                break
-
         # Make a dict of language -> title for all series titles in anidb data
         series_titles = {}
         for item in series_data['AniDB']['Titles']:
             if item['Type'] != 'Short': # Exclude all short titles
                 series_titles[item['Language']] = item['Name']
         series_titles['shoko'] = series_data['Name']
-        series_titles[original_title_language] = original_title # Get main title for original language instead of synonym title
 
-        # Get series title according to the preference
+        # Get Title according to the preference
         title = None
         for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
             if title is not None: break
         if title is None: title = series_titles['shoko'] # If not found, fallback to preferred title in Shoko
+        metadata.title = title
 
+        Log('Series Title: %s' % title)
+
+        # Get alternate Title according to the preference
         alt_title = None
         for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
             lang = lang.strip()
             alt_title = try_get(series_titles, lang.lower(), None)
-            if alt_title == title: continue # Skip if main title is same as alt title
             if alt_title is not None: break
 
-        metadata.title = title
+        Log('Alternate Series Title: %s' % alt_title)
 
-        if alt_title is not None:
-            # Append the alt title to the sort title to make it searchable
+        # Append the alternate title to the Sort Title to make it searchable
+        if alt_title is not None and alt_title != metadata.title:
             metadata.title_sort = title + ' [' + alt_title + ']'
         else:
             metadata.title_sort = title
 
-        # Set metadata.original_title to main x-jat title (if Plex fixes blocking issue)
+        # Get Original Title (enable if Plex fixes blocking issue)
+        # original_title = None
+        # for item in series_data['AniDB']['Titles']:
+        #     if item['Type'] == 'Main':
+        #         original_title = item['Name']
+        #         break
         # metadata.original_title = original_title
 
-        Log('Series Title: %s' % title)
-
-        # Get air date
+        # Get Originally Available
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
         if airdate is not None:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
 
-        # Get series tags
+        # Get Content Rating (missing metadata source)
+        # metadata.content_rating =
+
+        # Get Rating
+        metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
+
+        # Get Studio
+        studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
+        studio = try_get(studio, 0, False)
+        if not studio:
+            studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
+            studio = try_get(studio, 0, False)
+        if studio:
+            Log('Studio: %s', studio['Staff']['Name'])
+            metadata.studio = studio['Staff']['Name']
+
+        # Get Tagline (missing metadata source)
+        # metadata.tagline =
+
+        # Get Summary
+        metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
+
+        # Get Genres
         series_tags = HttpReq('api/v3/Series/%s/Tags/%d' % (aid, flags)) # http://127.0.0.1:8111/api/v3/Series/24/Tags/0
         tags = [tag['Name'] for tag in series_tags]
         metadata.genres = tags
 
-        # Get images
-        images = try_get(series_data, 'Images', {})
-        self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
-        self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
-        self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
-
-        # Get group
+        # Get Collections
         groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
         metadata.collections = [groupinfo['Name']] if groupinfo['Size'] > 1 else []
 
-        ### Generate general content ratings.
-        ### VERY rough approximation to: https://www.healthychildren.org/English/family-life/Media/Pages/TV-Ratings-A-Guide-for-Parents.aspx
+        # Get Posters / Backgrounds
+        images = try_get(series_data, 'Images', {})
+        self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
+        self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
+        self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
 
+        # Get Cast & Crew
+        cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
+        metadata.roles.clear()
+        Log('Fetching cast data...')
+        for role in cast:
+            meta_role = metadata.roles.new()
+            meta_role.name = role['Staff']['Name']
+            meta_role.role = role['Character']['Name']
+            Log('%s - %s' % (meta_role.role, meta_role.name))
+            image = role['Staff']['Image']
+            if image:
+                meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+
+        # Get Content Rating (assumed from Genres)
+        ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
         if Prefs["Ratings"]:
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
             if 'kodomo' in tags_lower:
@@ -201,29 +227,6 @@ class ShokoCommonAgent:
                 metadata.content_rating = 'X'
 
             Log('Assumed tv rating to be: %s' % metadata.content_rating)
-
-        # Get cast
-        cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
-        metadata.roles.clear()
-        Log('Fetching cast data...')
-        for role in cast:
-            meta_role = metadata.roles.new()
-            meta_role.name = role['Staff']['Name']
-            meta_role.role = role['Character']['Name']
-            Log('%s - %s' % (meta_role.role, meta_role.name))
-            image = role['Staff']['Image']
-            if image:
-                meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
-
-        # Get studio
-        studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
-        studio = try_get(studio, 0, False)
-        if not studio:
-            studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
-            studio = try_get(studio, 0, False)
-        if studio:
-            Log('Studio: %s', studio['Staff']['Name'])
-            metadata.studio = studio['Staff']['Name']
 
         # Get episode list using series ID
         episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/212/Episode?pageSize=0
@@ -263,7 +266,7 @@ class ShokoCommonAgent:
             for item in episode_data['AniDB']['Titles']:
                 episode_titles[item['Language']] = item['Name']
 
-            # Get episode title according to the preference
+            # Get episode Title according to the preference
             title = None
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
@@ -271,7 +274,7 @@ class ShokoCommonAgent:
                 if title is not None: break
             if title is None: title = episode_titles['en'] # If not found, fallback to EN title
 
-            # Replace Ambiguous Titles with Series Title
+            # Replace Ambiguous Title with series Title
             SingleEntryTitles = ['Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web'] # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the preference
@@ -293,7 +296,18 @@ class ShokoCommonAgent:
 
             Log('Episode Title: %s', episode_obj.title)
 
-            # Get description
+            # Get Originally Available
+            airdate = try_get(episode_data['AniDB'], 'AirDate', None)
+            if airdate is not None:
+                episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
+
+            # Get Content Ratings (from series)
+            episode_obj.content_rating = metadata.content_rating
+
+            # Get Rating (missing metadata source)
+            #episode_obj.rating =
+            
+            # Get Summary
             if try_get(episode_data['AniDB'], 'Description') != '':
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description'))
                 Log('Description (AniDB): %s' % episode_obj.summary)
@@ -301,15 +315,11 @@ class ShokoCommonAgent:
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description'))
                 Log('Description (TvDB): %s' % episode_obj.summary)
 
-            # Get air date
-            airdate = try_get(episode_data['AniDB'], 'AirDate', None)
-            if airdate is not None:
-                episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-
+            # Get episode Poster (thumbnail)
             if Prefs['customThumbs']:
                self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
-            # Get writers (as original work)
+            # Get Writers (as original work)
             writers = HttpReq('api/v3/Series/%s/Cast?roleType=SourceWork' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=SourceWork
             writers = try_get(writers, 0, False)
             if writers:
@@ -317,7 +327,7 @@ class ShokoCommonAgent:
                 writer = episode_obj.writers.new()
                 writer.name = writers['Staff']['Name']
 
-            # Get directors
+            # Get Directors
             directors = HttpReq('api/v3/Series/%s/Cast?roleType=Director' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Director
             directors = try_get(directors, 0, False)
             if directors:
