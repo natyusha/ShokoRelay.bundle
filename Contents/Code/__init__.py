@@ -289,9 +289,11 @@ class ShokoCommonAgent:
                 metadata.year = int(airdate.split('-')[0])
                 metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
 
-            collections = []
+            # Get group
+            groupinfo = HttpReq('api/v3/Series/%s/Group' % series_id)
             if series_data['Size'] > 1:
-                collections.append(series_data['Name'])
+                Log('Adding to collection: %s' % groupinfo['Name'])
+                metadata.collections = [groupinfo['Name']]
 
         else:
             # Get series data
