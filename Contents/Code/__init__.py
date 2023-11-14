@@ -364,7 +364,9 @@ class ShokoCommonAgent:
 
         # Get group
         groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
-        metadata.collections = [groupinfo['Name']] if groupinfo['Size'] > 1 else []
+        if groupinfo['Size'] > 1:
+            Log('Adding to collection: %s' % groupinfo['Name'])
+            metadata.collections = [groupinfo['Name']]
 
         ### Generate general content ratings.
         ### VERY rough approximation to: https://www.healthychildren.org/English/family-life/Media/Pages/TV-Ratings-A-Guide-for-Parents.aspx
