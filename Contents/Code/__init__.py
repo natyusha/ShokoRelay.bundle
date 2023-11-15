@@ -177,7 +177,9 @@ class ShokoCommonAgent:
 
         # Get Collections
         groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
-        metadata.collections = [groupinfo['Name']] if groupinfo['Size'] > 1 else []
+        if groupinfo['Size'] > 1:
+            Log('Adding to collection: %s' % groupinfo['Name'])
+            metadata.collections = [groupinfo['Name']]
 
         # Get Posters / Backgrounds
         images = try_get(series_data, 'Images', {})
