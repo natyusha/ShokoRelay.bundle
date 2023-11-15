@@ -142,7 +142,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
                 for episode in range(episode_multi):
                     episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
-                    episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212/AniDB?includeDataFrom=AniDB,TvDB
+                    episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
                     
                     # Get episode type
                     episode_type = episode_data['AniDB']['Type']
