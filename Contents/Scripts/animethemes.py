@@ -19,8 +19,12 @@ Behaviour:
   - By default this script will download the first OP (or ED if there is none) for the given series.
   - If FFplay_Enabled is set to True in Prefs the song will begin playing in the background which helps with picking the correct theme.
   - FFmpeg will then encode it as a 320kbps mp3 and save it as Theme.mp3 in the anime folder.
-  - FFmpeg will also apply following metadata: Title (with TV Size or not), Artist (if available), Album (as source anime), Subtitle (as OP/ED number + the version if there are multiple)
-  - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument
+  - FFmpeg will also apply the following metadata:
+      - Title (with TV Size or not)
+      - Artist (if available)
+      - Album (as source anime)
+      - Subtitle (as OP/ED number + the version if there are multiple)
+  - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
   - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback.
 Arguments:
@@ -49,18 +53,31 @@ Prefs = {
     'FFplay_Volume': '10'
 }
 
-file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg', '.mk3d', '.m4v') # default shoko file formats
-slug_formatting = {'OP': 'Opening ', 'ED': 'Ending ', '-BD': ' (Blu-ray Version)', '-Original': ' (Original Version)', '-TV': ' (Broadcast Version)', '-Web': ' (Web Version)', '  ': ' ', ' $': ''}
+# file formats that will work with the script (uses shoko's defaults)
+file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg', '.mk3d', '.m4v')
+
+# regex substitution pairs for additional slug formatting (executed top to bottom)
+slug_formatting = {
+    'OP': 'Opening ',
+    'ED': 'Ending ',
+    '-BD': ' (Blu-ray Version)',
+    '-Original': ' (Original Version)',
+    '-TV': ' (Broadcast Version)',
+    '-Web': ' (Web Version)',
+    '  ': ' ',
+    ' $': ''
+}
+
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
 error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
-# check if looking for a specific op/ed from argument
+## check the arguments if the user is looking for a specific op/ed, a series match offset or to batch
 theme_slug = None
 offset = 0
-# grab the theme slug + offset or batch depending on the arguments
+# if one argument supplied check if it is a theme slug, offset or batch
 if len(sys.argv) == 2:
     if re.match('^\\d$', sys.argv[1]): # if the first argument is a single digit set it as the offset
         offset = int(sys.argv[1])
@@ -73,7 +90,7 @@ if len(sys.argv) == 2:
         print(f'{error_prefix}Failed: Invalid Argument')
         exit(1)
 
-# if two arguments supplied make sure they follow the same rules as above (no reason for the batch argument to work here)
+# if two arguments supplied make sure they follow the same rules as above but without batch
 elif len(sys.argv) == 3:
     if re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and re.match('^\\d$', sys.argv[2]):
         theme_slug = sys.argv[1].upper()
@@ -86,6 +103,7 @@ elif len(sys.argv) > 3:
     exit(1)
 
 # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
+# this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
 if theme_slug is not None:
     if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
     if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
@@ -115,7 +133,7 @@ except Exception as error:
     print(f'{error_prefix}└─Failed: Bad response from Shoko Server (Try Checking your login credentials in the script)\n', error)
     exit(1)
 
-# get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
+## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
 ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
 ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][slug]=OP,OP1
 if anidbID is not None:
@@ -140,7 +158,7 @@ if anidbID is not None:
         print(f'{error_prefix}──Failed: Enter a valid argument\n', error)
         exit(1)
 
-# grab first video id from OP id above (make it easy to retrofit this script into a video downloader)
+## grab first video id from anime theme id above (also make it easy to retrofit this script into a video downloader)
 ## https://api.animethemes.moe/animetheme/11808?include=animethemeentries.videos,song.artists
 if animethemeID is not None:
     animetheme = requests.get(f'https://api.animethemes.moe/animetheme/{animethemeID}?include=animethemeentries.videos,song.artists').json()
@@ -158,7 +176,7 @@ if animethemeID is not None:
     else:
         artist_display = ''
 
-# grab first audio link from video id above
+## grab first audio link from video id above
 ## https://api.animethemes.moe/video?filter[video][id]=16031&include=audio
 if videoID is not None:
     video = requests.get(f'https://api.animethemes.moe/video?filter[video][id]={videoID}&include=audio').json()
@@ -195,9 +213,10 @@ if Prefs['FFplay_Enabled']:
     except Exception as error:
         print(f'{error_prefix}──FFPlay Failed\n│ ', error)
 
-# convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
+## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
 print_f('└┬Converting...')
-metadata = {  # ffmpeg metadata with double quote fix for something like "Oshi no Ko"
+# ffmpeg metadata with double quotes escaped for something like "Oshi no Ko"
+metadata = {
     'title': f' -metadata title="{song_title.replace('"','\\\"')}"',
     'subtitle': f' -metadata TIT3="{slug}"',
     'artist': f' -metadata artist="{artist_name.replace('"','\\\"')}"',
@@ -208,7 +227,7 @@ try:
 except Exception as error:
         print(f'{error_prefix}└─FFmpeg Failed\n│ ', error)
 
-# kill ffplay and end the operation after pressing ctrl-c
+# kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
 if Prefs['FFplay_Enabled']:
     try:
         for t in range(duration):
