@@ -36,6 +36,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Allows movies and series to be in the same library at once
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
 - Support for files which contain more than one episode
+- Includes a script for downloading the full OP/ED from AnimeThemes for local Plex metadata
 
 ### Notes
 #### Automatic Season Naming Limitations
