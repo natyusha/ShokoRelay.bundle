@@ -180,6 +180,8 @@ class ShokoCommonAgent:
         if groupinfo['Size'] > 1:
             Log('Adding to collection: %s' % groupinfo['Name'])
             metadata.collections = [groupinfo['Name']]
+        else:
+            metadata.collections.clear()
 
         # Get Posters / Backgrounds
         images = try_get(series_data, 'Images', {})

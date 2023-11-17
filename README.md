@@ -39,6 +39,12 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Includes a script for downloading the full OP/ED from AnimeThemes for local Plex metadata
 
 ### Notes
+#### Handling 'Stuck' Metadata
+- In cases where metadata (generally posters) won't update there is a 3 step process to fix it:
+	1. Navigate to the series > More "..." Button > Unmatch
+	2. Settings > Manage > Troubleshooting > Clean Bundles
+	3. Navigate back to the series > More "..." Button > Match > Select top result
+
 #### Automatic Season Naming Limitations
 Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with a script that accesses the Plex API. The affected season names and their intended names are listed below:
 - Season -1 → Themes
