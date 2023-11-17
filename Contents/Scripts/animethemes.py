@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import os, re, requests, subprocess, sys, time, urllib
 
-"""
+r"""
 Description:
   - This script uses the Shoko and AnimeThemes APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
   - The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.
 Author:
   - natyusha
 Requirements:
-  - Python 3.6+, Requests Library, FFmpeg, Shoko Server
+  - Python 3.7+, Requests Library (pip install requests), FFmpeg, Shoko Server
 Preferences:
   - Before doing anything with this script you must enter your Shoko information into the Prefs below.
   - To allow the Theme.mp3 files to be used by Plex you must also enable Local Media Assets for whatever library has your Anime in it.
@@ -32,15 +32,19 @@ Arguments:
   - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
   - offset: a single digit number which must be the second argument if the slug is provided
   - batch: must be the sole argument and is simply entered as 'batch'
-Examples (using bash and assuming that the script can be called directly from path):
+Examples (using bash / cmd and assuming that the script and ffmpeg can be called directly from path):
   - Library Batch Processing
-      cd /PathToAnime; for dir in */; do animethemes.py batch; done
+      for dir in '/PathToAnime/*/'; do animethemes.py batch; done
+      for /d %i in ("X:\PathToAnime\*") do cd /d %i && animethemes.py batch
   - Fix 'Mushoku Tensei II: Isekai Ittara Honki Dasu' Matching to Episode 0 (offset to the next animethemes match)
-      cd /PathToMushokuTenseiII; animethemes.py 1
+      cd '/PathToMushokuTenseiII'; animethemes.py 1
+      cd /d "X:\PathToMushokuTenseiII" && animethemes.py 1
   - Same as above but download the second ending instead of the default OP
-      cd /PathToMushokuTenseiII; animethemes.py ed2 1
+      cd '/PathToMushokuTenseiII'; animethemes.py ed2 1
+      cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1
   - Download 9th Opening of Bleach
-      cd /PathToBleach; animethemes.py op9
+      cd '/PathToBleach'; animethemes.py op9
+      cd /d "X:\PathToBleach" && animethemes.py op9        
 """
 
 # user preferences
@@ -64,8 +68,8 @@ slug_formatting = {
     '-Original': ' (Original Version)',
     '-TV': ' (Broadcast Version)',
     '-Web': ' (Web Version)',
-    '  ': ' ',
-    ' $': ''
+    '  ': ' ', # check for double spaces after other substitutions
+    ' $': '' # check for trailing spaces after other substitutions
 }
 
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
@@ -213,8 +217,6 @@ if Prefs['FFplay_Enabled']:
     except Exception as error:
         print(f'{error_prefix}──FFPlay Failed\n│ ', error)
 
-## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
-print_f('└┬Converting...')
 # ffmpeg metadata with double quotes escaped for something like "Oshi no Ko"
 metadata = {
     'title': f' -metadata title="{song_title.replace('"','\\\"')}"',
@@ -222,12 +224,15 @@ metadata = {
     'artist': f' -metadata artist="{artist_name.replace('"','\\\"')}"',
     'album': f' -metadata album="{anime_name.replace('"','\\\"')}"'
 }
+
+## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
+print_f('└┬Converting...')
 try:
     subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata['title']}{metadata['subtitle']}{metadata['artist']}{metadata['album']} Theme.mp3')
 except Exception as error:
-        print(f'{error_prefix}└─FFmpeg Failed\n│ ', error)
+    print(f'{error_prefix}└─FFmpeg Failed\n│ ', error)
 
-# kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
+## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
 if Prefs['FFplay_Enabled']:
     try:
         for t in range(duration):
