@@ -26,7 +26,7 @@ Behaviour:
       - Subtitle (as OP/ED number + the version if there are multiple)
   - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
-  - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback.
+  - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
   - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
@@ -81,6 +81,7 @@ def print_f(text): print(text, flush=True)
 ## check the arguments if the user is looking for a specific op/ed, a series match offset or to batch
 theme_slug = None
 offset = 0
+batch = False
 # if one argument supplied check if it is a theme slug, offset or batch
 if len(sys.argv) == 2:
     if re.match('^\\d$', sys.argv[1]): # if the first argument is a single digit set it as the offset
@@ -89,6 +90,7 @@ if len(sys.argv) == 2:
         theme_slug = sys.argv[1].upper()
     elif sys.argv[1].lower() == 'batch': # disable ffplay when running in batch mode and pad the console output
         Prefs['FFplay_Enabled'] = False
+        batch = True
         print('')
     else:
         print(f'{error_prefix}Failed: Invalid Argument')
@@ -114,7 +116,12 @@ if theme_slug is not None:
 
 ## grab the anidb id using shoko api and a video file path
 print_f('┌Plex Theme.mp3 Generator')
-files = [file for file in os.listdir('.') if file.lower().endswith(file_formats)] # check for video files regardless of case
+files = []
+for file in os.listdir('.'):
+    if batch == True and file == 'Theme.mp3': # if batching skip when a Theme.mp3 file is present
+        print(f'{error_prefix}─Skipped: A Theme.mp3 file is already present')
+        exit(1)
+    if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
 try:
     filename = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep + files[0] # add the base folder name to the filename in case of duplicate filenames
 except Exception:
