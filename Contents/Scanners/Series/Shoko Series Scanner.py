@@ -10,6 +10,7 @@ Prefs = {
     'Password': '',
     'IncludeSpecials': True,
     'IncludeOther': True,
+    'IncludeSubfolders': True,
     'SingleSeasonOrdering': False
 }
 
@@ -187,7 +188,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
         Stack.Scan(path, files, mediaList, subdirs)
 
-    if not path: # If current folder is root folder
+    if not path and Prefs['IncludeSubfolders']: # If current folder is root folder and subfolder scanning is enabled
         Log.info("Manual call to group folders")
         subfolders = subdirs[:]
 
