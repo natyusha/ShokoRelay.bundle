@@ -27,6 +27,7 @@ Behaviour:
   - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
   - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
+      - If Batch_Overwrite is set to true in Prefs the batch argument will instead overwrite existing Theme.mp3 files
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
   - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
@@ -53,6 +54,7 @@ Prefs = {
     'Shoko_Port': 8111,
     'Shoko_Username': 'Default',
     'Shoko_Password': '',
+    'Batch_Overwrite': False,
     'FFplay_Enabled': True,
     'FFplay_Volume': '10'
 }
@@ -116,23 +118,24 @@ if theme_slug is not None:
 
 ## grab the anidb id using shoko api and a video file path
 print_f('┌Plex Theme.mp3 Generator')
+folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
 files = []
 for file in os.listdir('.'):
-    if batch == True and file == 'Theme.mp3': # if batching skip when a Theme.mp3 file is present
-        print(f'{error_prefix}─Skipped: A Theme.mp3 file is already present')
+    if batch == True and file.lower() == 'theme.mp3' and not Prefs['Batch_Overwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
+        print(f'{error_prefix}─Skipped: Theme.mp3 already exists in {folder}')
         exit(1)
     if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
 try:
-    filename = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep + files[0] # add the base folder name to the filename in case of duplicate filenames
+    filepath = folder + files[0] # add the base folder name to the filename in case of duplicate filenames
 except Exception:
     print(f'{error_prefix}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
     exit(1)
 print_f('├┬Shoko')
-print_f('│├─File: ' + filename)
+print_f(f'│├─File: {filepath}')
 # grab a shoko api key using the credentials from the prefs
 authentication = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'AnimeThemes For Plex'}).json()
 # get the anidbid of a series by using the first filename present in its folder
-path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filename)}&includeXRefs=false&limit=0&apikey={authentication['apikey']}').json()
+path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&includeXRefs=false&limit=0&apikey={authentication['apikey']}').json()
 try:
     try:
         anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
