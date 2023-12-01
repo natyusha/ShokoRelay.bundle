@@ -33,18 +33,18 @@ Arguments:
   - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
   - offset: a single digit number which must be the second argument if the slug is provided
   - batch: must be the sole argument and is simply entered as 'batch'
-Examples (using bash / cmd and assuming that the script and ffmpeg can be called directly from path):
+Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):
   - Library Batch Processing
-      for dir in '/PathToAnime/*/'; do animethemes.py batch; done
-      for /d %i in ("X:\PathToAnime\*") do cd /d %i && animethemes.py batch
+      for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done
+      for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch
   - Fix 'Mushoku Tensei II: Isekai Ittara Honki Dasu' Matching to Episode 0 (offset to the next animethemes match)
-      cd '/PathToMushokuTenseiII'; animethemes.py 1
+      cd "/PathToMushokuTenseiII"; animethemes.py 1
       cd /d "X:\PathToMushokuTenseiII" && animethemes.py 1
   - Same as above but download the second ending instead of the default OP
-      cd '/PathToMushokuTenseiII'; animethemes.py ed2 1
+      cd "/PathToMushokuTenseiII"; animethemes.py ed2 1
       cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1
   - Download 9th Opening of Bleach
-      cd '/PathToBleach'; animethemes.py op9
+      cd "/PathToBleach"; animethemes.py op9
       cd /d "X:\PathToBleach" && animethemes.py op9        
 """
 
