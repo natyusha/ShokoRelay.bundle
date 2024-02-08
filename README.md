@@ -1,26 +1,26 @@
-ShokoMetadata.bundle
+ShokoRelay.bundle
 ====================
-This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko](https://shokoanime.com/) and Plex Media Server. Unlike the official metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single 'TV Shows' library.
+This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko](https://shokoanime.com/) and Plex Media Server. Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single 'TV Shows' library.
 
 ### Installation
-- Unzip [this repository](https://github.com/natyusha/ShokoMetadata.bundle/archive/refs/heads/master.zip) into `\Plex Media Server\Plug-ins`
-- Remove `-master` from the end of the resulting folder name (the folder name should be `ShokoMetadata.bundle`)
+- Unzip [this repository](https://github.com/natyusha/ShokoRelay.bundle/archive/refs/heads/master.zip) into `\Plex Media Server\Plug-ins`
+- Remove `-master` from the end of the resulting folder name (the folder name should be `ShokoRelay.bundle`)
 - Move the `Scanners` folder located in `Contents` to `\Plex Media Server\`
-- Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Series Scanner.py` with a text editor:
+- Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Relay Scanner.py` with a text editor:
 	- Hostname
 	- Port
 	- Username
 	- Password
 - Add a `TV Shows` library in Plex and configure the following options under `Advanced`:
-	- Scanner: `Shoko Series Scanner`
-	- Agent: `ShokoTV`
+	- Scanner: `Shoko Relay Scanner`
+	- Agent: `ShokoRelay`
 	- The username to log into Shoko server
 	- The password for above username
 	- The host for Shoko
 	- The port for Shoko
 	- Collections: `Hide items which are in collections`
 	- Seasons: `Hide for single-season series`
-- In Plex Settings: `Settings > Agents > Shows > ShokoTV` move the following entry to the top of the list and enable it:
+- In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
 	- [x] Local Media Assets (TV)
 
 ### Changes From the Official Shoko Scanner

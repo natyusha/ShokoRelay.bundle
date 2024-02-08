@@ -50,7 +50,7 @@ if not os.path.isdir(LOG_PATH):
                     'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server' }
   try:  path = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~')  # Platform.OS:  Windows, MacOSX, or Linux
   except: pass #os.makedirs(LOG_PATH)  # User folder on MacOS-X
-LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Metadata Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
+LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Relay Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
 set_logging("Root", LOG_FILE_LIBRARY)
 
 def HttpPost(url, postdata):
@@ -81,7 +81,7 @@ def GetApiKey():
         data = json.dumps({
             'user': Prefs['Username'],
             'pass': Prefs['Password'] if Prefs['Password'] != None else '',
-            'device': 'Shoko Series Scanner For Plex'
+            'device': 'Shoko Relay Scanner For Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
         Log.info( "Got API KEY: %s", resp)

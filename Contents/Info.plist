@@ -3,12 +3,16 @@
 <plist version="1.0">
     <dict>
         <key>CFBundleIdentifier</key>
-        <string>com.plexapp.agents.shoko</string>
+        <string>com.plexapp.agents.shokorelay</string>
         <key>PlexClientPlatforms</key>
-        <string>MacOSX,iOS,Android,LGTV</string>
+        <string>*</string>
         <key>PlexFrameworkVersion</key>
         <string>2</string>
         <key>PlexPluginClass</key>
         <string>Agent</string>
+        <key>PlexPluginCodePolicy</key>
+        <string>Elevated</string>
+        <key>PlexAgentAttributionText</key>
+        <string>Shoko Relay is a fork of Shoko Metadata (created by Cazzar) which utilizes Shoko Anime in conjunction with metadata sourced from AniDB, TVDB and TMDB</string>
     </dict>
 </plist>

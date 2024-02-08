@@ -22,7 +22,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log("Shoko metata agent started")
+    Log("Shoko Relay Agent Started")
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.CacheTime = 0.1 #cache, can you please go away, typically we will be requesting LOCALLY. HTTP.CacheTime
     ValidatePrefs()
@@ -34,7 +34,7 @@ def GetApiKey():
         data = json.dumps({
             'user': Prefs['Username'],
             'pass': Prefs['Password'] if Prefs['Password'] != None else '',
-            'device': 'Shoko Metadata For Plex'
+            'device': 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
         Log.Debug("Got API KEY: %s" % resp)
@@ -65,7 +65,7 @@ def HttpReq(url, retry=True):
         API_KEY = ''
         return HttpReq(url, False)
 
-class ShokoCommonAgent:
+class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         name = media.show
 
@@ -400,9 +400,9 @@ def try_get(arr, idx, default=""):
         return default
 
 
-class ShokoTVAgent(Agent.TV_Shows, ShokoCommonAgent):
+class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):
     name, primary_provider, fallback_agent, contributes_to, accepts_from = (
-        'ShokoTV', True, False, ['com.plexapp.agents.hama'],
+        'ShokoRelay', True, False, ['com.plexapp.agents.hama'],
         ['com.plexapp.agents.localmedia'])  # , 'com.plexapp.agents.opensubtitles'
     languages = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el',
                  'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
