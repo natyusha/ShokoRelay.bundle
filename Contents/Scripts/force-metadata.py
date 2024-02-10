@@ -99,9 +99,14 @@ if full_clean:
             failed_list.append(series.title)
     input('│└─Matching Queued: Press Enter to continue once Plex is finished...')
 
-# TODO rename negative seasons to their correct names
-#print_f('├┬Renaming Negative Seasons...')
-#print_f('│└─Finished Renaming Seasons!')
+# rename negative seasons to their correct names
+print_f('├┬Renaming Negative Seasons...')
+for season in anime.searchSeasons(title=''):
+    if season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
+    elif season.title == 'Season -2': season.editTitle('Trailers')
+    elif season.title == 'Season -3': season.editTitle('Parodies')
+    elif season.title == 'Season -4': season.editTitle('Other')
+print_f('│└─Finished Renaming Seasons!')
 
 # clear any empty collections that are left over
 print_f('└┬Removing Empty Collections...')
