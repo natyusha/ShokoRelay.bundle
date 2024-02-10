@@ -32,28 +32,44 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
 - Allows the user to configure what language they want for episode titles
 - Will use TheTVDB descriptions and episode titles if AniDB is missing that information
-- Will replace ambiguous AniDB episode titles with the series title
+- Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
 - Allows movies and series to be in the same library at once
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
 - Support for files which contain more than one episode
-- Includes a script for downloading the full OP/ED from AnimeThemes for local Plex metadata
+
+### Scripts
+#### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
+- This script uses the Shoko and AnimeThemes APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
+- The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.
+
+#### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
+- This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
+- After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
+- Any unused posters and empty collections will be removed from your library automatically while also updating negative season names.
+
+#### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)
+- This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to AniDB.
+- If something is marked as watched in Plex it will also be marked as watched on AniDB.
+- This was created due to various issues with Plex and Shoko's built in watched status syncing.
+    1. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
+    2. Shoko's "Sync Plex Watch Status" command doesn't work with a cross platform setup.
 
 ### Notes
 #### Handling 'Stuck' Metadata
-- In cases where metadata (generally posters) won't update there is a 3 step process to fix it:
+- In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
 	1. Navigate to the series > More "..." Button > Unmatch
 	2. Settings > Manage > Troubleshooting > Clean Bundles
 	3. Navigate back to the series > More "..." Button > Match > Select top result
 
 #### Automatic Season Naming Limitations
-Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with a script that accesses the Plex API. The affected season names and their intended names are listed below:
-- Season -1 → Themes
+Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with the included [force-metadata.py](#force-metadatapy) script that accesses the Plex API. The affected season names and their intended names are listed below:
+- Season -1 → Credits
 - Season -2 → Trailers
 - Season -3 → Parodies
 - Season -4 → Other
 
 #### Ambiguous Title Replacement
-In cases where AniDB uses ambiguous episode titles the series title will be used instead. A list of the titles considered ambiguous by the agent are as follows: 
+In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it). A list of the titles considered ambiguous by the agent are as follows: 
 - Complete Movie
 - Music Video
 - OAD
@@ -63,7 +79,7 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 - Web
 
 #### Combining Series
-If you have TheTVDB matching enabled in Shoko the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
+If you have TheTVDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
 
 Using Fairy Tail as an example all of the following series can be safely merged into a single entry in Plex if they are correctly matched to TheTVDB in Shoko:
 - Fairy Tail

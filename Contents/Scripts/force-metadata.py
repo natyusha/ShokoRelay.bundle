@@ -6,7 +6,7 @@ r"""
 Description:
   - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
-  - Any unused posters and empty collections will be removed from your library automatically.
+  - Any unused posters and empty collections will be removed from your library automatically while also updating negative season names.
   - Important: In 'full' mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at library in the desktop/web client or checking the logs in your "PMS Plugin Logs" for activity.
       - This may take a significant amount of time to complete with a large library.
@@ -51,9 +51,24 @@ if len(sys.argv) == 2:
         exit(1)
 
 # authenticate and connect to the Plex server/library specified
-admin = MyPlexAccount(Prefs['Plex_Username'], Prefs['Plex_Password'])
-plex = admin.resource(Prefs['Plex_ServerName']).connect()
-anime = plex.library.section(Prefs['Plex_LibraryName'])
+try:
+    admin = MyPlexAccount(Prefs['Plex_Username'], Prefs['Plex_Password'])
+except Exception:
+    print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
+    exit(1)
+
+try:
+    plex = admin.resource(Prefs['Plex_ServerName']).connect()
+except Exception:
+    print(f'└{error_prefix}Failed: Server Name Not Found')
+    exit(1)
+
+try:
+    anime = plex.library.section(Prefs['Plex_LibraryName'])
+except Exception:
+    print(f'└{error_prefix}Failed: Library Name Not Found')
+    exit(1)
+
 collections = anime.collections()
 
 print_f('\n┌ShokoRelay: Force Plex Metadata')

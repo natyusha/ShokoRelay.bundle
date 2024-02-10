@@ -158,7 +158,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'ThemeSong': season = -1
                     elif episode_type == 'Trailer': season = -2
                     elif episode_type == 'Parody': season = -3
-                    elif episode_type == 'Unknown': season = -4
+                    elif episode_type == 'Other': season = -4
                     if not Prefs['SingleSeasonOrdering']:
                         episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Take the first link, as explained before
                         if episode_data['TvDB'] is not None:

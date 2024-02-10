@@ -251,7 +251,7 @@ class ShokoRelayAgent:
             elif episode_type == 'ThemeSong': season = -1
             elif episode_type == 'Trailer': season = -2
             elif episode_type == 'Parody': season = -3
-            elif episode_type == 'Unknown': season = -4
+            elif episode_type == 'Other': season = -4
             if not Prefs['SingleSeasonOrdering'] and len(episode_data['TvDB']) != 0:
                 episode_data['TvDB'] = episode_data['TvDB'][0] # Take the first link, as explained before
                 season = episode_data['TvDB']['Season']
@@ -285,12 +285,12 @@ class ShokoRelayAgent:
                 singleTitle = title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()                                   
-                    title = try_get(series_titles, lang.lower(), title)
+                    title = try_get(series_titles, lang.lower(), title) + ' - ' + singleTitle
                     if title is not singleTitle: break
                 if title is singleTitle: # If not found, fallback to EN series title
-                    title = try_get(series_titles, 'en', title)
+                    title = try_get(series_titles, 'en', title) + ' - ' + singleTitle
                 if title is singleTitle: # Fallback to TvDB title as a last resort
-                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title')
+                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title') + ' - ' + singleTitle
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title') != '':
