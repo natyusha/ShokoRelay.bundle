@@ -133,7 +133,7 @@ except Exception:
 print_f('├┬Shoko')
 print_f(f'│├─File: {filepath}')
 # grab a shoko api key using the credentials from the prefs
-authentication = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'AnimeThemes For Plex'}).json()
+authentication = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'AnimeThemes for Plex'}).json()
 # get the anidbid of a series by using the first filename present in its folder
 path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={authentication['apikey']}').json()
 try:
