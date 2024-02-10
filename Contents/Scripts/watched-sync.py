@@ -52,12 +52,22 @@ except Exception:
 # add the admin account to a list then append any other users to it
 accounts = [admin]
 if Prefs['Plex_ExtraUsers'] is not None:
-    extra_users = [admin.user(username) for username in Prefs['Plex_ExtraUsers']]
-    data = [admin.query(f'https://plex.tv/api/home/users/{user.id}/switch', method=admin._session.post) for user in extra_users]
-    for userID in data: accounts.append(MyPlexAccount(token=userID.attrib.get('authenticationToken')))
+    try:
+        extra_users = [admin.user(username) for username in Prefs['Plex_ExtraUsers']]
+        data = [admin.query(f'https://plex.tv/api/home/users/{user.id}/switch', method=admin._session.post) for user in extra_users]
+        for userID in data: accounts.append(MyPlexAccount(token=userID.attrib.get('authenticationToken')))
+    except Exception as error: # if the extra users can't be found show an error but continue
+        print(f'{error_prefix}Failed:', error)
 
 # grab a shoko api key using the credentials from the prefs
-auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'Watched-Sync for Plex'}).json()
+try:
+    auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+except Exception:
+    print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
+    exit(1)
+if 'status' in auth and auth['status'] in (400, 401):
+    print(f'{error_prefix}Failed: Shoko Credentials Invalid')
+    exit(1)
 
 # loop through all of the accounts listed and sync watched states
 print_f('\n┌ShokoRelay Watched Sync: Checking for Plex Episodes Not Watched in Shoko...')
@@ -74,7 +84,7 @@ for account in accounts:
         print(f'└{error_prefix}Failed: Library Name Not Found')
         exit(1)
 
-    print_f(f'├┬Querying {account}...')
+    print_f(f'├┬Querying {account}')
     # loop through all unwatched episodes in the plex library
     for episode in anime.searchEpisodes(unwatched=False):
         for episode_path in episode.iterParts():
@@ -87,5 +97,5 @@ for account in accounts:
                         requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={auth['apikey']}')
                 except Exception as error:
                     print(f'││{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
-    print_f(f'│└─Finished syncing {account}')
+    print_f(f'│└─Finished {account}')
 print_f(f'└─Finished!')

@@ -47,9 +47,9 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - It will take the default poster from the corresponding Shoko group.
 
 #### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
-- This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
-- After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
-- Any unused posters and empty collections will be removed from your library automatically while also updating negative season names.
+  - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
+  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names.
+  - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
 
 #### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)
 - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to AniDB.

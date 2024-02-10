@@ -116,6 +116,16 @@ if theme_slug is not None:
     if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
     if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
 
+# grab a shoko api key using the credentials from the prefs
+try:
+    auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+except Exception:
+    print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
+    exit(1)
+if 'status' in auth and auth['status'] in (400, 401):
+    print(f'{error_prefix}Failed: Shoko Credentials Invalid')
+    exit(1)
+
 ## grab the anidb id using shoko api and a video file path
 print_f('┌Plex Theme.mp3 Generator')
 folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
@@ -132,8 +142,6 @@ except Exception:
     exit(1)
 print_f('├┬Shoko')
 print_f(f'│├─File: {filepath}')
-# grab a shoko api key using the credentials from the prefs
-auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'AnimeThemes for Plex'}).json()
 # get the anidbid of a series by using the first filename present in its folder
 path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth['apikey']}').json()
 try:

@@ -5,11 +5,11 @@ import sys
 r"""
 Description:
   - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
+  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
-  - Any unused posters and empty collections will be removed from your library automatically while also updating negative season names.
   - Important: In 'full' mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at library in the desktop/web client or checking the logs in your "PMS Plugin Logs" for activity.
-      - This may take a significant amount of time to complete with a large library.
+      - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
 Author:
   - natyusha
 Requirements:
@@ -18,7 +18,7 @@ Preferences:
   - Before doing anything with this script you must enter your Plex information into the Prefs below.
 Usage:
   - Run in a terminal (force-metadata.py) to remove empty collection and rename negative seasons.
-  - Append the argument 'full' (force-metadata.py full) if you want to do the time consuming full metadata clean up
+  - Append the argument 'full' (force-metadata.py full) if you want to do the time consuming full metadata clean up.
 Behaviour:
   - This script will ignore locked fields/posters and merged series assuming that the user wants to keep them intact.
   - If the main title of an anime was changed on AniDB or overridden in Shoko after it was first scanned into Plex it might fail to match using this method.
@@ -69,8 +69,6 @@ except Exception:
     print(f'└{error_prefix}Failed: Library Name Not Found')
     exit(1)
 
-collections = anime.collections()
-
 print_f('\n┌ShokoRelay: Force Plex Metadata')
 ## if running a full scan execute the next 3 steps
 if full_clean:
@@ -109,18 +107,19 @@ for season in anime.searchSeasons(title=''):
 print_f('│└─Finished Renaming Seasons!')
 
 # clear any empty collections that are left over
+collections = anime.collections()
 print_f('└┬Removing Empty Collections...')
 for idx, val in enumerate(collections):
     if anime.collection(title=collections[idx].title).childCount != 0:
         continue
     else:
         anime.collection(title=collections[idx].title).delete()
-print_f(' └─Finished!\n')
+print_f(' └─Finished!')
 
 # silently queue a database optimization if running a full clean due to the large amount of potential changes made
 if full_clean: plex.library.optimize()
 
 # if there were failed matches list them so the user doesn't have to scroll up
 if failed_list:
-    for failed in failed_list:
-        print_f(f'{error_prefix}Failed: {failed}')
+    print_f('\nThe following series failed to match:')
+    for failed in failed_list: print_f(f'{failed}')
