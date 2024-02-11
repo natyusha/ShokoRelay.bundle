@@ -17,12 +17,12 @@ Prefs = {
 API_KEY = ''
 
 ### Log + LOG_PATH calculated once for all calls ###
-import logging, logging.handlers                        #
+import logging, logging.handlers
 RootLogger     = logging.getLogger('main')
 RootHandler    = None
 RootFormatting = logging.Formatter('%(message)s') #%(asctime)-15s %(levelname)s -
 RootLogger.setLevel(logging.DEBUG)
-Log             = RootLogger
+Log = RootLogger
 
 FileListLogger     = logging.getLogger('FileListLogger')
 FileListHandler    = None

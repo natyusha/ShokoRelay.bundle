@@ -7,8 +7,8 @@ Description:
   - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
   - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
-  - Important: In 'full' mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
-      - You can tell if Plex is done by looking at library in the desktop/web client or checking the logs in your "PMS Plugin Logs" for activity.
+  - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
+      - You can tell if Plex is done by looking at library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
 Author:
   - natyusha
@@ -20,7 +20,9 @@ Usage:
   - Run in a terminal (force-metadata.py) to remove empty collection and rename negative seasons.
   - Append the argument 'full' (force-metadata.py full) if you want to do the time consuming full metadata clean up.
 Behaviour:
-  - This script will ignore locked fields/posters and merged series assuming that the user wants to keep them intact.
+  - This script will ignore locked fields/posters assuming that the user wants to keep them intact.
+  - Merged series will be split apart in order to refresh their individual metadata.
+      - This means that all merged series will have to be manually merged again after running this in "full" mode.
   - If the main title of an anime was changed on AniDB or overridden in Shoko after it was first scanned into Plex it might fail to match using this method.
       - In these cases the original title will be output to the console for the user to fix with a Plex dance or manual match.
   - Video preview thumbnails and watched states are maintained with this script (unless an anime encounters the above naming issue).
@@ -72,6 +74,13 @@ except Exception:
 print_f('\n┌ShokoRelay: Force Plex Metadata')
 ## if running a full scan execute the next 3 steps
 if full_clean:
+    # split apart any merged series to allow each aprt to receive updated metadata
+    print_f('├┬Queueing Splits...')
+    for series in anime.search(title=''):
+        print_f(f'│├─Splitting: {series.title}')
+        series.split()
+    input('│└─Splitting Queued: Press Enter to continue once Plex is finished...')
+
     # unmatch all anime to clear out bad metadata
     print_f('├┬Queueing Unmatches...')
     for series in anime.search(title=''):
@@ -90,9 +99,9 @@ if full_clean:
         print_f(f'│├─Match: {series.title}')
         relay = series.matches(agent='shokorelay', title=series.title, year='')
         try:
+            failed_list = []
             series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
         except IndexError:
-            failed_list = []
             print_f(f'│{error_prefix}Failed: {series.title}') # print titles of things which failed to match
             failed_list.append(series.title)
     input('│└─Matching Queued: Press Enter to continue once Plex is finished...')
@@ -117,9 +126,10 @@ for idx, val in enumerate(collections):
 print_f(' └─Finished!')
 
 # silently queue a database optimization if running a full clean due to the large amount of potential changes made
-if full_clean: plex.library.optimize()
+if full_clean:
+    plex.library.optimize()
 
-# if there were failed matches list them so the user doesn't have to scroll up
-if failed_list:
-    print_f('\nThe following series failed to match:')
-    for failed in failed_list: print_f(f'{failed}')
+    # if there were failed matches list them so the user doesn't have to scroll up
+    if failed_list:
+        print_f('\nThe following series failed to match:')
+        for failed in failed_list: print_f(f'{failed}')
