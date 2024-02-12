@@ -70,7 +70,7 @@ class ShokoRelayAgent:
         name = media.show
 
         # Search for series using the name
-        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=%s&limit=10' % (urllib.quote_plus(name.encode('utf8')), Prefs['Fuzzy'])) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
+        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
 
         for index, series_data in enumerate(prelimresults):
             # Get series data

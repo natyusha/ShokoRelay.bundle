@@ -1,6 +1,6 @@
 ShokoRelay.bundle
 ====================
-This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko](https://shokoanime.com/) and Plex Media Server. Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
+This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko Server](https://shokoanime.com/) and [Plex Media Server](https://www.plex.tv/media-server-downloads/). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ### Installation
 - Unzip [this repository](https://github.com/natyusha/ShokoRelay.bundle/archive/refs/heads/master.zip) into `\Plex Media Server\Plug-ins`
@@ -23,7 +23,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
 	- [x] Local Media Assets (TV)
 
-### Changes From the Official Shoko Scanner
+### Changes from Shoko Metadata
 - Uses Shoko's v3 API for fetching metadata
 - Series and movies will list the studio
 - Episodes and movies will list the writer and director
@@ -35,9 +35,15 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
 - Allows movies and series to be in the same library at once
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
+- Support for Credits / Parodies / Trailers and Other types of special files
 - Support for files which contain more than one episode
 
 ### Scripts
+- The following scripts all require [Python 3](https://www.python.org/downloads/) to be installed.
+- Some of them also require additional Python Packages which can installed using [pip](https://pypi.org/project/pip/):
+	1. [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi`
+	2. [Requests](https://pypi.org/project/requests/) `pip install requests`
+
 #### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and AnimeThemes APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
 - The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.

@@ -58,13 +58,6 @@
     },
 
     {
-        "id": "Fuzzy",
-        "label": "Use fuzzy searching in Shoko for matching the titles.",
-        "type": "bool",
-        "default": false
-    },
-
-    {
         "id": "Ratings",
         "label": "Enable using the \"assumed\" ratings portion of the code",
         "type": "bool",
@@ -141,7 +134,7 @@
 
     {
         "id": "synposisCleanMultiEmptyLines",
-        "label": "Synopsis: Collapse excessive empty lines..",
+        "label": "Synopsis: Collapse excessive empty lines.",
         "type": "bool",
         "default": true
     }
