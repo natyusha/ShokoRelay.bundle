@@ -86,7 +86,7 @@ for account in accounts:
         try:
             anime = plex.library.section(library)
         except Exception as error:
-            print(f'│{error_prefix}Failed:', error)
+            print(f'│{error_prefix}Failed', error)
             continue
 
         # loop through all unwatched episodes in the plex library

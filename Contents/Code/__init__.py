@@ -204,33 +204,19 @@ class ShokoRelayAgent:
 
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
-        if Prefs["Ratings"]:
+        ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
+        if Prefs["contentRatings"]:
+            rating = None
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
-            if 'kodomo' in tags_lower:
-                metadata.content_rating = 'TV-Y'
+            if 'kodomo' in tags_lower: rating = 'TV-Y'
+            if 'mina' in tags_lower: rating = 'TV-G'
+            if ('shounen' or 'shoujo' or 'josei') in tags_lower: rating = 'TV-14'
+            if ('seinen' or 'borderline porn') in tags_lower: rating = 'TV-MA'
+            if '18 restricted' in tags_lower: rating = 'X'
 
-            if 'mina' in tags_lower:
-                metadata.content_rating = 'TV-G'
+            metadata.content_rating = rating
 
-            if 'shoujo' in tags_lower:
-                metadata.content_rating = 'TV-14'
-
-            if 'shounen' in tags_lower:
-                metadata.content_rating = 'TV-14'
-
-            if 'josei' in tags_lower:
-                metadata.content_rating = 'TV-14'
-
-            if 'seinen' in tags_lower:
-                metadata.content_rating = 'TV-MA'
-
-            if 'borderline porn' in tags_lower:
-                metadata.content_rating = 'TV-MA'
-
-            if '18 restricted' in tags_lower:
-                metadata.content_rating = 'X'
-
-            Log('Assumed tv rating to be: %s' % metadata.content_rating)
+            Log('Assumed content rating to be: %s' % metadata.content_rating)
 
         # Get episode list using series ID
         episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/212/Episode?pageSize=0

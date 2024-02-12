@@ -58,8 +58,8 @@
     },
 
     {
-        "id": "Ratings",
-        "label": "Enable using the \"assumed\" ratings portion of the code",
+        "id": "contentRatings",
+        "label": "Enable using \"assumed\" content ratings",
         "type": "bool",
         "default": true
     },
