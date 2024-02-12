@@ -50,7 +50,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 
 #### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)
 - This script uses the Python-PlexAPI and Shoko Server to apply posters to the collections in Plex.
-- It will take the default poster from the corresponding Shoko group.
+- It will look for posters in a user defined folder and if none are found take the default poster from the corresponding Shoko group.
 
 #### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
 - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
