@@ -277,8 +277,8 @@ class ShokoRelayAgent:
                     title = try_get(series_titles, 'en', title)
                 if title is singleTitle: # Fallback to TvDB title as a last resort
                     if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title')
-                # Append Ambiguous Title to series Title if a replacement title was found
-                if singleTitle != title: title = title + ' - ' + singleTitle
+                # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
+                if singleTitle != title and singleTitle not in title: title = title + ' - ' + singleTitle
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title') != '':

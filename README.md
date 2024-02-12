@@ -43,6 +43,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Some of them also require additional Python Packages which can installed using [pip](https://pypi.org/project/pip/):
 	1. [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi`
 	2. [Requests](https://pypi.org/project/requests/) `pip install requests`
+- The animethemes script has the additional requirement of: [FFmpeg](https://ffmpeg.org/)
 
 #### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and AnimeThemes APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
@@ -80,7 +81,7 @@ Due to custom agent limitations certain season names which contain special files
 - Season -4 → Other
 
 #### Ambiguous Title Replacement
-In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it). A list of the titles considered ambiguous by the agent are as follows: 
+In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows: 
 - Complete Movie
 - Music Video
 - OAD
