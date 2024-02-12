@@ -285,12 +285,14 @@ class ShokoRelayAgent:
                 singleTitle = title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()                                   
-                    title = try_get(series_titles, lang.lower(), title) + ' - ' + singleTitle
+                    title = try_get(series_titles, lang.lower(), title)
                     if title is not singleTitle: break
                 if title is singleTitle: # If not found, fallback to EN series title
-                    title = try_get(series_titles, 'en', title) + ' - ' + singleTitle
+                    title = try_get(series_titles, 'en', title)
                 if title is singleTitle: # Fallback to TvDB title as a last resort
-                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title') + ' - ' + singleTitle
+                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title')
+                # Append Ambiguous Title to series Title if a replacement title was found
+                if singleTitle != title: title = title + ' - ' + singleTitle
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title') != '':
