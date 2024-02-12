@@ -1,6 +1,6 @@
 ShokoRelay.bundle
 ====================
-This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko](https://shokoanime.com/) and Plex Media Server. Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single 'TV Shows' library.
+This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko](https://shokoanime.com/) and Plex Media Server. Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ### Installation
 - Unzip [this repository](https://github.com/natyusha/ShokoRelay.bundle/archive/refs/heads/master.zip) into `\Plex Media Server\Plug-ins`
@@ -14,10 +14,10 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Add a `TV Shows` library in Plex and configure the following options under `Advanced`:
 	- Scanner: `Shoko Relay Scanner`
 	- Agent: `ShokoRelay`
-	- The username to log into Shoko server
-	- The password for above username
-	- The host for Shoko
-	- The port for Shoko
+	- The Shoko Server Username
+	- The Shoko Server Password
+	- The Shoko Server Hostname
+	- The Shoko Server Port
 	- Collections: `Hide items which are in collections`
 	- Seasons: `Hide for single-season series`
 - In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
@@ -56,7 +56,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - If something is marked as watched in Plex it will also be marked as watched on AniDB.
 - This was created due to various issues with Plex and Shoko's built in watched status syncing.
   1. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
-  2. Shoko's "Sync Plex Watch Status" command doesn't work with a cross platform setup.
+  2. Shoko's "Sync Plex Watch Status" command doesn't work with cross platform setups.
 
 ### Notes
 #### Handling "Stuck" Metadata
@@ -64,6 +64,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
   1. Navigate to the series > More "..." Button > Unmatch
   2. Settings > Manage > Troubleshooting > Clean Bundles
   3. Navigate back to the series > More "..." Button > Match > Select top result
+- If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required.
 
 #### Automatic Season Naming Limitations
 Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with the included [force-metadata.py](#force-metadatapy) script that accesses the Plex API. The affected season names and their intended names are listed below:

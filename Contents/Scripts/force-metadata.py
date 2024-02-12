@@ -74,7 +74,7 @@ except Exception:
 print_f('\n┌ShokoRelay: Force Plex Metadata')
 ## if running a full scan execute the next 3 steps
 if full_clean:
-    # split apart any merged series to allow each aprt to receive updated metadata
+    # split apart any merged series to allow each part to receive updated metadata
     print_f('├┬Queueing Splits...')
     for series in anime.search(title=''):
         print_f(f'│├─Splitting: {series.title}')

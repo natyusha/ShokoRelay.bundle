@@ -8,7 +8,7 @@ Description:
   - If something is marked as watched in Plex it will also be marked as watched on AniDB.
   - This was created due to various issues with Plex and Shoko's built in watched status syncing.
       i. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
-     ii. Shoko's "Sync Plex Watch Status" command doesn't work with a cross platform setup.
+     ii. Shoko's "Sync Plex Watch Status" command doesn't work with cross platform setups.
 Author:
   - natyusha
 Requirements:
