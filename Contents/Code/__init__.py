@@ -14,17 +14,17 @@ from lxml import etree
 API_KEY = ''
 PLEX_HOST = ''
 
-#this is from https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
+# this is from https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
 THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
-LINK_REGEX = r"https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]"
+LINK_REGEX = r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]'
 
 def ValidatePrefs():
     pass
 
 def Start():
-    Log("Shoko Relay Agent Started")
+    Log('Shoko Relay Agent Started')
     HTTP.Headers['Accept'] = 'application/json'
-    HTTP.CacheTime = 0.1 #cache, can you please go away, typically we will be requesting LOCALLY. HTTP.CacheTime
+    HTTP.CacheTime = 0.1 # cache, can you please go away, typically we will be requesting LOCALLY. HTTP.CacheTime
     ValidatePrefs()
 
 def GetApiKey():
@@ -37,7 +37,7 @@ def GetApiKey():
             'device': 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        Log.Debug("Got API KEY: %s" % resp)
+        Log.Debug('Got API KEY: %s' % resp)
         API_KEY = resp
         return resp
 
@@ -51,7 +51,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log("Requesting: %s" % url)
+    Log('Requesting: %s' % url)
 
     myheaders = {'apikey': GetApiKey()}
 
@@ -89,15 +89,8 @@ class ShokoRelayAgent:
             # results.Sort('score', descending=True)
 
     def Update(self, metadata, media, lang, force):
-        Log("update(%s)" % metadata.id)
+        Log('update(%s)' % metadata.id)
         aid = metadata.id
-
-        flags = 0
-        flags = flags | Prefs['hideMiscTags']       << 0 #0b00001 : Hide AniDB Internal Tags
-        flags = flags | Prefs['hideArtTags']        << 1 #0b00010 : Hide Art Style Tags
-        flags = flags | Prefs['hideSourceTags']     << 2 #0b00100 : Hide Source Work Tags
-        flags = flags | Prefs['hideUsefulMiscTags'] << 3 #0b01000 : Hide Useful Miscellaneous Tags
-        flags = flags | Prefs['hideSpoilerTags']    << 4 #0b10000 : Hide Plot Spoiler Tags
 
         # Get series data
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
@@ -171,8 +164,14 @@ class ShokoRelayAgent:
         metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
 
         # Get Genres
-        series_tags = HttpReq('api/v3/Series/%s/Tags/%d' % (aid, flags)) # http://127.0.0.1:8111/api/v3/Series/24/Tags/0
-        tags = [tag['Name'] for tag in series_tags]
+        ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
+        series_tags = HttpReq('api/v3/Series/%s/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true
+        
+        ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
+        tags = []
+        for tag in series_tags:
+            if tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight']):
+                tags.append(tag['Name'])
         metadata.genres = tags
 
         # Get Collections
@@ -205,13 +204,13 @@ class ShokoRelayAgent:
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
-        if Prefs["contentRatings"]:
+        if Prefs['contentRatings']:
             rating = None
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
             if 'kodomo' in tags_lower: rating = 'TV-Y'
             if 'mina' in tags_lower: rating = 'TV-G'
             if ('shoujo' or 'shounen') in tags_lower: rating = 'TV-14'
-            if ('josei' or 'seinen') in tags_lower: rating = 'TV-MA'
+            if ('josei' or 'seinen' or 'tv censoring') in tags_lower: rating = 'TV-MA'
             if ('borderline porn') in tags_lower: rating = 'TV-MA-S'
             if '18 restricted' in tags_lower: rating = 'X'
 
@@ -298,7 +297,7 @@ class ShokoRelayAgent:
             episode_obj.content_rating = metadata.content_rating
 
             # Get Rating (missing metadata source)
-            #episode_obj.rating =
+            # episode_obj.rating =
             
             # Get Summary
             if try_get(episode_data['AniDB'], 'Description') != '':
@@ -340,14 +339,14 @@ class ShokoRelayAgent:
         #         metadata.seasons[season_num].title = season_title
 
         #adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/fb5c77a60c925dcfd60e75a945244e07ee009e7c/Contents/Code/__init__.py#L41-L45
-        if Prefs["themeMusic"]:
+        if Prefs['themeMusic']:
             for tid in try_get(series_data['IDs'],'TvDB', []):
                 if THEME_URL % tid not in metadata.themes:
                     try:
                         metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
-                        Log("added: %s" % THEME_URL % tid)
+                        Log('added: %s' % THEME_URL % tid)
                     except:
-                        Log("error adding music, probably not found")
+                        Log('error adding music, probably not found')
 
     def metadata_add(self, meta, images):
         valid = list()
@@ -358,11 +357,11 @@ class ShokoRelayAgent:
                 art_url = '/api/v3/Image/{source}/{type}/{id}'.format(source=art['Source'], type=art['Type'], id=art['ID'])
                 url = 'http://{host}:{port}{relativeURL}'.format(host=Prefs['Hostname'], port=Prefs['Port'], relativeURL=art_url)
                 idx = try_get(art, 'index', 0)
-                Log("[metadata_add] :: Adding metadata %s (index %d)" % (url, idx))
+                Log('[metadata_add] :: Adding metadata %s (index %d)' % (url, idx))
                 meta[url] = Proxy.Media(HTTP.Request(url).content, idx)
                 valid.append(url)
             except Exception as e:
-                Log("[metadata_add] :: Invalid URL given (%s), skipping" % try_get(art, 'url', ''))
+                Log('[metadata_add] :: Invalid URL given (%s), skipping' % try_get(art, 'url', ''))
                 Log(e)
 
         meta.validate_keys(valid)
@@ -372,17 +371,17 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    if Prefs["synposisCleanLinks"]:
+    if Prefs['synposisCleanLinks']:
         summary = re.sub(LINK_REGEX, r'\1', summary)                                           # Replace links
-    if Prefs["synposisCleanMiscLines"]:
-        summary = re.sub(r'^(\*|--|~) .*',              "",      summary, flags=re.MULTILINE)  # Remove the line if it starts with ('* ' / '-- ' / '~ ')
-    if Prefs["synposisRemoveSummary"]:
-        summary = re.sub(r'\n(Source|Note|Summary):.*', "",      summary, flags=re.DOTALL)     # Remove all lines after this is seen
-    if Prefs["synposisCleanMultiEmptyLines"]:
+    if Prefs['synposisCleanMiscLines']:
+        summary = re.sub(r'^(\*|--|~) .*',              '',      summary, flags=re.MULTILINE)  # Remove the line if it starts with ('* ' / '-- ' / '~ ')
+    if Prefs['synposisRemoveSummary']:
+        summary = re.sub(r'\n(Source|Note|Summary):.*', '',      summary, flags=re.DOTALL)     # Remove all lines after this is seen
+    if Prefs['synposisCleanMultiEmptyLines']:
         summary = re.sub(r'\n\n+',                      r'\n\n', summary, flags=re.DOTALL)     # Condense multiple empty lines
-    return summary.strip(" \n")
+    return summary.strip(' \n')
 
-def try_get(arr, idx, default=""):
+def try_get(arr, idx, default=''):
     try:
         return arr[idx]
     except:

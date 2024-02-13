@@ -59,42 +59,17 @@
 
     {
         "id": "contentRatings",
-        "label": "Enable using \"assumed\" content ratings",
-        "type": "bool",
-        "default": true
-    },
-    {
-        "id": "hideArtTags",
-        "label": "Hide artstyle related tags by default",
-        "type": "bool",
-        "default": false
-    },
-    {
-        "id": "hideSourceTags",
-        "label": "Hide source related tags by default",
-        "type": "bool",
-        "default": false
-    },
-
-    {
-        "id": "hideUsefulMiscTags",
-        "label": "Hide misc info tags that may be useful by default",
-        "type": "bool",
-        "default": false
-    },
-
-    {
-        "id": "hideSpoilerTags",
-        "label": "Hide potentially plot-spoiling tags",
+        "label": "Enable using assumed content ratings",
         "type": "bool",
         "default": true
     },
 
     {
-        "id": "hideMiscTags",
-        "label": "Hide any miscellaneous tags.",
-        "type": "bool",
-        "default": true
+        "id": "minimumTagWeight",
+        "label": "The minimum weight for AniDB tags to be applied",
+        "type": "enum",
+        "values" : ["600", "500", "400", "300", "200", "100", "0"],
+        "default": "0"
     },
 
     {
@@ -113,28 +88,28 @@
 
     {
         "id": "synposisCleanLinks",
-        "label": "Synopsis: Remove links.",
+        "label": "Synopsis: Remove links",
         "type": "bool",
         "default": true
     },
 
     {
         "id": "synposisCleanMiscLines",
-        "label": "Synopsis: Remove the line if it starts with ('* ' / '-- ' / '~ ').",
+        "label": "Synopsis: Remove the line if it starts with ('* ' / '-- ' / '~ ')",
         "type": "bool",
         "default": true
     },
 
     {
         "id": "synposisRemoveSummary",
-        "label": "Synopsis: Remove anything after Source, Note or Summary.",
+        "label": "Synopsis: Remove anything after Source, Note or Summary",
         "type": "bool",
         "default": true
     },
 
     {
         "id": "synposisCleanMultiEmptyLines",
-        "label": "Synopsis: Collapse excessive empty lines.",
+        "label": "Synopsis: Collapse excessive empty lines",
         "type": "bool",
         "default": true
     }

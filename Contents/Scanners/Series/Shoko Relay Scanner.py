@@ -32,18 +32,18 @@ LogFileList = FileListLogger.info
 
 def set_logging(instance, filename):
   global RootLogger, RootHandler, RootFormatting, FileListLogger, FileListHandler, FileListFormatting
-  logger, handler, formatting, backup_count = [RootLogger, RootHandler, RootFormatting, 9] if instance=="Root" else [FileListLogger, FileListHandler, FileListFormatting, 1]
+  logger, handler, formatting, backup_count = [RootLogger, RootHandler, RootFormatting, 9] if instance=='Root' else [FileListLogger, FileListHandler, FileListFormatting, 1]
   if handler: logger.removeHandler(handler)
   handler = logging.handlers.RotatingFileHandler(os.path.join(LOG_PATH, filename), maxBytes=10*1024*1024, backupCount=backup_count)    #handler = logging.FileHandler(os.path.join(LOG_PATH, filename), mode)
   #handler.setFormatter(formatting)
   handler.setLevel(logging.DEBUG)
   logger.addHandler(handler)
-  if instance=="Root":  RootHandler     = handler
+  if instance=='Root':  RootHandler     = handler
   else:                 FileListHandler = handler
 
-### Check config files on boot up then create library variables ###    #platform = xxx if callable(getattr(sys,'platform')) else ""
+### Check config files on boot up then create library variables ###    #platform = xxx if callable(getattr(sys,'platform')) else ''
 import inspect
-LOG_PATH = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), "..", "..", "Logs"))
+LOG_PATH = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..', '..', 'Logs'))
 if not os.path.isdir(LOG_PATH):
   path_location = { 'Windows': '%LOCALAPPDATA%\\Plex Media Server',
                     'MacOSX':  '$HOME/Library/Application Support/Plex Media Server',
@@ -51,7 +51,7 @@ if not os.path.isdir(LOG_PATH):
   try:  path = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~')  # Platform.OS:  Windows, MacOSX, or Linux
   except: pass #os.makedirs(LOG_PATH)  # User folder on MacOS-X
 LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Relay Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
-set_logging("Root", LOG_FILE_LIBRARY)
+set_logging('Root', LOG_FILE_LIBRARY)
 
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}
@@ -61,7 +61,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log.info("Requesting: %s", url)
+    Log.info('Requesting: %s', url)
     myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}
     
     try:
@@ -84,7 +84,7 @@ def GetApiKey():
             'device': 'Shoko Relay Scanner For Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        Log.info( "Got API KEY: %s", resp)
+        Log.info('Got API KEY: %s', resp)
         API_KEY = resp
         return resp
 
@@ -95,7 +95,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('files: %s', files)
 
     for subdir in subdirs:
-        Log.info("[folder] " + os.path.relpath(subdir, root))
+        Log.info('[folder] ' + os.path.relpath(subdir, root))
 
     if files:
         
@@ -183,13 +183,13 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     vid.parts.append(file)
                     mediaList.append(vid)
             except Exception as e:
-                Log.error("Error in Scan: '%s'" % e)
+                Log.error('Error in Scan: "%s"' % e)
                 continue
 
         Stack.Scan(path, files, mediaList, subdirs)
 
     if not path and Prefs['IncludeSubfolders']: # If current folder is root folder and subfolder scanning is enabled
-        Log.info("Manual call to group folders")
+        Log.info('Manual call to group folders')
         subfolders = subdirs[:]
 
         while subfolders: # subfolder scanning queue
@@ -211,18 +211,18 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 else:
                     subdir_files.append(path_item)
 
-            Log.info("Sub-directories: %s", subdir_dirs)
-            Log.info("Files: %s", subdir_files)
+            Log.info('Sub-directories: %s', subdir_dirs)
+            Log.info('Files: %s', subdir_files)
 
             for dir in subdir_dirs:
-                Log.info("[Added for scanning] " + dir) # Add the subfolder to subfolder scanning queue)
+                Log.info('[Added for scanning] ' + dir) # Add the subfolder to subfolder scanning queue)
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(reverse_path)>1 or subdir_dirs):
                 if grouping_dir in subdirs:
-                    subdirs.remove(grouping_dir)  #Prevent group folders from being called by Plex normal call to Scan()
-                Log.info("CALLING SCAN FOR FILES IN CURRENT FOLDER")
+                    subdirs.remove(grouping_dir)  # Prevent group folders from being called by Plex normal call to Scan()
+                Log.info('CALLING SCAN FOR FILES IN CURRENT FOLDER')
                 Scan(path, sorted(subdir_files), mediaList, [], language, root) 
                 # relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards.
             
@@ -230,7 +230,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             Log.info('Completed subfolder scan: %s', full_path)
             Log.info('=' * 100)
 
-def try_get(arr, idx, default=""):
+def try_get(arr, idx, default=''):
     try:
         return arr[idx]
     except:

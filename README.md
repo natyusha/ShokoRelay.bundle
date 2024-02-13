@@ -27,12 +27,14 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Uses Shoko's v3 API for fetching metadata
 - Series and movies will list the studio
 - Episodes and movies will list the writer and director
-- Will apply ratings like 'TV-14' or 'TV-Y' to series, episode and movie entries (if the corresponding AniDB tags are present)
+- Will apply content ratings like "TV-14", 'TV-Y' etc. (if the corresponding AniDB tags are present)
 - Allows the user to configure the language for the series title (if they want a different language than in Shoko)
 - Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
 - Allows the user to configure what language they want for episode titles
 - Will use TheTVDB descriptions and episode titles if AniDB is missing that information
 - Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
+- Removes the original tag hiding options and replaces them with a tag weight system similar to what HAMA uses
+- Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68) list
 - Allows movies and series to be in the same library at once
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
 - Support for Credits / Parodies / Trailers and Other types of special files
@@ -104,13 +106,16 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 #### Assumed Content Ratings
 If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) tags from AniDB will be used to roughly match [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf).
 The tags which will trigger a rating change are listed in the table below:
-| Tag             | Rating  |
-| --------------- | ------- |
-| kodomo          | TV-Y    |
-| mina            | TV-G    |
-| shoujo, shounen | TV-14   |
-| josei, seinen   | TV-MA   |
-| borderline porn | TV-MA-S |
-| 18 restricted   | X 	    |
+| Tag                         | Rating  |
+| --------------------------- | ------- |
+| kodomo                      | TV-Y    |
+| mina                        | TV-G    |
+| shoujo, shounen             | TV-14   |
+| josei, seinen, TV censoring | TV-MA   |
+| borderline porn             | TV-MA-S |
+| 18 restricted               | X       |
 
 **Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.
+
+#### Minimum Tag Weight
+Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.
