@@ -103,16 +103,14 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 
 #### Assumed Content Ratings
 If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) tags from AniDB will be used to roughly match [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf).
-The tags which will trigger a rating change are in the table below:
-| Tag             | Rating |
-| --------------- | ------ |
-| kodomo          | TV-Y   |
-| mina            | TV-G   |
-| shoujo          | TV-14  |
-| shounen         | TV-14  |
-| josei           | TV-14  |
-| seinen          | TV-MA  |
-| borderline porn | TV-MA  |
-| 18 restricted   | X 	   |
+The tags which will trigger a rating change are listed in the table below:
+| Tag             | Rating  |
+| --------------- | ------- |
+| kodomo          | TV-Y    |
+| mina            | TV-G    |
+| shoujo, shounen | TV-14   |
+| josei, seinen   | TV-MA   |
+| borderline porn | TV-MA-S |
+| 18 restricted   | X 	    |
 
 **Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.

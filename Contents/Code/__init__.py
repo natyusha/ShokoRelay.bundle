@@ -210,8 +210,9 @@ class ShokoRelayAgent:
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
             if 'kodomo' in tags_lower: rating = 'TV-Y'
             if 'mina' in tags_lower: rating = 'TV-G'
-            if ('shounen' or 'shoujo' or 'josei') in tags_lower: rating = 'TV-14'
-            if ('seinen' or 'borderline porn') in tags_lower: rating = 'TV-MA'
+            if ('shoujo' or 'shounen') in tags_lower: rating = 'TV-14'
+            if ('josei' or 'seinen') in tags_lower: rating = 'TV-MA'
+            if ('borderline porn') in tags_lower: rating = 'TV-MA-S'
             if '18 restricted' in tags_lower: rating = 'X'
 
             metadata.content_rating = rating
