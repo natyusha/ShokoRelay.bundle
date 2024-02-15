@@ -1,7 +1,5 @@
-import re, os, os.path, json
+import re, os, os.path, json, urllib2, urllib
 import Media, VideoFiles, Stack, Utils
-
-import urllib2, urllib
 
 Prefs = {
     'Hostname': '127.0.0.1',
@@ -20,7 +18,7 @@ API_KEY = ''
 import logging, logging.handlers
 RootLogger     = logging.getLogger('main')
 RootHandler    = None
-RootFormatting = logging.Formatter('%(message)s') #%(asctime)-15s %(levelname)s -
+RootFormatting = logging.Formatter('%(message)s')
 RootLogger.setLevel(logging.DEBUG)
 Log = RootLogger
 
@@ -31,52 +29,50 @@ FileListLogger.setLevel(logging.DEBUG)
 LogFileList = FileListLogger.info
 
 def set_logging(instance, filename):
-  global RootLogger, RootHandler, RootFormatting, FileListLogger, FileListHandler, FileListFormatting
-  logger, handler, formatting, backup_count = [RootLogger, RootHandler, RootFormatting, 9] if instance=='Root' else [FileListLogger, FileListHandler, FileListFormatting, 1]
-  if handler: logger.removeHandler(handler)
-  handler = logging.handlers.RotatingFileHandler(os.path.join(LOG_PATH, filename), maxBytes=10*1024*1024, backupCount=backup_count)    #handler = logging.FileHandler(os.path.join(LOG_PATH, filename), mode)
-  #handler.setFormatter(formatting)
-  handler.setLevel(logging.DEBUG)
-  logger.addHandler(handler)
-  if instance=='Root':  RootHandler     = handler
-  else:                 FileListHandler = handler
+    global RootLogger, RootHandler, RootFormatting, FileListLogger, FileListHandler, FileListFormatting
+    logger, handler, formatting, backup_count = [RootLogger, RootHandler, RootFormatting, 9] if instance=='Root' else [FileListLogger, FileListHandler, FileListFormatting, 1]
+    if handler: logger.removeHandler(handler)
+    handler = logging.handlers.RotatingFileHandler(os.path.join(LOG_PATH, filename), maxBytes=10*1024*1024, backupCount=backup_count)    #handler = logging.FileHandler(os.path.join(LOG_PATH, filename), mode)
+    #handler.setFormatter(formatting)
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    if instance=='Root':  RootHandler     = handler
+    else:                 FileListHandler = handler
 
-### Check config files on boot up then create library variables ###    #platform = xxx if callable(getattr(sys,'platform')) else ''
+### Check config files on boot up then create library variables ###
 import inspect
 LOG_PATH = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..', '..', 'Logs'))
 if not os.path.isdir(LOG_PATH):
-  path_location = { 'Windows': '%LOCALAPPDATA%\\Plex Media Server',
-                    'MacOSX':  '$HOME/Library/Application Support/Plex Media Server',
-                    'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server' }
-  try:  path = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~')  # Platform.OS:  Windows, MacOSX, or Linux
-  except: pass #os.makedirs(LOG_PATH)  # User folder on MacOS-X
-LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Relay Scanner.log'                # Log filename library will include the library name, LOG_FILE not and serve as reference
+    path_location = {
+        'Windows': '%LOCALAPPDATA%\\Plex Media Server',
+        'MacOSX':  '$HOME/Library/Application Support/Plex Media Server',
+        'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server'
+    }
+    try:  path = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
+    except: pass #os.makedirs(LOG_PATH)  # User folder on MacOS-X
+LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Relay Scanner.log' # Log filename library will include the library name, LOG_FILE not and serve as reference
 set_logging('Root', LOG_FILE_LIBRARY)
 
 def HttpPost(url, postdata):
-    myheaders = {'Content-Type': 'application/json'}
-    
+    myheaders = {'Content-Type': 'application/json'}    
     req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
     return json.load(urllib2.urlopen(req, postdata))
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log.info('Requesting: %s', url)
-    myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}
-    
+    Log.info('Requesting:      %s', url)
+    myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}  
     try:
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
     except Exception, e:
         if not retry:
             raise e
-
         API_KEY = ''
         return HttpReq(url, False)
 
 def GetApiKey():
     global API_KEY
-
     if not API_KEY:
         data = json.dumps({
             'user': Prefs['Username'],
@@ -84,27 +80,26 @@ def GetApiKey():
             'device': 'Shoko Relay Scanner For Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        Log.info('Got API KEY: %s', resp)
+        Log.info('Got API Key:     %s', resp)
         API_KEY = resp
         return resp
-
     return API_KEY
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    Log.debug('path: %s', path)
-    Log.debug('files: %s', files)
+    Log.debug('[Path]           %s', path)
+    Log.debug('[Files]          %s', files)
 
     for subdir in subdirs:
-        Log.info('[folder] ' + os.path.relpath(subdir, root))
+        Log.info('[Folder]         ' + os.path.relpath(subdir, root))
+    Log.info('=' * 400)
 
     if files:
-        
-        # Scan for video files.
+        # Scan for video files
         VideoFiles.Scan(path, files, mediaList, subdirs, root)
         
         for idx, file in enumerate(files):
             try:
-                Log.info('file: %s', file)
+                Log.info('File:            %s', file)
 
                 # Get file data using filename
                 # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Clannad/%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
@@ -114,30 +109,29 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                 # Take the first file. As we are searching with both parent folder and filename, there should be only one result.
                 if len(file_data) > 1:
-                    Log.info('File search has more than 1 result. HOW DID YOU DO IT?')
-                    Log.info('Unsupported! Skipping...')
+                    Log.info('File Search Detected More Than One Result - Skipping!')
                     continue
                     
                 file_data = file_data[0]
                 
                 # Ignore unrecognized files
                 if 'SeriesIDs' not in file_data or file_data['SeriesIDs'] is None:
-                    Log.info('Unrecognized file. Skipping!')
+                    Log.info('Unrecognized File Detected - Skipping!')
                     continue
 
                 # Get series data
                 series_ids = try_get(file_data['SeriesIDs'], 0, None)
 
                 if series_ids is None:
-                    Log.info('Unrecognized file. Skipping!')
+                    Log.info('Unrecognized File Detected - Skipping!')
                     continue
 
-                series_id = series_ids['SeriesID']['ID'] # Taking the first matching anime. Not supporting multi-anime linked files for now. eg. Those two Toriko/One Piece episodes
+                series_id = series_ids['SeriesID']['ID'] # Take the first matching anime in case of crossover episodes
                 series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-                # Get preferred/overridden title. Preferred title is the one shown in Desktop.
-                show_title = series_data['Name'].encode('utf-8') #no idea why I need to do this.
-                Log.info('Show Title: %s', show_title)
+                # Get preferred/overridden title (preferred title is the one shown in Desktop)
+                show_title = series_data['Name'].encode('utf-8') # Requires utf-8
+                Log.info('Title:           %s', show_title)
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
@@ -159,48 +153,47 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Trailer': season = -2
                     elif episode_type == 'Parody': season = -3
                     elif episode_type == 'Other': season = -4
-                    if not Prefs['SingleSeasonOrdering']:
+                    if not Prefs['SingleSeasonOrdering']: # Grab TvDB info when SingleSeasonOrdering isn't enabled
                         episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Take the first link, as explained before
-                        if episode_data['TvDB'] is not None:
-                            season = episode_data['TvDB']['Season']
+                        if episode_data['TvDB'] is not None: season = episode_data['TvDB']['Season']
 
-                    # Ignore these by choice.
+                    # Ignore these by choice
                     if season == 0 and Prefs['IncludeSpecials'] == False: continue
                     if season < 0 and Prefs['IncludeOther'] == False: continue
 
-                    Log.info('Season: %s', season)
-
                     if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
                         episode_number = episode_data['TvDB']['Number']
+                        Log.info('Season (TvDB):   %s', season)
+                        Log.info('Episode (TvDB):  %s', episode_number)
                     else:
                         episode_number = episode_data['AniDB']['EpisodeNumber']
+                        Log.info('Season (AniDB):  %s', season)
+                        Log.info('Episode (AniDB): %s', episode_number)
 
-                    Log.info('Episode Number: %s', episode_number)
 
                     vid = Media.Episode(show_title, season, episode_number)
                     if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # required for multi episode files
-                    Log.info('vid: %s', vid)
+                    Log.info('Video Match:     %s', vid)
+                    Log.info('-' * 400)
                     vid.parts.append(file)
                     mediaList.append(vid)
             except Exception as e:
-                Log.error('Error in Scan: "%s"' % e)
+                Log.error('Error in Scan:   "%s"' % e)
                 continue
 
         Stack.Scan(path, files, mediaList, subdirs)
 
     if not path and Prefs['IncludeSubfolders']: # If current folder is root folder and subfolder scanning is enabled
-        Log.info('Manual call to group folders')
+        Log.info('Initiating Subfolder Scan')
+        Log.info('=' * 400)
         subfolders = subdirs[:]
 
-        while subfolders: # subfolder scanning queue
+        while subfolders: # Subfolder scanning queue
             full_path = subfolders.pop(0)
             path = os.path.relpath(full_path, root)
-
             reverse_path = list(reversed(path.split(os.sep)))
-            
-            Log.info('=' * 100)
-            Log.info('Started subfolder scan: %s', full_path)
-            Log.info('=' * 100)
+
+            Log.info('Subfolder Scan:  %s', full_path)
 
             subdir_dirs, subdir_files = [], []
 
@@ -221,14 +214,14 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(reverse_path)>1 or subdir_dirs):
                 if grouping_dir in subdirs:
-                    subdirs.remove(grouping_dir)  # Prevent group folders from being called by Plex normal call to Scan()
+                    subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
                 Log.info('CALLING SCAN FOR FILES IN CURRENT FOLDER')
                 Scan(path, sorted(subdir_files), mediaList, [], language, root) 
-                # relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards.
-            
-            Log.info('=' * 100)
-            Log.info('Completed subfolder scan: %s', full_path)
-            Log.info('=' * 100)
+                # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards
+            Log.info('-' * 400)
+    elif not path and not Prefs['IncludeSubfolders']: # Log if subfolder scanning is disabled
+        Log.info('Subfolder Scanning Disabled')
+        Log.info('=' * 400)
 
 def try_get(arr, idx, default=''):
     try:

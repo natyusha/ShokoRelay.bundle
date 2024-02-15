@@ -1,22 +1,9 @@
-import os
-import re
-import time
-import string
-import thread
-import threading
-import urllib
-import copy
-import json
+import os, re, time, string, thread, threading, urllib, copy, json
 from urllib2 import HTTPError
 from datetime import datetime
 from lxml import etree
 
 API_KEY = ''
-PLEX_HOST = ''
-
-# this is from https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
-THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
-LINK_REGEX = r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]'
 
 def ValidatePrefs():
     pass
@@ -24,7 +11,8 @@ def ValidatePrefs():
 def Start():
     Log('Shoko Relay Agent Started')
     HTTP.Headers['Accept'] = 'application/json'
-    HTTP.CacheTime = 0.1 # cache, can you please go away, typically we will be requesting LOCALLY. HTTP.CacheTime
+    HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
+    HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
 
 def GetApiKey():
@@ -45,19 +33,15 @@ def GetApiKey():
 
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}
-    return JSON.ObjectFromString(
-        HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders,
-                     data=postdata).content)
+    return JSON.ObjectFromString(HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders, data=postdata).content)
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log('Requesting: %s' % url)
-
+    # Log('Requesting: %s' % url)
     myheaders = {'apikey': GetApiKey()}
 
     try:
-        return JSON.ObjectFromString(
-            HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders).content)
+        return JSON.ObjectFromString(HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders).content)
     except Exception, e:
         if not retry:
             raise e
@@ -69,7 +53,7 @@ class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         name = media.show
 
-        # Search for series using the name
+        # Search for the series using the name
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
 
         for index, series_data in enumerate(prelimresults):
@@ -86,13 +70,11 @@ class ShokoRelayAgent:
             meta = MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)
             results.Append(meta)
 
-            # results.Sort('score', descending=True)
-
     def Update(self, metadata, media, lang, force):
-        Log('update(%s)' % metadata.id)
         aid = metadata.id
 
         # Get series data
+        Log('################## ShokoRelay for Series ID: %-*s ##################' % (7, aid))
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
         # Make a dict of language -> title for all series titles in anidb data
@@ -109,9 +91,9 @@ class ShokoRelayAgent:
             title = try_get(series_titles, lang.lower(), None)
             if title is not None: break
         if title is None: title = series_titles['shoko'] # If not found, fallback to preferred title in Shoko
-        metadata.title = title
 
-        Log('Series Title: %s' % title)
+        metadata.title = title
+        Log('Title:                         %s' % title)
 
         # Get alternate Title according to the preference
         alt_title = None
@@ -120,7 +102,7 @@ class ShokoRelayAgent:
             alt_title = try_get(series_titles, lang.lower(), None)
             if alt_title is not None: break
 
-        Log('Alternate Series Title: %s' % alt_title)
+        Log('Alternate Title:               %s' % alt_title)
 
         # Append the alternate title to the Sort Title to make it searchable
         if alt_title is not None and alt_title != metadata.title:
@@ -140,66 +122,58 @@ class ShokoRelayAgent:
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
         if airdate is not None:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
+            Log('Originally Available:          %s', metadata.originally_available_at)
+        else:
+            Log('Originally Available:          %s', None)
 
         # Get Content Rating (missing metadata source)
         # metadata.content_rating =
 
         # Get Rating
         metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
+        Log('Rating:                        %s', metadata.rating)
 
         # Get Studio
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
         studio = try_get(studio, 0, False)
-        if not studio:
+        if not studio: # If no studio use Animation Work listing
             studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
             studio = try_get(studio, 0, False)
         if studio:
-            Log('Studio: %s', studio['Staff']['Name'])
             metadata.studio = studio['Staff']['Name']
+            Log('Studio:                        %s', studio['Staff']['Name'])
+        else:
+            Log('Studio:                        %s', None)
 
         # Get Tagline (missing metadata source)
         # metadata.tagline =
 
         # Get Summary
         metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
+        Log('Summary: %s', metadata.summary)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
         series_tags = HttpReq('api/v3/Series/%s/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true
+        metadata.genres.clear()
         
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
-        tags = []
+        tags, tags_list = [], None
         for tag in series_tags:
             if tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight']):
                 tags.append(tag['Name'])
         metadata.genres = tags
+        if tags: tags_list = ', '.join(tags)
+        Log('Genres: %s' % tags_list)
 
         # Get Collections
+        metadata.collections.clear()
         groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
         if groupinfo['Size'] > 1:
-            Log('Adding to collection: %s' % groupinfo['Name'])
             metadata.collections = [groupinfo['Name']]
+            Log('Collection:                    %s' % groupinfo['Name'])
         else:
-            metadata.collections.clear()
-
-        # Get Posters / Backgrounds
-        images = try_get(series_data, 'Images', {})
-        self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
-        self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
-        self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
-
-        # Get Cast & Crew
-        cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
-        metadata.roles.clear()
-        Log('Fetching cast data...')
-        for role in cast:
-            meta_role = metadata.roles.new()
-            meta_role.name = role['Staff']['Name']
-            meta_role.role = role['Character']['Name']
-            Log('%s - %s' % (meta_role.role, meta_role.name))
-            image = role['Staff']['Image']
-            if image:
-                meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+            Log('Collection:                    %s' % None)
 
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
@@ -215,8 +189,47 @@ class ShokoRelayAgent:
             if '18 restricted' in tags_lower: rating = 'X'
 
             metadata.content_rating = rating
+            Log('Content Rating (Assumed):      %s' % metadata.content_rating)
 
-            Log('Assumed content rating to be: %s' % metadata.content_rating)
+        # Get Posters & Backgrounds
+        images = try_get(series_data, 'Images', {})
+        self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
+        self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
+        self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
+
+        # Get Cast & Crew
+        cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
+        Log('Character                      Seiyuu')
+        Log('-----------------------------------------------------------------------')
+        metadata.roles.clear()
+        for role in cast:
+            meta_role = metadata.roles.new()
+            meta_role.name = role['Staff']['Name']
+            meta_role.role = role['Character']['Name']
+            Log('%-30s %s' % (meta_role.role, meta_role.name))
+            image = role['Staff']['Image']
+            if image:
+                meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+
+        # Initialize Writer & Director outside of the episodes loop to avoid repeated requests per episode
+        # Prep Writer (Original Work)
+        writers = HttpReq('api/v3/Series/%s/Cast?roleType=SourceWork' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=SourceWork
+        writers = try_get(writers, 0, False)
+        writer_name = None
+        if writers:
+            writer_name = writers['Staff']['Name']
+        Log('Writer (Original Work):        %s', writer_name)
+
+        # Prep Director (if there is only one)
+        directors = HttpReq('api/v3/Series/%s/Cast?roleType=Director' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Director
+        director_name = None
+        if not try_get(directors, 1, False): # Full support will be added once Shoko specifies which episodes are credited to each director
+            directors = try_get(directors, 0, False)
+            if directors:
+                director_name = directors['Staff']['Name']
+            Log('Director:                      %s', director_name)
+        else: 
+            Log('Director:                      Multiple Directors Detected - Skipping!')
 
         # Get episode list using series ID
         episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/212/Episode?pageSize=0
@@ -238,16 +251,17 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer': season = -2
             elif episode_type == 'Parody': season = -3
             elif episode_type == 'Other': season = -4
-            if not Prefs['SingleSeasonOrdering'] and len(episode_data['TvDB']) != 0:
-                episode_data['TvDB'] = episode_data['TvDB'][0] # Take the first link, as explained before
+            if not Prefs['SingleSeasonOrdering']: episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Grab TvDB info when SingleSeasonOrdering isn't enabled
+
+            if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
                 season = episode_data['TvDB']['Season']
                 episode_number = episode_data['TvDB']['Number']
-
-            if episode_number is None:
+                Log('Season (TvDB):                 %s', season)
+                Log('Episode (TvDB):                %s', episode_number)
+            else:
                 episode_number = episode_data['AniDB']['EpisodeNumber']
-
-            Log('Season: %s', season)
-            Log('Episode: %s', episode_number)
+                Log('Season (AniDB):                %s', season)
+                Log('Episode (AniDB):               %s', episode_number)
 
             episode_obj = metadata.seasons[season].episodes[episode_number]
 
@@ -285,47 +299,47 @@ class ShokoRelayAgent:
                 title = try_get(episode_data['TvDB'], 'Title')
 
             episode_obj.title = title
-
-            Log('Episode Title: %s', episode_obj.title)
+            Log('Title:                         %s', episode_obj.title)
 
             # Get Originally Available
             airdate = try_get(episode_data['AniDB'], 'AirDate', None)
             if airdate is not None:
                 episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
+                Log('Originally Available:          %s', episode_obj.originally_available_at)
 
             # Get Content Ratings (from series)
             episode_obj.content_rating = metadata.content_rating
+            Log('Content Rating (Assumed):      %s', episode_obj.content_rating)
 
-            # Get Rating (missing metadata source)
-            # episode_obj.rating =
+            # Get Rating
+            episode_obj.rating = episode_data['AniDB']['Rating']['Value']
+            Log('Rating:                        %s', float(episode_obj.rating))
             
             # Get Summary
             if try_get(episode_data['AniDB'], 'Description') != '':
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description'))
-                Log('Description (AniDB): %s' % episode_obj.summary)
+                Log('Summary (AniDB): %s' % episode_obj.summary)
             elif episode_data['TvDB'] and try_get(episode_data['TvDB'], 'Description') != None: 
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description'))
-                Log('Description (TvDB): %s' % episode_obj.summary)
+                Log('Summary (TvDB): %s' % episode_obj.summary)
+            else:
+                Log('Summary: %s' % None)
 
-            # Get episode Poster (thumbnail)
-            if Prefs['customThumbs']:
-               self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
-
-            # Get Writers (as original work)
-            writers = HttpReq('api/v3/Series/%s/Cast?roleType=SourceWork' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=SourceWork
-            writers = try_get(writers, 0, False)
-            if writers:
-                Log('Writers: %s', writers['Staff']['Name'])
+            # Get Writer (Original Work)
+            episode_obj.writers.clear()
+            if writer_name:
                 writer = episode_obj.writers.new()
-                writer.name = writers['Staff']['Name']
+                writer.name = writer_name
 
-            # Get Directors
-            directors = HttpReq('api/v3/Series/%s/Cast?roleType=Director' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Director
-            directors = try_get(directors, 0, False)
-            if directors:
-                Log('Directors: %s', directors['Staff']['Name'])
+            # Get Director (if there is only one)
+            episode_obj.directors.clear()
+            if director_name:
                 director = episode_obj.directors.new()
-                director.name = directors['Staff']['Name']
+                director.name = director_name
+
+            # Get Episode Poster (Thumbnail)
+            if Prefs['customThumbs']:
+                self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
         # Set custom negative season names (To be enabled if Plex fixes blocking issue)
         # for season_num in metadata.seasons:
@@ -338,30 +352,30 @@ class ShokoRelayAgent:
         #         Log('Renaming season: %s to %s' % (season_num, season_title))
         #         metadata.seasons[season_num].title = season_title
 
-        #adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/fb5c77a60c925dcfd60e75a945244e07ee009e7c/Contents/Code/__init__.py#L41-L45
+        # Adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
         if Prefs['themeMusic']:
+            THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
             for tid in try_get(series_data['IDs'],'TvDB', []):
                 if THEME_URL % tid not in metadata.themes:
                     try:
                         metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
-                        Log('added: %s' % THEME_URL % tid)
+                        Log('Theme Music Added:             %s' % THEME_URL % tid)
                     except:
-                        Log('error adding music, probably not found')
+                        Log('Error Adding Theme Music:      (Probably Not Found)')
 
     def metadata_add(self, meta, images):
         valid = list()
-        
-        art_url = '' # Declaring it inside the loop throws UnboundLocalError for some reason
+        art_url = ''
         for art in images:
             try:
                 art_url = '/api/v3/Image/{source}/{type}/{id}'.format(source=art['Source'], type=art['Type'], id=art['ID'])
                 url = 'http://{host}:{port}{relativeURL}'.format(host=Prefs['Hostname'], port=Prefs['Port'], relativeURL=art_url)
                 idx = try_get(art, 'index', 0)
-                Log('[metadata_add] :: Adding metadata %s (index %d)' % (url, idx))
+                Log('Adding Metadata:               %s (index %d)' % (url, idx))
                 meta[url] = Proxy.Media(HTTP.Request(url).content, idx)
                 valid.append(url)
             except Exception as e:
-                Log('[metadata_add] :: Invalid URL given (%s), skipping' % try_get(art, 'url', ''))
+                Log('Invalid URL Given:             (%s) - Skipping' % try_get(art, 'url', ''))
                 Log(e)
 
         meta.validate_keys(valid)
@@ -372,13 +386,13 @@ class ShokoRelayAgent:
 
 def summary_sanitizer(summary):
     if Prefs['synposisCleanLinks']:
-        summary = re.sub(LINK_REGEX, r'\1', summary)                                           # Replace links
+        summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
     if Prefs['synposisCleanMiscLines']:
-        summary = re.sub(r'^(\*|--|~) .*',              '',      summary, flags=re.MULTILINE)  # Remove the line if it starts with ('* ' / '-- ' / '~ ')
+        summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.MULTILINE)             # Remove the line if it starts with ('* ' / '-- ' / '~ ')
     if Prefs['synposisRemoveSummary']:
-        summary = re.sub(r'\n(Source|Note|Summary):.*', '',      summary, flags=re.DOTALL)     # Remove all lines after this is seen
+        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.DOTALL)   # Remove all lines after this is seen
     if Prefs['synposisCleanMultiEmptyLines']:
-        summary = re.sub(r'\n\n+',                      r'\n\n', summary, flags=re.DOTALL)     # Condense multiple empty lines
+        summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.DOTALL)                   # Condense multiple empty lines
     return summary.strip(' \n')
 
 def try_get(arr, idx, default=''):
@@ -387,14 +401,11 @@ def try_get(arr, idx, default=''):
     except:
         return default
 
-
+# Agent Declaration
 class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):
-    name, primary_provider, fallback_agent, contributes_to, accepts_from = (
-        'ShokoRelay', True, False, ['com.plexapp.agents.hama'],
-        ['com.plexapp.agents.localmedia'])  # , 'com.plexapp.agents.opensubtitles'
-    languages = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el',
-                 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
-
+    name, primary_provider, fallback_agent = 'ShokoRelay', True, False
+    contributes_to = ['com.plexapp.agents.none', 'com.plexapp.agents.hama']
+    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']            
+    languages = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
     def search(self, results, media, lang, manual): self.Search(results, media, lang, manual)
-
     def update(self, metadata, media, lang, force): self.Update(metadata, media, lang, force)

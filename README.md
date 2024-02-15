@@ -1,5 +1,5 @@
 ShokoRelay.bundle
-====================
+=================
 This is a Plex library metadata agent/scanner written to work with anything listed on AniDB. All you need to get started is [Shoko Server](https://shokoanime.com/) and [Plex Media Server](https://www.plex.tv/media-server-downloads/). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ### Installation
@@ -26,7 +26,9 @@ This is a Plex library metadata agent/scanner written to work with anything list
 ### Changes from Shoko Metadata
 - Uses Shoko's v3 API for fetching metadata
 - Series and movies will list the studio
-- Episodes and movies will list the writer and director
+- Episodes and movies will list the writer (as original work)
+- Episodes and movies will list the director (if there is only one)
+  - Note: Full support will be added once Shoko specifies which episodes are credited to each director
 - Will apply content ratings like "TV-14", 'TV-Y' etc. (if the corresponding AniDB tags are present)
 - Allows the user to configure the language for the series title (if they want a different language than in Shoko)
 - Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
@@ -39,6 +41,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Allows multi season shows matched on TheTVDB to be merged into a single entry
 - Support for Credits / Parodies / Trailers and Other types of special files
 - Support for files which contain more than one episode
+- Support for AniDB episode ratings
 
 ### Scripts
 - The following scripts all require [Python 3](https://www.python.org/downloads/) to be installed.
