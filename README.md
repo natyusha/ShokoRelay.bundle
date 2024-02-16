@@ -84,7 +84,8 @@ If "staff listings" are enabled in the settings the following custom agent limit
 - All Cast & Crew members are listed under the cast section only
 - Directors, Poducers and Writers will be empty when attempting to filter for them in Plex
 - All crew members are available for filtering under Actor only
-- The links in the Cast & Crew section under individual episodes don't work (the "Directed by" and "Written by" links still work though)
+- The links in the Cast & Crew section under individual episodes don't work
+  - The "Directed by" and "Written by" links still work though
 
 #### Automatic Season Naming Limitations
 Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with the included [force-metadata.py](#force-metadatapy) script that accesses the Plex API. The affected season names and their intended names are listed below:

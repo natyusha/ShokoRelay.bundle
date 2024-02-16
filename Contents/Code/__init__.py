@@ -53,6 +53,9 @@ class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         name = media.show
 
+        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search
+        if name == '86': name = 'Eighty-Six'
+
         # Search for the series using the name
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
 
@@ -226,7 +229,7 @@ class ShokoRelayAgent:
             Log('-----------------------------------------------------------------------')
             Log('Role                           Staff Name')
             Log('-----------------------------------------------------------------------')
-            for role in cast_crew: # second loop for cast so that seiyuu appear first in the list
+            for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
                 role_name = role['RoleName']
                 if role_name in ('Seiyuu', 'Staff'): continue # Skip if not part of the main staff or a seiyuu
                 meta_role = metadata.roles.new()
@@ -235,10 +238,12 @@ class ShokoRelayAgent:
                     meta_role.role = 'Director'
                     director_name.append(meta_role.name)
                 elif role_name == 'SourceWork': # Initialize Writer outside of the episodes loop to avoid repeated requests per episode
-                    meta_role.role = 'Writer'
+                    meta_role.role = 'Writer (Original Work)'
                     writer_name.append(meta_role.name)
                 elif role_name == 'CharacterDesign': meta_role.role = role['RoleDetails']
-                elif role_name == 'SeriesComposer': meta_role.role = 'Composer'
+                elif role_name == 'SeriesComposer': meta_role.role = 'Chief Scriptwriter'
+                elif role_name == 'Producer': meta_role.role = role['RoleDetails']
+                elif role_name == 'Music': meta_role.role = 'Composer'
                 else: meta_role.role = role_name
 
                 Log('%-30s %s' % (meta_role.role, meta_role.name))
