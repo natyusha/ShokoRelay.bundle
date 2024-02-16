@@ -58,18 +58,25 @@
     },
 
     {
-        "id": "contentRatings",
-        "label": "Enable using assumed content ratings",
-        "type": "bool",
-        "default": true
-    },
-
-    {
         "id": "minimumTagWeight",
         "label": "The minimum weight for AniDB tags to be applied",
         "type": "enum",
         "values" : ["600", "500", "400", "300", "200", "100", "0"],
         "default": "0"
+    },
+
+    {
+        "id": "crewListings",
+        "label": "Enable staff listings in the Cast & Crew section",
+        "type": "bool",
+        "default": true
+    },
+
+    {
+        "id": "contentRatings",
+        "label": "Enable using assumed content ratings",
+        "type": "bool",
+        "default": true
     },
 
     {

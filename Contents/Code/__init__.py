@@ -63,7 +63,7 @@ class ShokoRelayAgent:
 
             # Get year from air date
             airdate = try_get(anidb_series_data, 'AirDate', None)
-            year = airdate.split('-')[0] if airdate is not None else None
+            year = airdate.split('-')[0] if airdate else None
 
             score = 100 if series_data['Name'] == name else 100 - index - int(series_data['Distance'] * 100)
 
@@ -89,7 +89,7 @@ class ShokoRelayAgent:
         for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
-            if title is not None: break
+            if title: break
         if title is None: title = series_titles['shoko'] # If not found, fallback to preferred title in Shoko
 
         metadata.title = title
@@ -100,7 +100,7 @@ class ShokoRelayAgent:
         for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
             lang = lang.strip()
             alt_title = try_get(series_titles, lang.lower(), None)
-            if alt_title is not None: break
+            if alt_title: break
 
         Log('Alternate Title:               %s' % alt_title)
 
@@ -120,7 +120,7 @@ class ShokoRelayAgent:
 
         # Get Originally Available
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
-        if airdate is not None:
+        if airdate:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
             Log('Originally Available:          %s', metadata.originally_available_at)
         else:
@@ -135,10 +135,10 @@ class ShokoRelayAgent:
 
         # Get Studio
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
-        studio = try_get(studio, 0, False)
+        studio = try_get(studio, 0, None)
         if not studio: # If no studio use Animation Work listing
             studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
-            studio = try_get(studio, 0, False)
+            studio = try_get(studio, 0, None)
         if studio:
             metadata.studio = studio['Staff']['Name']
             Log('Studio:                        %s', studio['Staff']['Name'])
@@ -149,8 +149,11 @@ class ShokoRelayAgent:
         # metadata.tagline =
 
         # Get Summary
-        metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
-        Log('Summary: %s', metadata.summary)
+        if try_get(series_data['AniDB'], 'Description', None):
+            metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
+            Log('Summary: %s', metadata.summary)
+        else:
+            Log('Summary:                       %s', None)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -163,8 +166,11 @@ class ShokoRelayAgent:
             if tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight']):
                 tags.append(tag['Name'])
         metadata.genres = tags
-        if tags: tags_list = ', '.join(tags)
-        Log('Genres: %s' % tags_list)
+        if tags:
+            tags_list = ', '.join(tags)
+            Log('Genres: %s' % tags_list)
+        else:
+            Log('Genres:                        %s' % None)
 
         # Get Collections
         metadata.collections.clear()
@@ -198,38 +204,47 @@ class ShokoRelayAgent:
         self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
 
         # Get Cast & Crew
-        cast = HttpReq('api/v3/Series/%s/Cast?roleType=Seiyuu' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Seiyuu
+        cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
+        Log('-----------------------------------------------------------------------')
         Log('Character                      Seiyuu')
         Log('-----------------------------------------------------------------------')
         metadata.roles.clear()
-        for role in cast:
+        for role in cast_crew:
+            role_name = role['RoleName']
+            if role_name != 'Seiyuu': continue # Skip if not seiyuu
             meta_role = metadata.roles.new()
             meta_role.name = role['Staff']['Name']
             meta_role.role = role['Character']['Name']
+
             Log('%-30s %s' % (meta_role.role, meta_role.name))
             image = role['Staff']['Image']
             if image:
                 meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+    
+        director_name, writer_name = [], []
+        if Prefs['crewListings']:
+            Log('-----------------------------------------------------------------------')
+            Log('Role                           Staff Name')
+            Log('-----------------------------------------------------------------------')
+            for role in cast_crew: # second loop for cast so that seiyuu appear first in the list
+                role_name = role['RoleName']
+                if role_name in ('Seiyuu', 'Staff'): continue # Skip if not part of the main staff or a seiyuu
+                meta_role = metadata.roles.new()
+                meta_role.name = role['Staff']['Name']
+                if role_name == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
+                    meta_role.role = 'Director'
+                    director_name.append(meta_role.name)
+                elif role_name == 'SourceWork': # Initialize Writer outside of the episodes loop to avoid repeated requests per episode
+                    meta_role.role = 'Writer'
+                    writer_name.append(meta_role.name)
+                elif role_name == 'CharacterDesign': meta_role.role = role['RoleDetails']
+                elif role_name == 'SeriesComposer': meta_role.role = 'Composer'
+                else: meta_role.role = role_name
 
-        # Initialize Writer & Director outside of the episodes loop to avoid repeated requests per episode
-        # Prep Writer (Original Work)
-        writers = HttpReq('api/v3/Series/%s/Cast?roleType=SourceWork' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=SourceWork
-        writers = try_get(writers, 0, False)
-        writer_name = None
-        if writers:
-            writer_name = writers['Staff']['Name']
-        Log('Writer (Original Work):        %s', writer_name)
-
-        # Prep Director (if there is only one)
-        directors = HttpReq('api/v3/Series/%s/Cast?roleType=Director' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Director
-        director_name = None
-        if not try_get(directors, 1, False): # Full support will be added once Shoko specifies which episodes are credited to each director
-            directors = try_get(directors, 0, False)
-            if directors:
-                director_name = directors['Staff']['Name']
-            Log('Director:                      %s', director_name)
-        else: 
-            Log('Director:                      Multiple Directors Detected - Skipping!')
+                Log('%-30s %s' % (meta_role.role, meta_role.name))
+                image = role['Staff']['Image']
+                if image:
+                    meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
 
         # Get episode list using series ID
         episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/212/Episode?pageSize=0
@@ -253,7 +268,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Other': season = -4
             if not Prefs['SingleSeasonOrdering']: episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Grab TvDB info when SingleSeasonOrdering isn't enabled
 
-            if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
+            if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB']:
                 season = episode_data['TvDB']['Season']
                 episode_number = episode_data['TvDB']['Number']
                 Log('Season (TvDB):                 %s', season)
@@ -275,7 +290,7 @@ class ShokoRelayAgent:
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
                 title = try_get(episode_titles, lang.lower(), None)
-                if title is not None: break
+                if title: break
             if title is None: title = episode_titles['en'] # If not found, fallback to EN title
 
             # Replace Ambiguous Title with series Title
@@ -290,20 +305,20 @@ class ShokoRelayAgent:
                 if title is singleTitle: # If not found, fallback to EN series title
                     title = try_get(series_titles, 'en', title)
                 if title is singleTitle: # Fallback to TvDB title as a last resort
-                    if try_get(episode_data['TvDB'], 'Title') != '': title = try_get(episode_data['TvDB'], 'Title')
+                    if try_get(episode_data['TvDB'], 'Title', None): title = try_get(episode_data['TvDB'], 'Title', None)
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if singleTitle != title and singleTitle not in title: title = title + ' - ' + singleTitle
 
             # TvDB episode title fallback
-            if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title') != '':
-                title = try_get(episode_data['TvDB'], 'Title')
+            if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title', None):
+                title = try_get(episode_data['TvDB'], 'Title', None)
 
             episode_obj.title = title
             Log('Title:                         %s', episode_obj.title)
 
             # Get Originally Available
             airdate = try_get(episode_data['AniDB'], 'AirDate', None)
-            if airdate is not None:
+            if airdate:
                 episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
                 Log('Originally Available:          %s', episode_obj.originally_available_at)
 
@@ -316,26 +331,36 @@ class ShokoRelayAgent:
             Log('Rating:                        %s', float(episode_obj.rating))
             
             # Get Summary
-            if try_get(episode_data['AniDB'], 'Description') != '':
-                episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description'))
+            if try_get(episode_data['AniDB'], 'Description', None):
+                episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description', None))
                 Log('Summary (AniDB): %s' % episode_obj.summary)
-            elif episode_data['TvDB'] and try_get(episode_data['TvDB'], 'Description') != None: 
-                episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description'))
+            elif episode_data['TvDB'] and try_get(episode_data['TvDB'], 'Description', None): 
+                episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description', None))
                 Log('Summary (TvDB): %s' % episode_obj.summary)
             else:
-                Log('Summary: %s' % None)
+                Log('Summary:                       %s' % None)
 
-            # Get Writer (Original Work)
+            # Get Writer (Original Work) (if there is only one)
             episode_obj.writers.clear()
-            if writer_name:
+            if len(writer_name) == 1:
                 writer = episode_obj.writers.new()
-                writer.name = writer_name
+                writer.name = writer_name[0]
+                Log('Writer (Original Work):        %s', writer_name[0])
+            elif len(writer_name) > 1:
+                Log('Writer (Original Work):        Multiple Writers Detected - Skipping!')
+            else:
+                Log('Writer (Original Work):        %s', None)
 
             # Get Director (if there is only one)
             episode_obj.directors.clear()
-            if director_name:
+            if len(director_name) == 1:
                 director = episode_obj.directors.new()
-                director.name = director_name
+                director.name = director_name[0]
+                Log('Director:                      %s', director_name[0])
+            elif len(writer_name) > 1:
+                Log('Director:                      Multiple Directors Detected - Skipping!')
+            else:
+                Log('Director:                      %s', None)
 
             # Get Episode Poster (Thumbnail)
             if Prefs['customThumbs']:
@@ -405,7 +430,7 @@ def try_get(arr, idx, default=''):
 class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):
     name, primary_provider, fallback_agent = 'ShokoRelay', True, False
     contributes_to = ['com.plexapp.agents.none', 'com.plexapp.agents.hama']
-    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']            
+    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']
     languages = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
     def search(self, results, media, lang, manual): self.Search(results, media, lang, manual)
     def update(self, metadata, media, lang, force): self.Update(metadata, media, lang, force)

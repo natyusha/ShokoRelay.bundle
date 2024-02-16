@@ -205,7 +205,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     subdir_files.append(path_item)
 
             Log.info('Sub-directories: %s', subdir_dirs)
-            Log.info('Files: %s', subdir_files)
+            Log.info('Files:           %s', subdir_files)
 
             for dir in subdir_dirs:
                 Log.info('[Added for scanning] ' + dir) # Add the subfolder to subfolder scanning queue)

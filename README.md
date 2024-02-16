@@ -26,10 +26,11 @@ This is a Plex library metadata agent/scanner written to work with anything list
 ### Changes from Shoko Metadata
 - Uses Shoko's v3 API for fetching metadata
 - Series and movies will list the studio
-- Episodes and movies will list the writer (as original work)
-- Episodes and movies will list the director (if there is only one)
+- Optionally: Series and movies will list the main staff along with seiyuu under "Cast & Crew"
+  - Note: they will all appear as actors due to crew not being accessible for custom agents
+- Optionally: Individual episodes will list the writer (original work) and director (if there is only one)
   - Note: Full support will be added once Shoko specifies which episodes are credited to each director
-- Will apply content ratings like "TV-14", 'TV-Y' etc. (if the corresponding AniDB tags are present)
+- Optionally: Will apply content ratings like "TV-14", 'TV-Y' etc. (if the corresponding AniDB tags are present)
 - Allows the user to configure the language for the series title (if they want a different language than in Shoko)
 - Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
 - Allows the user to configure what language they want for episode titles
@@ -68,7 +69,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - If something is marked as watched in Plex it will also be marked as watched on AniDB.
 - This was created due to various issues with Plex and Shoko's built in watched status syncing.
   1. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
-  2. Shoko's "Sync Plex Watch Status" command doesn't work with cross platform setups.
+  2. Shoko's "Sync Plex Watch Status" command [doesn't work](https://github.com/ShokoAnime/ShokoServer/issues/1086) with cross platform setups.
 
 ### Notes
 #### Handling "Stuck" Metadata
@@ -76,7 +77,14 @@ This is a Plex library metadata agent/scanner written to work with anything list
   1. Navigate to the series > More "..." Button > Unmatch
   2. Settings > Manage > Troubleshooting > Clean Bundles
   3. Navigate back to the series > More "..." Button > Match > Select top result
-- If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required.
+- If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required
+
+#### Cast & Crew Limitations
+If "staff listings" are enabled in the settings the following custom agent limitations apply:
+- All Cast & Crew members are listed under the cast section only
+- Directors, Poducers and Writers will be empty when attempting to filter for them in Plex
+- All crew members are available for filtering under Actor only
+- The links in the Cast & Crew section under individual episodes don't work (the "Directed by" and "Written by" links still work though)
 
 #### Automatic Season Naming Limitations
 Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with the included [force-metadata.py](#force-metadatapy) script that accesses the Plex API. The affected season names and their intended names are listed below:
