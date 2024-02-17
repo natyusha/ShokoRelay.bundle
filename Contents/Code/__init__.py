@@ -37,7 +37,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    # Log('Requesting: %s' % url)
+    # Log('Requesting:                    %s' % url)
     myheaders = {'apikey': GetApiKey()}
 
     try:
@@ -105,13 +105,14 @@ class ShokoRelayAgent:
             alt_title = try_get(series_titles, lang.lower(), None)
             if alt_title: break
 
-        Log('Alternate Title:               %s' % alt_title)
 
         # Append the alternate title to the Sort Title to make it searchable
         if alt_title is not None and alt_title != metadata.title:
             metadata.title_sort = title + ' [' + alt_title + ']'
+            Log('Alternate Title:               %s' % alt_title)
         else:
             metadata.title_sort = title
+            Log('Alternate Title:               Alternate Title Matches the Title - Skipping!')
 
         # Get Original Title (enable if Plex fixes blocking issue)
         # original_title = None
@@ -125,16 +126,16 @@ class ShokoRelayAgent:
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
         if airdate:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-            Log('Originally Available:          %s', metadata.originally_available_at)
+            Log('Originally Available:          %s' % metadata.originally_available_at)
         else:
-            Log('Originally Available:          %s', None)
+            Log('Originally Available:          %s' % None)
 
         # Get Content Rating (missing metadata source)
         # metadata.content_rating =
 
         # Get Rating
         metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
-        Log('Rating:                        %s', metadata.rating)
+        Log('Rating:                        %s' % metadata.rating)
 
         # Get Studio
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
@@ -144,9 +145,9 @@ class ShokoRelayAgent:
             studio = try_get(studio, 0, None)
         if studio:
             metadata.studio = studio['Staff']['Name']
-            Log('Studio:                        %s', studio['Staff']['Name'])
+            Log('Studio:                        %s' % studio['Staff']['Name'])
         else:
-            Log('Studio:                        %s', None)
+            Log('Studio:                        %s' % None)
 
         # Get Tagline (missing metadata source)
         # metadata.tagline =
@@ -154,9 +155,9 @@ class ShokoRelayAgent:
         # Get Summary
         if try_get(series_data['AniDB'], 'Description', None):
             metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
-            Log('Summary: %s', metadata.summary)
+            Log('Summary:                       %s' % metadata.summary)
         else:
-            Log('Summary:                       %s', None)
+            Log('Summary:                       %s' % None)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -171,7 +172,7 @@ class ShokoRelayAgent:
         metadata.genres = tags
         if tags:
             tags_list = ', '.join(tags)
-            Log('Genres: %s' % tags_list)
+            Log('Genres:                        %s' % tags_list)
         else:
             Log('Genres:                        %s' % None)
 
@@ -264,7 +265,7 @@ class ShokoRelayAgent:
 
             # Get season number
             season = 0
-            episode_number = None
+            episode_source = '(AniDB):'
             if episode_type == 'Normal': season = 1
             elif episode_type == 'Special': season = 0
             elif episode_type == 'ThemeSong': season = -1
@@ -276,22 +277,21 @@ class ShokoRelayAgent:
             if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB']:
                 season = episode_data['TvDB']['Season']
                 episode_number = episode_data['TvDB']['Number']
-                Log('Season (TvDB):                 %s', season)
-                Log('Episode (TvDB):                %s', episode_number)
-            else:
-                episode_number = episode_data['AniDB']['EpisodeNumber']
-                Log('Season (AniDB):                %s', season)
-                Log('Episode (AniDB):               %s', episode_number)
+                episode_source = '(TvDB): '
+            else: episode_number = episode_data['AniDB']['EpisodeNumber']
+
+            Log('Season %s                %s' % (episode_source, season))
+            Log('Episode %s               %s' % (episode_source, episode_number))
 
             episode_obj = metadata.seasons[season].episodes[episode_number]
 
             # Make a dict of language -> title for all episode titles in anidb data
             episode_titles = {}
-            for item in episode_data['AniDB']['Titles']:
-                episode_titles[item['Language']] = item['Name']
+            for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
 
             # Get episode Title according to the preference
             title = None
+            title_source = '(AniDB):       '
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
                 title = try_get(episode_titles, lang.lower(), None)
@@ -302,46 +302,50 @@ class ShokoRelayAgent:
             SingleEntryTitles = ['Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web'] # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the preference
-                singleTitle = title
+                single_title = title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()                                   
                     title = try_get(series_titles, lang.lower(), title)
-                    if title is not singleTitle: break
-                if title is singleTitle: # If not found, fallback to EN series title
+                    title_source = '(AniDB Series):'
+                    if title is not single_title: break
+                if title is single_title: # If not found, fallback to EN series title
                     title = try_get(series_titles, 'en', title)
-                if title is singleTitle: # Fallback to TvDB title as a last resort
-                    if try_get(episode_data['TvDB'], 'Title', None): title = try_get(episode_data['TvDB'], 'Title', None)
+                if title is single_title: # Fallback to TvDB title as a last resort
+                    if try_get(episode_data['TvDB'], 'Title', None):
+                        title = try_get(episode_data['TvDB'], 'Title')
+                        title_source = '(TvDB):        '
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
-                if singleTitle != title and singleTitle not in title: title = title + ' - ' + singleTitle
+                if single_title != title and single_title not in title: title = title + ' — ' + single_title
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title', None):
-                title = try_get(episode_data['TvDB'], 'Title', None)
+                title = try_get(episode_data['TvDB'], 'Title')
+                title_source = '(TvDB):        '
 
             episode_obj.title = title
-            Log('Title:                         %s', episode_obj.title)
+            Log('Title %s          %s' % (title_source, episode_obj.title))
 
             # Get Originally Available
             airdate = try_get(episode_data['AniDB'], 'AirDate', None)
             if airdate:
                 episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-                Log('Originally Available:          %s', episode_obj.originally_available_at)
+                Log('Originally Available:          %s' % episode_obj.originally_available_at)
 
             # Get Content Ratings (from series)
             episode_obj.content_rating = metadata.content_rating
-            Log('Content Rating (Assumed):      %s', episode_obj.content_rating)
+            Log('Content Rating (Assumed):      %s' % episode_obj.content_rating)
 
             # Get Rating
             episode_obj.rating = episode_data['AniDB']['Rating']['Value']
-            Log('Rating:                        %s', float(episode_obj.rating))
+            Log('Rating:                        %s' % float(episode_obj.rating))
             
             # Get Summary
             if try_get(episode_data['AniDB'], 'Description', None):
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['AniDB'], 'Description', None))
-                Log('Summary (AniDB): %s' % episode_obj.summary)
+                Log('Summary (AniDB):               %s' % episode_obj.summary)
             elif episode_data['TvDB'] and try_get(episode_data['TvDB'], 'Description', None): 
                 episode_obj.summary = summary_sanitizer(try_get(episode_data['TvDB'], 'Description', None))
-                Log('Summary (TvDB): %s' % episode_obj.summary)
+                Log('Summary (TvDB):                %s' % episode_obj.summary)
             else:
                 Log('Summary:                       %s' % None)
 
@@ -354,18 +358,18 @@ class ShokoRelayAgent:
             elif len(writer_name) > 1:
                 Log('Writer (Original Work):        Multiple Writers Detected - Skipping!')
             else:
-                Log('Writer (Original Work):        %s', None)
+                Log('Writer (Original Work):        %s' % None)
 
             # Get Director (if there is only one)
             episode_obj.directors.clear()
             if len(director_name) == 1:
                 director = episode_obj.directors.new()
                 director.name = director_name[0]
-                Log('Director:                      %s', director_name[0])
-            elif len(writer_name) > 1:
+                Log('Director:                      %s' % director_name[0])
+            elif len(director_name) > 1:
                 Log('Director:                      Multiple Directors Detected - Skipping!')
             else:
-                Log('Director:                      %s', None)
+                Log('Director:                      %s' % None)
 
             # Get Episode Poster (Thumbnail)
             if Prefs['customThumbs']:

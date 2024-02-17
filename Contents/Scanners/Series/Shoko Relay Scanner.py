@@ -60,7 +60,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log.info('Requesting:      %s', url)
+    Log.info('Requesting:      %s' % url)
     myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}  
     try:
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
@@ -80,17 +80,17 @@ def GetApiKey():
             'device': 'Shoko Relay Scanner For Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        Log.info('Got API Key:     %s', resp)
+        Log.info('Got API Key:     %s' % resp)
         API_KEY = resp
         return resp
     return API_KEY
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('[Path]           %s', path)
-    Log.debug('[Files]          %s', files)
+    if files: Log.debug('[Files]          %s', files)
 
     for subdir in subdirs:
-        Log.info('[Folder]         ' + os.path.relpath(subdir, root))
+        Log.info('[Folder]         %s' % os.path.relpath(subdir, root))
     Log.info('=' * 400)
 
     if files:
@@ -99,7 +99,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
         
         for idx, file in enumerate(files):
             try:
-                Log.info('File:            %s', file)
+                Log.info('File:            %s' % file)
 
                 # Get file data using filename
                 # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Clannad/%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
@@ -131,7 +131,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                 # Get preferred/overridden title (preferred title is the one shown in Desktop)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
-                Log.info('Title:           %s', show_title)
+                Log.info('Title:           %s' % show_title)
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
@@ -147,6 +147,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                     # Get season number
                     season = 0
+                    episode_source = '(AniDB):'
                     if episode_type == 'Normal': season = 1
                     elif episode_type == 'Special': season = 0
                     elif episode_type == 'ThemeSong': season = -1
@@ -155,7 +156,9 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Other': season = -4
                     if not Prefs['SingleSeasonOrdering']: # Grab TvDB info when SingleSeasonOrdering isn't enabled
                         episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Take the first link, as explained before
-                        if episode_data['TvDB'] is not None: season = episode_data['TvDB']['Season']
+                        if episode_data['TvDB'] is not None:
+                            season = episode_data['TvDB']['Season']
+                            episode_source = '(TvDB): '
 
                     # Ignore these by choice
                     if season == 0 and Prefs['IncludeSpecials'] == False: continue
@@ -163,17 +166,14 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                     if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
                         episode_number = episode_data['TvDB']['Number']
-                        Log.info('Season (TvDB):   %s', season)
-                        Log.info('Episode (TvDB):  %s', episode_number)
-                    else:
-                        episode_number = episode_data['AniDB']['EpisodeNumber']
-                        Log.info('Season (AniDB):  %s', season)
-                        Log.info('Episode (AniDB): %s', episode_number)
+                    else: episode_number = episode_data['AniDB']['EpisodeNumber']
 
+                    Log.info('Season %s  %s' % (episode_source, season))
+                    Log.info('Episode %s %s' % (episode_source, episode_number))
 
                     vid = Media.Episode(show_title, season, episode_number)
                     if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # required for multi episode files
-                    Log.info('Video Match:     %s', vid)
+                    Log.info('Video Match:     %s' % vid)
                     Log.info('-' * 400)
                     vid.parts.append(file)
                     mediaList.append(vid)
@@ -193,7 +193,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             path = os.path.relpath(full_path, root)
             reverse_path = list(reversed(path.split(os.sep)))
 
-            Log.info('Subfolder Scan:  %s', full_path)
+            Log.info('Subfolder Scan:  %s' % full_path)
 
             subdir_dirs, subdir_files = [], []
 
@@ -204,18 +204,19 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 else:
                     subdir_files.append(path_item)
 
-            Log.info('Sub-directories: %s', subdir_dirs)
-            Log.info('Files:           %s', subdir_files)
+            if subdir_dirs: Log.info('Subdirectories:  %s' % subdir_dirs)
+            if subdir_files: Log.info('Files:           %s' % subdir_files)
 
             for dir in subdir_dirs:
-                Log.info('[Added for scanning] ' + dir) # Add the subfolder to subfolder scanning queue)
+                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue)
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(reverse_path)>1 or subdir_dirs):
                 if grouping_dir in subdirs:
                     subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
-                Log.info('CALLING SCAN FOR FILES IN CURRENT FOLDER')
+                Log.info('Files Detected:  Subfolder Scan Initiated in Current Folder')
+                Log.info('-' * 400)
                 Scan(path, sorted(subdir_files), mediaList, [], language, root) 
                 # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards
             Log.info('-' * 400)
