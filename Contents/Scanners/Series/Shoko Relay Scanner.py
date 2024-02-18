@@ -1,5 +1,5 @@
-import re, os, os.path, json, urllib2, urllib
-import Media, VideoFiles, Stack, Utils
+import os, json, urllib, inspect, urllib2, logging, logging.handlers
+import Media, Stack, VideoFiles
 
 Prefs = {
     'Hostname': '127.0.0.1',
@@ -14,44 +14,31 @@ Prefs = {
 
 API_KEY = ''
 
-### Log + LOG_PATH calculated once for all calls ###
-import logging, logging.handlers
-RootLogger     = logging.getLogger('main')
-RootHandler    = None
-RootFormatting = logging.Formatter('%(message)s')
-RootLogger.setLevel(logging.DEBUG)
-Log = RootLogger
+# Setup the logger
+Log = logging.getLogger('main')
+Log.setLevel(logging.DEBUG)
 
-FileListLogger     = logging.getLogger('FileListLogger')
-FileListHandler    = None
-FileListFormatting = logging.Formatter('%(message)s')
-FileListLogger.setLevel(logging.DEBUG)
-LogFileList = FileListLogger.info
-
-def set_logging(instance, filename):
-    global RootLogger, RootHandler, RootFormatting, FileListLogger, FileListHandler, FileListFormatting
-    logger, handler, formatting, backup_count = [RootLogger, RootHandler, RootFormatting, 9] if instance=='Root' else [FileListLogger, FileListHandler, FileListFormatting, 1]
-    if handler: logger.removeHandler(handler)
-    handler = logging.handlers.RotatingFileHandler(os.path.join(LOG_PATH, filename), maxBytes=10*1024*1024, backupCount=backup_count)    #handler = logging.FileHandler(os.path.join(LOG_PATH, filename), mode)
-    #handler.setFormatter(formatting)
-    handler.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-    if instance=='Root':  RootHandler     = handler
-    else:                 FileListHandler = handler
-
-### Check config files on boot up then create library variables ###
-import inspect
-LOG_PATH = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..', '..', 'Logs'))
-if not os.path.isdir(LOG_PATH):
+# Define the path the logs should save to
+LOG_ROOT = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..', '..', 'Logs'))
+if not os.path.isdir(LOG_ROOT):
     path_location = {
         'Windows': '%LOCALAPPDATA%\\Plex Media Server',
         'MacOSX':  '$HOME/Library/Application Support/Plex Media Server',
-        'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server'
+        'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server',
+        'Android': '/storage/emulated/0/Plex Media Server'
     }
-    try:  path = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
-    except: pass #os.makedirs(LOG_PATH)  # User folder on MacOS-X
-LOG_FILE_LIBRARY = LOG_FILE = 'Shoko Relay Scanner.log' # Log filename library will include the library name, LOG_FILE not and serve as reference
-set_logging('Root', LOG_FILE_LIBRARY)
+    LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
+
+# Define logger parameters with a max size of 10MB and a single backup for file rotation
+def set_logging(foldername='', filename='', format='%(message)s'):
+    foldername = os.path.join(LOG_ROOT, '') 
+    filename = 'Shoko Relay Scanner.log'
+    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1, encoding='utf-8')
+    handler.setFormatter(logging.Formatter(format))
+    handler.setLevel(logging.DEBUG)
+    Log.addHandler(handler)
+
+set_logging() # Start logger
 
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}    
@@ -87,7 +74,7 @@ def GetApiKey():
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('[Path]           %s', path)
-    if files: Log.debug('[Files]          %s', files)
+    Log.debug('[Files]          %s', files)
 
     for subdir in subdirs:
         Log.info('[Folder]         %s' % os.path.relpath(subdir, root))
@@ -101,13 +88,13 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             try:
                 Log.info('File:            %s' % file)
 
-                # Get file data using filename
+                # Get file data using the filename
                 # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Clannad/%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
                 filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
                 file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename)))
                 if len(file_data) == 0: continue # Skip if file data is not found
 
-                # Take the first file. As we are searching with both parent folder and filename, there should be only one result.
+                # Take the first file - Searching with both parent folder and filename should only return a single result
                 if len(file_data) > 1:
                     Log.info('File Search Detected More Than One Result - Skipping!')
                     continue
@@ -129,7 +116,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 series_id = series_ids['SeriesID']['ID'] # Take the first matching anime in case of crossover episodes
                 series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-                # Get preferred/overridden title (preferred title is the one shown in Desktop)
+                # Get the preferred/overridden title (preferred title follows shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
                 Log.info('Title:           %s' % show_title)
 
@@ -183,9 +170,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
         Stack.Scan(path, files, mediaList, subdirs)
 
-    if not path and Prefs['IncludeSubfolders']: # If current folder is root folder and subfolder scanning is enabled
-        Log.info('Initiating Subfolder Scan')
-        Log.info('=' * 400)
+    if not path: # If current folder is root folder
+        Log.info('Initiating Subfolder Scan\n' + '=' * 400) # Log once during the root scan
         subfolders = subdirs[:]
 
         while subfolders: # Subfolder scanning queue
@@ -220,9 +206,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Scan(path, sorted(subdir_files), mediaList, [], language, root) 
                 # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards
             Log.info('-' * 400)
-    elif not path and not Prefs['IncludeSubfolders']: # Log if subfolder scanning is disabled
-        Log.info('Subfolder Scanning Disabled')
-        Log.info('=' * 400)
 
 def try_get(arr, idx, default=''):
     try:

@@ -1,4 +1,4 @@
-import os, re, time, string, thread, threading, urllib, copy, json
+import os, re, copy, json, time, string, thread, urllib, threading
 from urllib2 import HTTPError
 from datetime import datetime
 from lxml import etree
@@ -37,7 +37,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    # Log('Requesting:                    %s' % url)
+    # Log('Requesting:                    %s' % url) # Not needed since debug logging shows these requests anyways
     myheaders = {'apikey': GetApiKey()}
 
     try:
@@ -54,6 +54,7 @@ class ShokoRelayAgent:
         name = media.show
 
         # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search
+        ## https://github.com/ShokoAnime/ShokoServer/issues/1105
         if name == '86': name = 'Eighty-Six'
 
         # Search for the series using the name
@@ -184,6 +185,14 @@ class ShokoRelayAgent:
             Log('Collection:                    %s' % groupinfo['Name'])
         else:
             Log('Collection:                    %s' % None)
+
+        # Get Labels (likely never to be supported)
+        # metadata.labels.clear()
+        # if try_get(series_data['AniDB'], 'Type', None):
+        #     metadata.labels = [try_get(series_data['AniDB'], 'Type')]
+        #     Log('Labels:                        %s' % metadata.labels)
+        # else: 
+        #     Log('Labels:                        %s' % None)
 
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
@@ -375,7 +384,7 @@ class ShokoRelayAgent:
             if Prefs['customThumbs']:
                 self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
-        # Set custom negative season names (To be enabled if Plex fixes blocking issue)
+        # Set custom negative season names (enable if Plex fixes blocking issue)
         # for season_num in metadata.seasons:
         #     season_title = None
         #     if season_num == '-1': season_title = 'Credits'
