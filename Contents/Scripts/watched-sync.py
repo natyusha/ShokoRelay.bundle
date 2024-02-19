@@ -94,7 +94,7 @@ for account in accounts:
             for episode_path in episode.iterParts():
                 filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
                 path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth['apikey']}').json()
-                if path_ends_with[0]['Watched'] == None: 
+                if path_ends_with[0]['Watched'] == None:
                     print_f(f'│├─Relaying: {filepath} → {episode.title}')
                     try:
                         for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:

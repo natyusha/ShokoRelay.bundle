@@ -30,7 +30,7 @@ if not os.path.isdir(LOG_ROOT):
 
 # Define logger parameters with a max size of 10MB and a single backup for file rotation
 def set_logging(foldername='', filename='', format=''):
-    foldername = os.path.join(LOG_ROOT, '') 
+    foldername = os.path.join(LOG_ROOT, '')
     filename = 'Shoko Relay Scanner.log'
     format = '%(asctime)s %(message)s'
     handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1, encoding='utf-8')
@@ -55,14 +55,14 @@ def GetApiKey():
     return API_KEY
 
 def HttpPost(url, postdata):
-    myheaders = {'Content-Type': 'application/json'}    
+    myheaders = {'Content-Type': 'application/json'}
     req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
     return json.load(urllib2.urlopen(req, postdata))
 
 def HttpReq(url, retry=True):
     global API_KEY
     Log.info('Requesting:      %s' % url)
-    myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}  
+    myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}
     try:
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
@@ -83,7 +83,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files:
         # Scan for video files
         VideoFiles.Scan(path, files, mediaList, subdirs, root)
-        
+
         for idx, file in enumerate(files):
             try:
                 Log.info('File:            %s' % file)
@@ -97,9 +97,9 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 if len(file_data) > 1:
                     Log.info('Multiple Files:  File Search Detected More Than One Result - Skipping!')
                     continue
-                    
+
                 file_data = file_data[0]
-                
+
                 # Ignore unrecognized files
                 if 'SeriesIDs' not in file_data or file_data['SeriesIDs'] is None:
                     Log.info('Missing ID:      Unrecognized or Ignored File Detected - Skipping!')
@@ -184,7 +184,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             subdir_dirs, subdir_files = [], []
 
             for file in os.listdir(full_path):
-                path_item = os.path.join(full_path, file) 
+                path_item = os.path.join(full_path, file)
                 if os.path.isdir(path_item):
                     subdir_dirs.append(path_item)
                 else:

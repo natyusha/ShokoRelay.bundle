@@ -24,25 +24,29 @@ This is a Plex library metadata agent/scanner written to work with anything list
 	- [x] Local Media Assets (TV)
 
 ### Changes from Shoko Metadata
-- Uses Shoko's v3 API for fetching metadata
-- Series and movies will list the studio
-- Optionally: Series and movies will list the main staff along with seiyuu under "Cast & Crew"
-  - Note: they will all appear as actors due to crew not being accessible for custom agents
-- Optionally: Individual episodes will list the writer (original work) and director (if there is only one)
-  - Note: Full support will be added once Shoko specifies which episodes are credited to each director
-- Optionally: Will apply content ratings like "TV-14", 'TV-Y' etc. (if the corresponding AniDB tags are present)
-- Allows the user to configure the language for the series title (if they want a different language than in Shoko)
-- Allows the user to configure an additional 'Alt Title' language for the series title (which will be searchable in Plex)
-- Allows the user to configure what language they want for episode titles
-- Will use TheTVDB descriptions and episode titles if AniDB is missing that information
-- Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
+- Uses Shoko's v3 API for fetching metadata and matching files
+- Allows:
+  - Movies and series to be in the same library at once
+  - Multi "season" shows matched on TheTVDB to be merged into a single entry
+- Allows the user to configure:
+  - The language for the series title (to use a different language than Shoko's)
+  - An 'Alt Title' language for the series title (which will be searchable in Plex)
+  - What language they want for episode titles
+- Optionally:
+  - Series and movies will list the Main Staff along with Seiyuu (CV) under "Cast & Crew"
+    - Note: They will all appear as actors due to crew not being accessible for custom agents
+  - Individual episodes will list the Writer as Original Work (原作) and Director as Direction (監督)
+    - Note: Only supported if there is a single entry for each credit to avoid incorrect metadata
+  - Will apply content ratings like "TV-14", "TV-Y" etc. (if the corresponding AniDB tags are present)
 - Removes the original tag hiding options and replaces them with a tag weight system similar to what HAMA uses
-- Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68) list
-- Allows movies and series to be in the same library at once
-- Allows multi season shows matched on TheTVDB to be merged into a single entry
-- Support for Credits / Parodies / Trailers and Other types of special files
-- Support for files which contain more than one episode
-- Support for AniDB episode ratings
+  - Note: Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68) list
+- Series and movies will list the Studio as Animation Work (アニメーション制作) or Work (制作)
+- Support for:
+  - Files which contain more than one episode or episodes which span multiple files
+  - Credits / Parodies / Trailers and Other types of special files
+  - Individual episode ratings (from AniDB)
+- Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
+- Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ### Scripts
 - The following scripts all require [Python 3](https://www.python.org/downloads/) to be installed.
@@ -52,7 +56,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - The animethemes script has the additional requirement of: [FFmpeg](https://ffmpeg.org/)
 
 #### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
-- This script uses the Shoko and AnimeThemes APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
+- This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
 - The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.
 
 #### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)
@@ -73,7 +77,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 
 ### Notes
 #### Troubleshooting
-When encountering any issues with the scanner or agent note that there are detailed logs available in the [Plex Media Server Logs Folder](https://support.plex.tv/articles/200250417-plex-media-server-log-files/) which can help to pinpoint any issues:
+When encountering any issues with the scanner or agent, please note that there are detailed logs available in the [Plex Media Server Logs Folder](https://support.plex.tv/articles/200250417-plex-media-server-log-files/) which can help to pinpoint any issues:
 - Agent Logs: `\Plex Media Server\Logs\PMS Plugin Logs\com.plexapp.agents.shokorelay.log`
 - Scanner Logs: `\Plex Media Server\Logs\Shoko Relay Scanner.log`
 
@@ -90,7 +94,7 @@ When encountering any issues with the scanner or agent note that there are detai
 If "staff listings" are enabled in the settings the following custom agent limitations apply:
 - All Cast & Crew members are listed under the cast section only
 - Directors, Poducers and Writers will be empty when attempting to filter for them in Plex
-- All crew members are available for filtering under Actor only
+- All Crew members are available for filtering under Actor only
 - The links in the Cast & Crew section under individual episodes don't work
   - The "Directed by" and "Written by" links still work though
 
@@ -102,7 +106,7 @@ Due to custom agent limitations certain season names which contain special files
 - Season -4 → Other
 
 #### Ambiguous Title Replacement
-In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows: 
+In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows:
 - Complete Movie
 - Music Video
 - OAD

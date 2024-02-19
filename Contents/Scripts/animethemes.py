@@ -45,7 +45,7 @@ Examples (using bash / cmd respectively and assuming that the script and ffmpeg 
       cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1
   - Download 9th Opening of Bleach
       cd "/PathToBleach"; animethemes.py op9
-      cd /d "X:\PathToBleach" && animethemes.py op9        
+      cd /d "X:\PathToBleach" && animethemes.py op9
 """
 
 # user preferences
