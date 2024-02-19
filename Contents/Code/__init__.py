@@ -1,7 +1,5 @@
-import os, re, copy, json, time, string, thread, urllib, threading
-from urllib2 import HTTPError
+import os, re, json, urllib
 from datetime import datetime
-from lxml import etree
 
 API_KEY = ''
 
@@ -17,7 +15,6 @@ def Start():
 
 def GetApiKey():
     global API_KEY
-
     if not API_KEY:
         data = json.dumps({
             'user': Prefs['Username'],
@@ -28,7 +25,6 @@ def GetApiKey():
         Log.Debug('Got API KEY: %s' % resp)
         API_KEY = resp
         return resp
-
     return API_KEY
 
 def HttpPost(url, postdata):

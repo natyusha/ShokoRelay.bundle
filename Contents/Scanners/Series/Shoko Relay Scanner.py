@@ -8,7 +8,6 @@ Prefs = {
     'Password': '',
     'IncludeSpecials': True,
     'IncludeOther': True,
-    'IncludeSubfolders': True,
     'SingleSeasonOrdering': False
 }
 
@@ -30,15 +29,30 @@ if not os.path.isdir(LOG_ROOT):
     LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
 
 # Define logger parameters with a max size of 10MB and a single backup for file rotation
-def set_logging(foldername='', filename='', format='%(message)s'):
+def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '') 
     filename = 'Shoko Relay Scanner.log'
+    format = '%(asctime)s %(message)s'
     handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1, encoding='utf-8')
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
     Log.addHandler(handler)
 
 set_logging() # Start logger
+
+def GetApiKey():
+    global API_KEY
+    if not API_KEY:
+        data = json.dumps({
+            'user': Prefs['Username'],
+            'pass': Prefs['Password'] if Prefs['Password'] != None else '',
+            'device': 'Shoko Relay for Plex'
+        })
+        resp = HttpPost('api/auth', data)['apikey']
+        Log.info('Got API Key:     %s' % resp)
+        API_KEY = resp
+        return resp
+    return API_KEY
 
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}    
@@ -58,26 +72,12 @@ def HttpReq(url, retry=True):
         API_KEY = ''
         return HttpReq(url, False)
 
-def GetApiKey():
-    global API_KEY
-    if not API_KEY:
-        data = json.dumps({
-            'user': Prefs['Username'],
-            'pass': Prefs['Password'] if Prefs['Password'] != None else '',
-            'device': 'Shoko Relay Scanner For Plex'
-        })
-        resp = HttpPost('api/auth', data)['apikey']
-        Log.info('Got API Key:     %s' % resp)
-        API_KEY = resp
-        return resp
-    return API_KEY
-
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
     Log.debug('[Path]           %s', path)
     Log.debug('[Files]          %s', files)
 
     for subdir in subdirs:
-        Log.info('[Folder]         %s' % os.path.relpath(subdir, root))
+        Log.debug('[Folder]         %s' % os.path.relpath(subdir, root))
     Log.info('=' * 400)
 
     if files:
@@ -89,28 +89,27 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info('File:            %s' % file)
 
                 # Get file data using the filename
-                # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Clannad/%5Bjoseole99%5D%20Clannad%20-%2001%20(1280x720%20Blu-ray%20H264)%20%5B8E128DF5%5D.mkv
                 filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
-                file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename)))
+                file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename))) # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Kowarekake%20no%20Orgel%5CKowarekake%20no%20Orgel%20-%2001.mkv
                 if len(file_data) == 0: continue # Skip if file data is not found
 
                 # Take the first file - Searching with both parent folder and filename should only return a single result
                 if len(file_data) > 1:
-                    Log.info('File Search Detected More Than One Result - Skipping!')
+                    Log.info('Multiple Files:  File Search Detected More Than One Result - Skipping!')
                     continue
                     
                 file_data = file_data[0]
                 
                 # Ignore unrecognized files
                 if 'SeriesIDs' not in file_data or file_data['SeriesIDs'] is None:
-                    Log.info('Unrecognized File Detected - Skipping!')
+                    Log.info('Missing ID:      Unrecognized or Ignored File Detected - Skipping!')
                     continue
 
                 # Get series data
                 series_ids = try_get(file_data['SeriesIDs'], 0, None)
 
                 if series_ids is None:
-                    Log.info('Unrecognized File Detected - Skipping!')
+                    Log.info('Missing ID:      Unrecognized or Ignored File Detected - Skipping!')
                     continue
 
                 series_id = series_ids['SeriesID']['ID'] # Take the first matching anime in case of crossover episodes
@@ -159,8 +158,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     Log.info('Episode %s %s' % (episode_source, episode_number))
 
                     vid = Media.Episode(show_title, season, episode_number)
-                    if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # required for multi episode files
-                    Log.info('Video Match:     %s' % vid)
+                    if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # Required for multi episode files
+                    Log.info('Mapping:         %s' % vid)
                     Log.info('-' * 400)
                     vid.parts.append(file)
                     mediaList.append(vid)
@@ -171,7 +170,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
         Stack.Scan(path, files, mediaList, subdirs)
 
     if not path: # If current folder is root folder
-        Log.info('Initiating Subfolder Scan\n' + '=' * 400) # Log once during the root scan
+        Log.info('Initiating Global Subfolder Scan & Plex Grouping Removal') # Log once during the root scan
+        Log.info('=' * 400)
         subfolders = subdirs[:]
 
         while subfolders: # Subfolder scanning queue
@@ -191,21 +191,19 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     subdir_files.append(path_item)
 
             if subdir_dirs: Log.info('Subdirectories:  %s' % subdir_dirs)
-            if subdir_files: Log.info('Files:           %s' % subdir_files)
 
             for dir in subdir_dirs:
-                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue)
+                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(reverse_path)>1 or subdir_dirs):
+                Log.info('Files Detected:  Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
                 if grouping_dir in subdirs:
                     subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
-                Log.info('Files Detected:  Subfolder Scan Initiated in Current Folder')
                 Log.info('-' * 400)
-                Scan(path, sorted(subdir_files), mediaList, [], language, root) 
                 # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards
-            Log.info('-' * 400)
+                Scan(path, sorted(subdir_files), mediaList, [], language, root)
 
 def try_get(arr, idx, default=''):
     try:

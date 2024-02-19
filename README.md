@@ -72,6 +72,13 @@ This is a Plex library metadata agent/scanner written to work with anything list
   2. Shoko's "Sync Plex Watch Status" command [doesn't work](https://github.com/ShokoAnime/ShokoServer/issues/1086) with cross platform setups.
 
 ### Notes
+#### Troubleshooting
+When encountering any issues with the scanner or agent note that there are detailed logs available in the [Plex Media Server Logs Folder](https://support.plex.tv/articles/200250417-plex-media-server-log-files/) which can help to pinpoint any issues:
+- Agent Logs: `\Plex Media Server\Logs\PMS Plugin Logs\com.plexapp.agents.shokorelay.log`
+- Scanner Logs: `\Plex Media Server\Logs\Shoko Relay Scanner.log`
+
+**Note:** When encountering bad metadata the first thing to check for is if TheTVDB match is correct in Shoko for the series in question.
+
 #### Handling "Stuck" Metadata
 - In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
   1. Navigate to the series > More "..." Button > Unmatch
