@@ -77,15 +77,14 @@ class ShokoRelayAgent:
         Log('################## ShokoRelay for Series ID: %-*s ##################' % (7, aid))
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-        # Make a dict of language -> title for all series titles in anidb data
+        # Make a dict of language -> title for all series titles in the anidb series data (one pair per language)
         series_titles = {}
-        for item in series_data['AniDB']['Titles']:
+        for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': # Exclude all short titles
                 series_titles[item['Language']] = item['Name']
         series_titles['shoko'] = series_data['Name']
 
         # Get Title according to the preference
-        title = None
         for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
@@ -96,7 +95,6 @@ class ShokoRelayAgent:
         Log('Title:                         %s' % title)
 
         # Get alternate Title according to the preference
-        alt_title = None
         for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
             lang = lang.strip()
             alt_title = try_get(series_titles, lang.lower(), None)
@@ -296,12 +294,11 @@ class ShokoRelayAgent:
 
             episode_obj = metadata.seasons[season].episodes[episode_number]
 
-            # Make a dict of language -> title for all episode titles in anidb data
+            # Make a dict of language -> title for all episode titles in the anidb episode data
             episode_titles = {}
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
 
             # Get episode Title according to the preference
-            title = None
             title_source = '(AniDB):       '
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
@@ -313,20 +310,20 @@ class ShokoRelayAgent:
             SingleEntryTitles = ['Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web'] # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the preference
-                single_title = title
+                original_title = title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()
                     title = try_get(series_titles, lang.lower(), title)
                     title_source = '(AniDB Series):'
-                    if title is not single_title: break
-                if title is single_title: # If not found, fallback to EN series title
+                    if title is not original_title: break
+                if title is original_title: # If not found, fallback to EN series title
                     title = try_get(series_titles, 'en', title)
-                if title is single_title: # Fallback to TvDB title as a last resort
+                if title is original_title: # Fallback to TvDB title as a last resort
                     if try_get(episode_data['TvDB'], 'Title', None):
                         title = try_get(episode_data['TvDB'], 'Title')
                         title_source = '(TvDB):        '
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
-                if single_title != title and single_title not in title: title = title + ' — ' + single_title
+                if original_title != title and original_title not in title: title = title + ' — ' + original_title
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title', None):
