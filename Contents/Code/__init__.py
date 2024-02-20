@@ -84,7 +84,7 @@ class ShokoRelayAgent:
                 series_titles[item['Language']] = item['Name']
         series_titles['shoko'] = series_data['Name']
 
-        # Get Title according to the preference
+        # Get Title according to the language preference
         for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
@@ -94,13 +94,13 @@ class ShokoRelayAgent:
         metadata.title = title
         Log('Title:                         %s' % title)
 
-        # Get alternate Title according to the preference
+        # Get Alternate Title according to the language preference
         for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
             lang = lang.strip()
             alt_title = try_get(series_titles, lang.lower(), None)
             if alt_title: break
 
-        # Append the alternate title to the Sort Title to make it searchable
+        # Append the Alternate title to the Sort Title to make it searchable
         if alt_title is not None and alt_title != metadata.title:
             metadata.title_sort = title + ' [' + alt_title + ']'
             Log('Alternate Title:               %s' % alt_title)
@@ -108,13 +108,15 @@ class ShokoRelayAgent:
             metadata.title_sort = title
             Log('Alternate Title:               Alternate Title Matches the Title - Skipping!')
 
-        # Get Original Title (enable if Plex fixes blocking issue)
-        # original_title = None
-        # for item in series_data['AniDB']['Titles']:
-        #     if item['Type'] == 'Main':
-        #         original_title = item['Name']
-        #         break
-        # metadata.original_title = original_title
+        """ Enable if Plex Fixes Blocking Legacy Agent Issue
+        # Get Original Title
+        original_title = None
+        for item in series_data['AniDB']['Titles']:
+            if item['Type'] == 'Main':
+                original_title = item['Name']
+                break
+        metadata.original_title = original_title
+        """
 
         # Get Originally Available
         airdate = try_get(series_data['AniDB'], 'AirDate', None)
@@ -162,8 +164,10 @@ class ShokoRelayAgent:
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
         tags, tags_list = [], None
+        ## Temporary TagBlacklist Additions  Until PR Merged: https://github.com/ShokoAnime/ShokoServer/pull/1104
+        TagBlackListTemp = ('description needs improvement', 'fetishes', 'no english subs available', 'pic needs improvement', 'pornography', 'staff missing', 'to be moved to character', 'to be moved to episode')
         for tag in series_tags:
-            if tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight']):
+            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp:
                 tags.append(tag['Name'])
         metadata.genres = tags
         if tags:
@@ -181,13 +185,15 @@ class ShokoRelayAgent:
         else:
             Log('Collection:                    %s' % None)
 
-        # Get Labels (likely never to be supported)
-        # metadata.labels.clear()
-        # if try_get(series_data['AniDB'], 'Type', None):
-        #     metadata.labels = [try_get(series_data['AniDB'], 'Type')]
-        #     Log('Labels:                        %s' % metadata.labels)
-        # else:
-        #     Log('Labels:                        %s' % None)
+        """ Labels are likely never to be supported for legacy agents
+        # Get Labels
+        metadata.labels.clear()
+        if try_get(series_data['AniDB'], 'Type', None):
+            metadata.labels = [try_get(series_data['AniDB'], 'Type')]
+            Log('Labels:                        %s' % metadata.labels)
+        else:
+            Log('Labels:                        %s' % None)
+        """
 
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
@@ -298,7 +304,7 @@ class ShokoRelayAgent:
             episode_titles = {}
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
 
-            # Get episode Title according to the preference
+            # Get episode Title according to the language preference
             title_source = '(AniDB):       '
             for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                 lang = lang.strip()
@@ -307,9 +313,9 @@ class ShokoRelayAgent:
             if title is None: title = episode_titles['en'] # If not found, fallback to EN title
 
             # Replace Ambiguous Title with series Title
-            SingleEntryTitles = ['Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web'] # AniDB titles used for single entries which are ambiguous
+            SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
-                # Get series title according to the preference
+                # Get series title according to the language preference
                 original_title = title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()
@@ -383,16 +389,18 @@ class ShokoRelayAgent:
             if Prefs['customThumbs']:
                 self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
-        # Set custom negative season names (enable if Plex fixes blocking issue)
-        # for season_num in metadata.seasons:
-        #     season_title = None
-        #     if season_num == '-1': season_title = 'Credits'
-        #     elif season_num == '-2': season_title = 'Trailers'
-        #     elif season_num == '-3': season_title = 'Parodies'
-        #     elif season_num == '-4': season_title = 'Other'
-        #     if int(season_num) < 0 and season_title is not None:
-        #         Log('Renaming season: %s to %s' % (season_num, season_title))
-        #         metadata.seasons[season_num].title = season_title
+        """ Enable if Plex Fixes Blocking Legacy Agent Issue
+        # Set custom negative season names
+        for season_num in metadata.seasons:
+            season_title = None
+            if season_num == '-1': season_title = 'Credits'
+            elif season_num == '-2': season_title = 'Trailers'
+            elif season_num == '-3': season_title = 'Parodies'
+            elif season_num == '-4': season_title = 'Other'
+            if int(season_num) < 0 and season_title is not None:
+                Log('Renaming season: %s to %s' % (season_num, season_title))
+                metadata.seasons[season_num].title = season_title
+        """
 
         # Adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
         if Prefs['themeMusic']:

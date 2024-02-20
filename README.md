@@ -29,9 +29,8 @@ This is a Plex library metadata agent/scanner written to work with anything list
   - Movies and series to be in the same library at once
   - Multi "season" shows matched on TheTVDB to be merged into a single entry
 - Allows the user to configure:
-  - The language for the series title (to use a different language than Shoko's)
-  - An 'Alt Title' language for the series title (which will be searchable in Plex)
-  - What language they want for episode titles
+  - The language for the series or episode titles (to use a different language than Shoko's)
+  - An "Alt Title" language for the series title (which will be searchable in Plex)
 - Optionally:
   - Series and movies will list the Main Staff along with Seiyuu (CV) under "Cast & Crew"
     - Note: They will all appear as actors due to crew not being accessible for custom agents
