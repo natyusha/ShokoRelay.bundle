@@ -65,7 +65,7 @@ class ShokoRelayAgent:
             airdate = try_get(anidb_series_data, 'AirDate', None)
             year = airdate.split('-')[0] if airdate else None
 
-            score = 100 if series_data['Name'] == name else 100 - index - int(series_data['Distance'] * 100)
+            score = 100 if series_data['Name'] == name else 99 - index - int(series_data['Distance'] * 100)
 
             meta = MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)
             results.Append(meta)
@@ -80,8 +80,7 @@ class ShokoRelayAgent:
         # Make a dict of language -> title for all series titles in the anidb series data (one pair per language)
         series_titles = {}
         for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
-            if item['Type'] != 'Short': # Exclude all short titles
-                series_titles[item['Language']] = item['Name']
+            if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
         series_titles['shoko'] = series_data['Name']
 
         # Get Title according to the language preference
@@ -123,8 +122,7 @@ class ShokoRelayAgent:
         if airdate:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
             Log('Originally Available:          %s' % metadata.originally_available_at)
-        else:
-            Log('Originally Available:          %s' % None)
+        else: Log('Originally Available:          %s' % None)
 
         # Get Content Rating (missing metadata source)
         # metadata.content_rating =
@@ -144,8 +142,7 @@ class ShokoRelayAgent:
         if studio:
             metadata.studio = studio['Staff']['Name']
             Log('Studio %s %s' % (studio_source, studio['Staff']['Name']))
-        else:
-            Log('Studio:                        %s' % None)
+        else: Log('Studio:                        %s' % None)
 
         # Get Tagline (missing metadata source)
         # metadata.tagline =
@@ -154,8 +151,7 @@ class ShokoRelayAgent:
         if try_get(series_data['AniDB'], 'Description', None):
             metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
             Log('Summary:                       %s' % metadata.summary)
-        else:
-            Log('Summary:                       %s' % None)
+        else: Log('Summary:                       %s' % None)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -163,27 +159,39 @@ class ShokoRelayAgent:
         metadata.genres.clear()
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
-        tags, tags_list = [], None
+        tags, tags_list, content_rating, content_descriptor, descriptor_s, descriptor_v = [], None, None, '', '', ''
         ## Temporary TagBlacklist Additions  Until PR Merged: https://github.com/ShokoAnime/ShokoServer/pull/1104
         TagBlackListTemp = ('description needs improvement', 'fetishes', 'no english subs available', 'pic needs improvement', 'pornography', 'staff missing', 'to be moved to character', 'to be moved to episode')
         for tag in series_tags:
-            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp:
-                tags.append(tag['Name'])
+            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp: tags.append(tag['Name'])
+            if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) here: https://wiki.anidb.net/Categories:Content_Indicators
+                # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
+                if tag['Name'].lower() == 'nudity':
+                    descriptor_s = 'S'
+                    if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Full frontal nudity with nipples and/or visible genitals
+                    if tag['Weight'] >= 500: content_rating = 'TV-MA' # Most borderline porn / hentai
+                if tag['Name'].lower() == 'sex':
+                    descriptor_s = 'S' # 400 for sex is 99% TV-MA material
+                    if tag['Weight'] >= 400: content_rating = 'TV-MA' # Sexual activity that is "on camera", but most of the action is indirectly visible
+                if tag['Name'].lower() == 'violence':
+                    descriptor_v = 'V'
+                    if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
+                    if tag['Weight'] >= 500: content_rating = 'TV-MA' # Added gore, repetitive killing/mutilation of more than 1 individual
+        if descriptor_s or descriptor_v: content_descriptor = '-' + descriptor_s + descriptor_v
+        
         metadata.genres = tags
         if tags:
             tags_list = ', '.join(tags)
             Log('Genres:                        %s' % tags_list)
-        else:
-            Log('Genres:                        %s' % None)
+        else: Log('Genres:                        %s' % None)
 
         # Get Collections
-        metadata.collections.clear()
         groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
+        metadata.collections.clear()
         if groupinfo['Size'] > 1:
             metadata.collections = [groupinfo['Name']]
             Log('Collection:                    %s' % groupinfo['Name'])
-        else:
-            Log('Collection:                    %s' % None)
+        else: Log('Collection:                    %s' % None)
 
         """ Labels are likely never to be supported for legacy agents
         # Get Labels
@@ -198,17 +206,19 @@ class ShokoRelayAgent:
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
+        ## Uses the content indicators tags + weights on AniDB: https://anidb.net/tag/2604/animetb
         if Prefs['contentRatings']:
-            rating = None
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
-            if 'kodomo' in tags_lower: rating = 'TV-Y'
-            if 'mina' in tags_lower: rating = 'TV-G'
-            if ('shoujo' or 'shounen') in tags_lower: rating = 'TV-14'
-            if ('josei' or 'seinen' or 'tv censoring') in tags_lower: rating = 'TV-MA'
-            if ('borderline porn') in tags_lower: rating = 'TV-MA-S'
-            if '18 restricted' in tags_lower: rating = 'X'
-
-            metadata.content_rating = rating
+            if not content_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
+                if 'kodomo' in tags_lower: content_rating = 'TV-Y'
+                elif 'mina' in tags_lower: content_rating = 'TV-G'
+                elif 'shoujo' in tags_lower or 'shounen' in tags_lower: content_rating = 'TV-PG'
+                elif 'josei' in tags_lower or 'seinen' in tags_lower: content_rating = 'TV-14'
+            if 'borderline porn' in tags_lower: content_rating = 'TV-MA' # Override any previous rating for borderline porn content
+            if content_rating: content_rating += content_descriptor # Append the content descriptor using the content indicators above
+            if '18 restricted' in tags_lower: content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
+            
+            metadata.content_rating = content_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
 
         # Get Posters & Backgrounds
@@ -225,17 +235,16 @@ class ShokoRelayAgent:
         metadata.roles.clear()
         cv_check = False
         for role in cast_crew:
-            role_name = role['RoleName']
-            if role_name != 'Seiyuu': continue # Skip if not Seiyuu
+            role_type = role['RoleName']
+            if role_type != 'Seiyuu': continue # Skip if not Seiyuu
             cv_check = True
             meta_role = metadata.roles.new()
             meta_role.name = role['Staff']['Name']
             meta_role.role = role['Character']['Name']
-
             Log('%-30s %s' % (meta_role.role, meta_role.name))
+            # Grab staff image (if available)
             image = role['Staff']['Image']
-            if image:
-                meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+            if image: meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
         if not cv_check: Log('N/A')
 
         director_name, writer_name, staff_check = [], [], False
@@ -244,27 +253,26 @@ class ShokoRelayAgent:
             Log('Role                           Staff Name')
             Log('-----------------------------------------------------------------------')
             for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
-                role_name = role['RoleName']
-                if role_name in ('Seiyuu', 'Staff'): continue # Skip if not part of the Main Staff or a Seiyuu
+                role_type = role['RoleName']
+                if role_type in ('Seiyuu', 'Staff'): continue # Skip if not part of the Main Staff or a Seiyuu
                 staff_check = True
                 meta_role = metadata.roles.new()
                 meta_role.name = role['Staff']['Name']
-                if role_name == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
+                if role_type == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Director' # Direction (監督)
                     director_name.append(meta_role.name)
-                elif role_name == 'SourceWork': # Initialize Writer outside of the episodes loop to avoid repeated requests per episode
+                elif role_type == 'SourceWork': # Initialize Writer outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Writer (Original Work)' # Original Work (原作)
                     writer_name.append(meta_role.name)
-                elif role_name == 'CharacterDesign': meta_role.role = role['RoleDetails'] # Character Design (キャラクターデザイン)
-                elif role_name == 'SeriesComposer': meta_role.role = 'Chief Scriptwriter' # Series Composition (シリーズ構成)
-                elif role_name == 'Producer': meta_role.role = role['RoleDetails'] # Chief Animation Direction (総作画監督)
-                elif role_name == 'Music': meta_role.role = 'Composer' # Music (音楽)
-                else: meta_role.role = role_name
-
+                elif role_type == 'CharacterDesign': meta_role.role = role['RoleDetails'] # Character Design (キャラクターデザイン)
+                elif role_type == 'SeriesComposer': meta_role.role = 'Chief Scriptwriter' # Series Composition (シリーズ構成)
+                elif role_type == 'Producer': meta_role.role = role['RoleDetails'] # Chief Animation Direction (総作画監督)
+                elif role_type == 'Music': meta_role.role = 'Composer' # Music (音楽)
+                else: meta_role.role = role_type
                 Log('%-30s %s' % (meta_role.role, meta_role.name))
+                # Grab staff image (if available)
                 image = role['Staff']['Image']
-                if image:
-                    meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+                if image: meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
             if not staff_check: Log('N/A')
 
         # Get episode list using series ID
@@ -274,9 +282,7 @@ class ShokoRelayAgent:
             # Get episode data
             episode_id = episode['IDs']['ID']
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
-
-            # Get episode type
-            episode_type = episode_data['AniDB']['Type']
+            episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Get season number
             season = 0
@@ -322,14 +328,13 @@ class ShokoRelayAgent:
                     title = try_get(series_titles, lang.lower(), title)
                     title_source = '(AniDB Series):'
                     if title is not original_title: break
-                if title is original_title: # If not found, fallback to EN series title
-                    title = try_get(series_titles, 'en', title)
+                if title is original_title: title = try_get(series_titles, 'en', title) # If not found, fallback to EN series title
                 if title is original_title: # Fallback to TvDB title as a last resort
                     if try_get(episode_data['TvDB'], 'Title', None):
                         title = try_get(episode_data['TvDB'], 'Title')
                         title_source = '(TvDB):        '
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
-                if original_title != title and original_title not in title: title = title + ' — ' + original_title
+                if original_title != title and original_title not in title: title += ' — ' + original_title
 
             # TvDB episode title fallback
             if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title', None):
@@ -386,8 +391,7 @@ class ShokoRelayAgent:
                 Log('Director:                      %s' % None)
 
             # Get Episode Poster (Thumbnail)
-            if Prefs['customThumbs']:
-                self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
+            if Prefs['customThumbs']: self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
         """ Enable if Plex Fixes Blocking Legacy Agent Issue
         # Set custom negative season names

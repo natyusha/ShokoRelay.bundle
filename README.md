@@ -126,16 +126,20 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 **Note:** Only do this when you are happy with the metadata for the series to be merged as you will be unable to correctly refresh it without splitting the series apart first.
 
 #### Assumed Content Ratings
-If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) tags from AniDB will be used to roughly match [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf).
-The tags which will trigger a rating change are listed in the table below:
-| Tag                         | Rating  |
-| --------------------------- | ------- |
-| kodomo                      | TV-Y    |
-| mina                        | TV-G    |
-| shoujo, shounen             | TV-14   |
-| josei, seinen, TV censoring | TV-MA   |
-| borderline porn             | TV-MA-S |
-| 18 restricted               | X       |
+If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
+| Tag                               | Rating  |
+| --------------------------------- | ------- |
+| kodomo                            | TV-Y    |
+| mina                              | TV-G    |
+| shoujo, shounen                   | TV-PG   |
+| josei, seinen                     | TV-14   |
+| nudity, sex                       | TV-\*-S |
+| **\*\*** violence                 | TV-14-V |
+| **\*\*** nudity                   | TV-14-S |
+| borderline porn (override)        | TV-MA   |
+| **\*\*\+** nudity, **\*\*** sex   | TV-MA-S |
+| **\*\*\+** violence               | TV-MA-V |
+| 18 restricted (override)          | X       |
 
 **Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.
 
