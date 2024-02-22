@@ -134,12 +134,12 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     # Get season number
                     season = 0
                     episode_source = '(AniDB):'
-                    if episode_type == 'Normal': season = 1
-                    elif episode_type == 'Special': season = 0
-                    elif episode_type == 'ThemeSong': season = -1
-                    elif episode_type == 'Trailer': season = -2
-                    elif episode_type == 'Parody': season = -3
-                    elif episode_type == 'Other': season = -4
+                    if episode_type   == 'Normal'    : season =  1
+                    elif episode_type == 'Special'   : season =  0
+                    elif episode_type == 'ThemeSong' : season = -1
+                    elif episode_type == 'Trailer'   : season = -2
+                    elif episode_type == 'Parody'    : season = -3
+                    elif episode_type == 'Other'     : season = -4
                     if not Prefs['SingleSeasonOrdering']: # Grab TvDB info when SingleSeasonOrdering isn't enabled
                         episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Take the first link, as explained before
                         if episode_data['TvDB'] is not None:
@@ -206,7 +206,5 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Scan(path, sorted(subdir_files), mediaList, [], language, root)
 
 def try_get(arr, idx, default=''):
-    try:
-        return arr[idx]
-    except:
-        return default
+    try:    return arr[idx]
+    except: return default

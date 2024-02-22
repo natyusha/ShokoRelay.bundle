@@ -122,7 +122,8 @@ class ShokoRelayAgent:
         if airdate:
             metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
             Log('Originally Available:          %s' % metadata.originally_available_at)
-        else: Log('Originally Available:          %s' % None)
+        else:
+            Log('Originally Available:          %s' % None)
 
         # Get Content Rating (missing metadata source)
         # metadata.content_rating =
@@ -142,7 +143,8 @@ class ShokoRelayAgent:
         if studio:
             metadata.studio = studio['Staff']['Name']
             Log('Studio %s %s' % (studio_source, studio['Staff']['Name']))
-        else: Log('Studio:                        %s' % None)
+        else:
+            Log('Studio:                        %s' % None)
 
         # Get Tagline (missing metadata source)
         # metadata.tagline =
@@ -151,7 +153,8 @@ class ShokoRelayAgent:
         if try_get(series_data['AniDB'], 'Description', None):
             metadata.summary = summary_sanitizer(try_get(series_data['AniDB'], 'Description'))
             Log('Summary:                       %s' % metadata.summary)
-        else: Log('Summary:                       %s' % None)
+        else:
+            Log('Summary:                       %s' % None)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -178,7 +181,7 @@ class ShokoRelayAgent:
                     if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
                     if tag['Weight'] >= 500: content_rating = 'TV-MA' # Added gore, repetitive killing/mutilation of more than 1 individual
         if descriptor_s or descriptor_v: content_descriptor = '-' + descriptor_s + descriptor_v
-        
+
         metadata.genres = tags
         if tags:
             tags_list = ', '.join(tags)
@@ -206,18 +209,18 @@ class ShokoRelayAgent:
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
-        ## Uses the content indicators tags + weights on AniDB: https://anidb.net/tag/2604/animetb
+        ## Uses the content indicator tags + weights on AniDB: https://anidb.net/tag/2604/animetb
         if Prefs['contentRatings']:
             tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
             if not content_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
-                if 'kodomo' in tags_lower: content_rating = 'TV-Y'
-                elif 'mina' in tags_lower: content_rating = 'TV-G'
+                if 'kodomo' in tags_lower:                              content_rating = 'TV-Y'
+                elif 'mina' in tags_lower:                              content_rating = 'TV-G'
                 elif 'shoujo' in tags_lower or 'shounen' in tags_lower: content_rating = 'TV-PG'
-                elif 'josei' in tags_lower or 'seinen' in tags_lower: content_rating = 'TV-14'
-            if 'borderline porn' in tags_lower: content_rating = 'TV-MA' # Override any previous rating for borderline porn content
+                elif 'josei' in tags_lower or 'seinen' in tags_lower:   content_rating = 'TV-14'
+            if 'borderline porn' in tags_lower:  content_rating = 'TV-MA' # Override any previous rating for borderline porn content
             if content_rating: content_rating += content_descriptor # Append the content descriptor using the content indicators above
-            if '18 restricted' in tags_lower: content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
-            
+            if '18 restricted' in tags_lower:    content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
+
             metadata.content_rating = content_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
 
@@ -264,10 +267,10 @@ class ShokoRelayAgent:
                 elif role_type == 'SourceWork': # Initialize Writer outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Writer (Original Work)' # Original Work (原作)
                     writer_name.append(meta_role.name)
-                elif role_type == 'CharacterDesign': meta_role.role = role['RoleDetails'] # Character Design (キャラクターデザイン)
-                elif role_type == 'SeriesComposer': meta_role.role = 'Chief Scriptwriter' # Series Composition (シリーズ構成)
-                elif role_type == 'Producer': meta_role.role = role['RoleDetails'] # Chief Animation Direction (総作画監督)
-                elif role_type == 'Music': meta_role.role = 'Composer' # Music (音楽)
+                elif role_type == 'CharacterDesign' : meta_role.role = 'Character Design'          # Character Design (キャラクターデザイン)
+                elif role_type == 'SeriesComposer'  : meta_role.role = 'Chief Scriptwriter'        # Series Composition (シリーズ構成)
+                elif role_type == 'Producer'        : meta_role.role = 'Chief Animation Direction' # Chief Animation Direction (総作画監督)
+                elif role_type == 'Music'           : meta_role.role = 'Composer'                  # Music (音楽)
                 else: meta_role.role = role_type
                 Log('%-30s %s' % (meta_role.role, meta_role.name))
                 # Grab staff image (if available)
@@ -280,26 +283,27 @@ class ShokoRelayAgent:
 
         for episode in episodes['List']:
             # Get episode data
-            episode_id = episode['IDs']['ID']
+            episode_id   = episode['IDs']['ID']
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
             episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Get season number
             season = 0
             episode_source = '(AniDB):'
-            if episode_type == 'Normal': season = 1
-            elif episode_type == 'Special': season = 0
-            elif episode_type == 'ThemeSong': season = -1
-            elif episode_type == 'Trailer': season = -2
-            elif episode_type == 'Parody': season = -3
-            elif episode_type == 'Other': season = -4
-            if not Prefs['SingleSeasonOrdering']: episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Grab TvDB info when SingleSeasonOrdering isn't enabled
-
-            if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB']:
-                season = episode_data['TvDB']['Season']
-                episode_number = episode_data['TvDB']['Number']
-                episode_source = '(TvDB): '
-            else: episode_number = episode_data['AniDB']['EpisodeNumber']
+            if   episode_type == 'Normal'    : season =  1
+            elif episode_type == 'Special'   : season =  0
+            elif episode_type == 'ThemeSong' : season = -1
+            elif episode_type == 'Trailer'   : season = -2
+            elif episode_type == 'Parody'    : season = -3
+            elif episode_type == 'Other'     : season = -4
+            if not Prefs['SingleSeasonOrdering']:
+                episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Grab TvDB info when SingleSeasonOrdering isn't enabled
+                if episode_data['TvDB']:
+                    season         = episode_data['TvDB']['Season']
+                    episode_number = episode_data['TvDB']['Number']
+                    episode_source = '(TvDB): '
+                else:
+                    episode_number = episode_data['AniDB']['EpisodeNumber']
 
             Log('Season %s                %s' % (episode_source, season))
             Log('Episode %s               %s' % (episode_source, episode_number))
@@ -439,27 +443,21 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    if Prefs['synposisCleanLinks']:
-        summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
-    if Prefs['synposisCleanMiscLines']:
-        summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.MULTILINE)             # Remove the line if it starts with ('* ' / '-- ' / '~ ')
-    if Prefs['synposisRemoveSummary']:
-        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.DOTALL)   # Remove all lines after this is seen
-    if Prefs['synposisCleanMultiEmptyLines']:
-        summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.DOTALL)                   # Condense multiple empty lines
+    if Prefs['synposisCleanLinks']:           summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
+    if Prefs['synposisCleanMiscLines']:       summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.MULTILINE)             # Remove the line if it starts with ('* ' / '-- ' / '~ ')
+    if Prefs['synposisRemoveSummary']:        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.DOTALL)   # Remove all lines after this is seen
+    if Prefs['synposisCleanMultiEmptyLines']: summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.DOTALL)                   # Condense multiple empty lines
     return summary.strip(' \n')
 
 def try_get(arr, idx, default=''):
-    try:
-        return arr[idx]
-    except:
-        return default
+    try:    return arr[idx]
+    except: return default
 
 # Agent Declaration
 class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):
     name, primary_provider, fallback_agent = 'ShokoRelay', True, False
     contributes_to = ['com.plexapp.agents.none', 'com.plexapp.agents.hama']
-    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']
-    languages = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
+    accepts_from   = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']
+    languages      = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
     def search(self, results, media, lang, manual): self.Search(results, media, lang, manual)
     def update(self, metadata, media, lang, force): self.Update(metadata, media, lang, force)

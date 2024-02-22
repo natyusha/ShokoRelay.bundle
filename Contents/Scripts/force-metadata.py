@@ -109,7 +109,7 @@ if full_clean:
 # rename negative seasons to their correct names
 print_f('├┬Renaming Negative Seasons...')
 for season in anime.searchSeasons(title=''):
-    if season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
+    if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
     elif season.title == 'Season -2': season.editTitle('Trailers')
     elif season.title == 'Season -3': season.editTitle('Parodies')
     elif season.title == 'Season -4': season.editTitle('Other')

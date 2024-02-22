@@ -92,7 +92,7 @@ When encountering any issues with the scanner or agent, please note that there a
 #### Cast & Crew Limitations
 If "staff listings" are enabled in the settings the following custom agent limitations apply:
 - All Cast & Crew members are listed under the cast section only
-- Directors, Poducers and Writers will be empty when attempting to filter for them in Plex
+- Directors, Producers and Writers will be empty when attempting to filter for them in Plex
 - All Crew members are available for filtering under Actor only
 - The links in the Cast & Crew section under individual episodes don't work
   - The "Directed by" and "Written by" links still work though
@@ -114,6 +114,8 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 - TV Special
 - Web
 
+**Note:** The appended titles will appear after an em dash (—) making it easy to search for anything affected by this.
+
 #### Combining Series
 If you have TheTVDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
 
@@ -124,6 +126,9 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 - Fairy Tail (2018)
 
 **Note:** Only do this when you are happy with the metadata for the series to be merged as you will be unable to correctly refresh it without splitting the series apart first.
+
+#### Minimum Tag Weight
+Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.
 
 #### Assumed Content Ratings
 If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
@@ -142,6 +147,3 @@ If "assumed content ratings" are enabled in the agent settings the [target audie
 | 18 restricted (override)          | X       |
 
 **Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.
-
-#### Minimum Tag Weight
-Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.

@@ -64,14 +64,14 @@ file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg',
 
 # regex substitution pairs for additional slug formatting (executed top to bottom)
 slug_formatting = {
-    'OP': 'Opening ',
-    'ED': 'Ending ',
-    '-BD': ' (Blu-ray Version)',
+    'OP':        'Opening ',
+    'ED':        'Ending ',
+    '-BD':       ' (Blu-ray Version)',
     '-Original': ' (Original Version)',
-    '-TV': ' (Broadcast Version)',
-    '-Web': ' (Web Version)',
-    '  ': ' ', # check for double spaces after other substitutions
-    ' $': '' # check for trailing spaces after other substitutions
+    '-TV':       ' (Broadcast Version)',
+    '-Web':      ' (Web Version)',
+    '  ':        ' ', # check for double spaces after other substitutions
+    ' $':        '' # check for trailing spaces after other substitutions
 }
 
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
@@ -237,10 +237,10 @@ if Prefs['FFplay_Enabled']:
 
 # ffmpeg metadata with double quotes escaped for something like "Oshi no Ko"
 metadata = {
-    'title': f' -metadata title="{song_title.replace('"','\\\"')}"',
+    'title':    f' -metadata title="{song_title.replace('"','\\\"')}"',
     'subtitle': f' -metadata TIT3="{slug}"',
-    'artist': f' -metadata artist="{artist_name.replace('"','\\\"')}"',
-    'album': f' -metadata album="{anime_name.replace('"','\\\"')}"'
+    'artist':   f' -metadata artist="{artist_name.replace('"','\\\"')}"',
+    'album':    f' -metadata album="{anime_name.replace('"','\\\"')}"'
 }
 
 ## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
