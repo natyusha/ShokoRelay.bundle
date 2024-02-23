@@ -109,12 +109,11 @@ class ShokoRelayAgent:
 
         """ Enable if Plex Fixes Blocking Legacy Agent Issue
         # Get Original Title
-        original_title = None
-        for item in series_data['AniDB']['Titles']:
-            if item['Type'] == 'Main':
-                original_title = item['Name']
-                break
-        metadata.original_title = original_title
+        if alt_title is not None and alt_title != metadata.title:
+            metadata.original_title = alt_title
+            Log('Original Title:                %s' % alt_title)
+        else:
+            Log('Original Title:                %s' % None)
         """
 
         # Get Originally Available
@@ -233,7 +232,7 @@ class ShokoRelayAgent:
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
         Log('-----------------------------------------------------------------------')
-        Log('Character                      Seiyuu')
+        Log('Character                      Seiyuu (CV)')
         Log('-----------------------------------------------------------------------')
         metadata.roles.clear()
         cv_check = False
@@ -257,7 +256,7 @@ class ShokoRelayAgent:
             Log('-----------------------------------------------------------------------')
             for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
                 role_type = role['RoleName']
-                if role_type in ('Seiyuu', 'Staff'): continue # Skip if not part of the Main Staff or a Seiyuu
+                if role_type == 'Seiyuu': continue # Skip if Seiyuu
                 staff_check = True
                 meta_role = metadata.roles.new()
                 meta_role.name = role['Staff']['Name']
@@ -271,6 +270,7 @@ class ShokoRelayAgent:
                 elif role_type == 'SeriesComposer'  : meta_role.role = 'Chief Scriptwriter'        # Series Composition (シリーズ構成)
                 elif role_type == 'Producer'        : meta_role.role = 'Chief Animation Direction' # Chief Animation Direction (総作画監督)
                 elif role_type == 'Music'           : meta_role.role = 'Composer'                  # Music (音楽)
+                elif role_type == 'Staff'           : meta_role.role = role['RoleDetails']         # Various Other Main Staff Entries
                 else: meta_role.role = role_type
                 Log('%-30s %s' % (meta_role.role, meta_role.name))
                 # Grab staff image (if available)
@@ -406,7 +406,7 @@ class ShokoRelayAgent:
             elif season_num == '-3': season_title = 'Parodies'
             elif season_num == '-4': season_title = 'Other'
             if int(season_num) < 0 and season_title is not None:
-                Log('Renaming season: %s to %s' % (season_num, season_title))
+                Log('Renaming Season:               %s to %s' % (season_num, season_title))
                 metadata.seasons[season_num].title = season_title
         """
 
