@@ -5,7 +5,7 @@ import sys
 r"""
 Description:
   - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
-  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names.
+  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names and collection sort titles.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
   - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
@@ -27,6 +27,8 @@ Behaviour:
       - In these cases the original title will be output to the console for the user to fix with a Plex dance or manual match.
   - Video preview thumbnails and watched states are maintained with this script (unless an anime encounters the above naming issue).
   - Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
+  - The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
+  - All Smart Collection are ignored as they are not managed by Shoko Relay
 """
 
 # user preferences
@@ -115,14 +117,18 @@ for season in anime.searchSeasons(title=''):
     elif season.title == 'Season -4': season.editTitle('Other')
 print_f('│└─Finished Renaming Seasons!')
 
-# clear any empty collections that are left over
-collections = anime.collections()
-print_f('└┬Removing Empty Collections...')
-for idx, val in enumerate(collections):
-    if anime.collection(title=collections[idx].title).childCount != 0:
-        continue
-    else:
-        anime.collection(title=collections[idx].title).delete()
+# clear any empty collections that are left over and set the sort title to match the title
+print_f('└┬Checking Collections...')
+for collection in anime.collections():
+    if not collection.smart: # ignore any smart collections as they are not managed by Shoko Relay
+        if collection.childCount != 0:
+            if collection.title != collection.titleSort:
+                collection.editSortTitle(collection.title, locked=False)
+                print_f(f' ├─Correcting Sort Title: {collection.title}')
+            continue
+        else:
+            collection.delete()
+            print_f(f' ├─Deleting Empty Entry: {collection.title}')
 print_f(' └─Finished!')
 
 # silently queue a database optimization if running a full clean due to the large amount of potential changes made
