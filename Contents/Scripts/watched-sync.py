@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plexapi.myplex import MyPlexAccount
-import os, requests, sys, urllib
+import os, re, requests, sys, urllib
 
 r"""
 Description:
@@ -20,7 +20,11 @@ Preferences:
   - If you want to track watched states from managed/home accounts on your Plex server you can add them to "Plex_ExtraUsers" following the same list format as above.
       - Leave it as "None" otherwise.
 Usage:
-  - Run in a terminal (watched-sync.py)
+  - Run in a terminal (watched-sync.py) to sync watch states of all watched episodes.
+  - Append a relative date suffix as an argument to narrow down the time frame and speed up the process:
+      - (watched-sync.py 2w) would return results from the last 2 weeks
+      - (watched-sync.py 3d) would return results from the last 3 days
+  - The full list of suffixes (from 1-999) is: d=days, w=weeks, mon=months, y=years
 Behaviour:
   - Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
 """
@@ -43,6 +47,15 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
+
+# check the arguments if the user is looking to use a relative date or not
+relative_date = '999y' # set the relative date to 999 years by default
+if len(sys.argv) == 2:
+    if re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:d|w|mon|y)$', sys.argv[1]): # if the argument is a valid relative date
+        relative_date = sys.argv[1]
+    else:
+        print(f'{error_prefix}Failed: Invalid Argument (Relative Date)')
+        exit(1)
 
 # authenticate and connect to the Plex server/library specified
 try:
@@ -89,8 +102,8 @@ for account in accounts:
             print(f'│{error_prefix}Failed', error)
             continue
 
-        # loop through all unwatched episodes in the plex library
-        for episode in anime.searchEpisodes(unwatched=False):
+        # loop through all the watched episodes in the plex library within the time frame of the relative date
+        for episode in anime.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
             for episode_path in episode.iterParts():
                 filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
                 path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth['apikey']}').json()
@@ -99,7 +112,7 @@ for account in accounts:
                     try:
                         for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
                             requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={auth['apikey']}')
-                    except Exception as error:
-                        print(f'││{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
+                    except Exception:
+                        print(f'││{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko')
         print_f(f'│└─Finished!')
 print(f'└─Watched Sync Complete')
