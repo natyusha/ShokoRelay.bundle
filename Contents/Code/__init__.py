@@ -165,7 +165,8 @@ class ShokoRelayAgent:
         ## Temporary TagBlacklist Additions  Until PR Merged: https://github.com/ShokoAnime/ShokoServer/pull/1104
         TagBlackListTemp = ('description needs improvement', 'fetishes', 'no english subs available', 'pic needs improvement', 'pornography', 'staff missing', 'to be moved to character', 'to be moved to episode')
         for tag in series_tags:
-            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp: tags.append(tag['Name'])
+            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp:
+                tags.append(title_case(tag['Name'])) # convert tags to title case and add them to the list
             if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) here: https://wiki.anidb.net/Categories:Content_Indicators
                 # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
                 if tag['Name'].lower() == 'nudity':
@@ -448,6 +449,16 @@ def summary_sanitizer(summary):
     if Prefs['synposisRemoveSummary']:        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.DOTALL)   # Remove all lines after this is seen
     if Prefs['synposisCleanMultiEmptyLines']: summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.DOTALL)                   # Condense multiple empty lines
     return summary.strip(' \n')
+
+def title_case(text):
+    # Words to force lowercase in tags to follow AniDB Capitalisation Rules: https://wiki.anidb.net/Capitalisation
+    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as')
+    # Abbreviations or acronyms that should be fully capitalised
+    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm' 'ii', 'milf', 'mmf', 'mmm', 'op', 'tv')
+    text = re.sub(r'[\'\w\d]+\b', lambda m:m.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
+    for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
+    for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
+    return text[:1].upper() + text[1:] # Force capitalise the first character no matter what
 
 def try_get(arr, idx, default=''):
     try:    return arr[idx]

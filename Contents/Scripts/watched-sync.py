@@ -24,7 +24,7 @@ Usage:
   - Append a relative date suffix as an argument to narrow down the time frame and speed up the process:
       - (watched-sync.py 2w) would return results from the last 2 weeks
       - (watched-sync.py 3d) would return results from the last 3 days
-  - The full list of suffixes (from 1-999) is: d=days, w=weeks, mon=months, y=years
+  - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
 Behaviour:
   - Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
 """
@@ -51,7 +51,7 @@ def print_f(text): print(text, flush=True)
 # check the arguments if the user is looking to use a relative date or not
 relative_date = '999y' # set the relative date to 999 years by default
 if len(sys.argv) == 2:
-    if re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:d|w|mon|y)$', sys.argv[1]): # if the argument is a valid relative date
+    if re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', sys.argv[1]): # if the argument is a valid relative date
         relative_date = sys.argv[1]
     else:
         print(f'{error_prefix}Failed: Invalid Argument (Relative Date)')
@@ -99,7 +99,7 @@ for account in accounts:
         try:
             anime = plex.library.section(library)
         except Exception as error:
-            print(f'│{error_prefix}Failed', error)
+            print(f'│{error_prefix}─Failed', error)
             continue
 
         # loop through all the watched episodes in the plex library within the time frame of the relative date
@@ -114,5 +114,5 @@ for account in accounts:
                             requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={auth['apikey']}')
                     except Exception:
                         print(f'│├{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko')
-        print_f(f'│└─Finished!')
+        print_f('│└─Finished!')
 print('└Watched Sync Complete')

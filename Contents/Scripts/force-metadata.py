@@ -65,7 +65,7 @@ except Exception:
 try:
     plex = admin.resource(Prefs['Plex_ServerName']).connect()
 except Exception:
-    print(f'└{error_prefix}Failed: Server Name Not Found')
+    print(f'{error_prefix}Failed: Server Name Not Found')
     exit(1)
 
 # loop through the configured libraries
@@ -109,7 +109,7 @@ for library in Prefs['Plex_LibraryNames']:
                 failed_list = []
                 series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
             except IndexError:
-                print_f(f'├{error_prefix}Failed: {series.title}') # print titles of things which failed to match
+                print_f(f'│├{error_prefix}Failed: {series.title}') # print titles of things which failed to match
                 failed_list.append(series.title)
         input('│└─Matching Queued: Press Enter to continue once Plex is finished...')
 

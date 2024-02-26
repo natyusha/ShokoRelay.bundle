@@ -68,7 +68,7 @@ except Exception:
 try:
     plex = admin.resource(Prefs['Plex_ServerName']).connect()
 except Exception:
-    print(f'└{error_prefix}Failed: Server Name Not Found')
+    print(f'{error_prefix}Failed: Server Name Not Found')
     exit(1)
 
 # loop through the configured libraries

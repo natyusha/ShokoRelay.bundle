@@ -44,7 +44,9 @@ This is a Plex library metadata agent/scanner written to work with anything list
   - Files which contain more than one episode or episodes which span multiple files
   - Credits / Parodies / Trailers and Other types of special files
   - Individual episode ratings (from AniDB)
-- Will replace ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
+- Will replace:
+  - Ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
+  - Inconsistently capitalised genre tags with ones using [AniDB Capitalisation Rules](https://wiki.anidb.net/Capitalisation)
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ### Scripts
