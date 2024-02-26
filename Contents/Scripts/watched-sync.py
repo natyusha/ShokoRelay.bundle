@@ -113,6 +113,6 @@ for account in accounts:
                         for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
                             requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={auth['apikey']}')
                     except Exception:
-                        print(f'││{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko')
+                        print(f'│├{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko')
         print_f(f'│└─Finished!')
-print(f'└─Watched Sync Complete')
+print('└Watched Sync Complete')
