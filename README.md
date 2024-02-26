@@ -136,16 +136,16 @@ Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star
 If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
 | Tag                               | Rating  |
 | --------------------------------- | ------- |
-| kodomo                            | TV-Y    |
-| mina                              | TV-G    |
-| shoujo, shounen                   | TV-PG   |
-| josei, seinen                     | TV-14   |
-| nudity, sex                       | TV-\*-S |
-| **\*\*** violence                 | TV-14-V |
-| **\*\*** nudity                   | TV-14-S |
-| borderline porn (override)        | TV-MA   |
-| **\*\*\+** nudity, **\*\*** sex   | TV-MA-S |
-| **\*\*\+** violence               | TV-MA-V |
-| 18 restricted (override)          | X       |
+| Kodomo                            | TV-Y    |
+| Mina                              | TV-G    |
+| Shoujo, Shounen                   | TV-PG   |
+| Josei, Seinen                     | TV-14   |
+| Nudity, Sex                       | TV-\*-S |
+| **\*\*** Violence                 | TV-14-V |
+| **\*\*** Nudity                   | TV-14-S |
+| Borderline Porn (override)        | TV-MA   |
+| **\*\*\+** Nudity, **\*\*** sex   | TV-MA-S |
+| **\*\*\+** Violence               | TV-MA-V |
+| 18 Restricted (override)          | X       |
 
 **Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.

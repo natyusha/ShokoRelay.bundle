@@ -166,7 +166,7 @@ class ShokoRelayAgent:
         TagBlackListTemp = ('description needs improvement', 'fetishes', 'no english subs available', 'pic needs improvement', 'pornography', 'staff missing', 'to be moved to character', 'to be moved to episode')
         for tag in series_tags:
             if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp:
-                tags.append(title_case(tag['Name'])) # convert tags to title case and add them to the list
+                tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
             if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) here: https://wiki.anidb.net/Categories:Content_Indicators
                 # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
                 if tag['Name'].lower() == 'nudity':
@@ -211,15 +211,14 @@ class ShokoRelayAgent:
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
         ## Uses the content indicator tags + weights on AniDB: https://anidb.net/tag/2604/animetb
         if Prefs['contentRatings']:
-            tags_lower = [tag.lower() for tag in tags] # Account for inconsistent capitalization of tags
             if not content_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
-                if 'kodomo' in tags_lower:                              content_rating = 'TV-Y'
-                elif 'mina' in tags_lower:                              content_rating = 'TV-G'
-                elif 'shoujo' in tags_lower or 'shounen' in tags_lower: content_rating = 'TV-PG'
-                elif 'josei' in tags_lower or 'seinen' in tags_lower:   content_rating = 'TV-14'
-            if 'borderline porn' in tags_lower:  content_rating = 'TV-MA' # Override any previous rating for borderline porn content
+                if 'Kodomo' in tags:                        content_rating = 'TV-Y'
+                elif 'Mina' in tags:                        content_rating = 'TV-G'
+                elif 'Shoujo' in tags or 'Shounen' in tags: content_rating = 'TV-PG'
+                elif 'Josei' in tags or 'Seinen' in tags:   content_rating = 'TV-14'
+            if 'Borderline Porn' in tags:  content_rating = 'TV-MA' # Override any previous rating for borderline porn content
             if content_rating: content_rating += content_descriptor # Append the content descriptor using the content indicators above
-            if '18 restricted' in tags_lower:    content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
+            if '18 Restricted' in tags:    content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
 
             metadata.content_rating = content_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
