@@ -444,18 +444,18 @@ class ShokoRelayAgent:
 
 def summary_sanitizer(summary):
     if Prefs['synposisCleanLinks']:           summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
-    if Prefs['synposisCleanMiscLines']:       summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.MULTILINE)             # Remove the line if it starts with ('* ' / '-- ' / '~ ')
-    if Prefs['synposisRemoveSummary']:        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.DOTALL)   # Remove all lines after this is seen
-    if Prefs['synposisCleanMultiEmptyLines']: summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.DOTALL)                   # Condense multiple empty lines
+    if Prefs['synposisCleanMiscLines']:       summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)                     # Remove the line if it starts with ('* ' / '-- ' / '~ ')
+    if Prefs['synposisRemoveSummary']:        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)        # Remove all lines after this is seen
+    if Prefs['synposisCleanMultiEmptyLines']: summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense multiple empty lines
     return summary.strip(' \n')
 
 def title_case(text):
-    # Words to force lowercase in tags to follow AniDB Capitalisation Rules: https://wiki.anidb.net/Capitalisation ("no" added for romaji tags)
-    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as', 'no')
+    # Words to force lowercase in tags to follow AniDB capitalisation rules: https://wiki.anidb.net/Capitalisation (some romaji tag endings and separator words are also included)
+    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as', '4-koma', '-hime', '-kei', '-kousai', '-sama', '-warashi', 'no', 'vs', 'x')
     # Abbreviations or acronyms that should be fully capitalised
-    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm' 'ii', 'milf', 'mmf', 'mmm', 'npc' 'op', 'rpg','tbs', 'tv')
-    # Special cases where a specific capitalisation style is warranted
-    force_special = {'noitamina': 'noitaminA', 'comicfesta': 'ComicFesta'}
+    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv')
+    # Special cases where a specific capitalisation style is preferred
+    force_special = {'comicfesta': 'ComicFesta', 'D\'etat': 'd\'Etat', 'Noitamina': 'noitaminA'}
     text = re.sub(r'[\'\w\d]+\b', lambda m:m.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
     for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
     for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
