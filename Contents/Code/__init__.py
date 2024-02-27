@@ -450,14 +450,18 @@ def summary_sanitizer(summary):
     return summary.strip(' \n')
 
 def title_case(text):
-    # Words to force lowercase in tags to follow AniDB Capitalisation Rules: https://wiki.anidb.net/Capitalisation
-    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as')
+    # Words to force lowercase in tags to follow AniDB Capitalisation Rules: https://wiki.anidb.net/Capitalisation ("no" added for romaji tags)
+    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as', 'no')
     # Abbreviations or acronyms that should be fully capitalised
-    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm' 'ii', 'milf', 'mmf', 'mmm', 'op', 'tv')
+    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm' 'ii', 'milf', 'mmf', 'mmm', 'npc' 'op', 'rpg','tbs', 'tv')
+    # Special cases where a specific capitalisation style is warranted
+    force_special = {'noitamina': 'noitaminA', 'comicfesta': 'ComicFesta'}
     text = re.sub(r'[\'\w\d]+\b', lambda m:m.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
     for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
     for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
-    return text[:1].upper() + text[1:] # Force capitalise the first character no matter what
+    text = text[:1].upper() + text[1:] # Force capitalise the first character no matter what
+    for key, value in force_special.items(): text = re.sub(r'\b' + key + r'\b', value, text, flags=re.I) # Apply special cases as a last step
+    return text
 
 def try_get(arr, idx, default=''):
     try:    return arr[idx]
