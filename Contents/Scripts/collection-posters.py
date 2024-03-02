@@ -17,11 +17,12 @@ Preferences:
   - Before doing anything with this script you must enter your Plex and Shoko Server information into the Prefs below.
   - If your anime is split across multiple libraries they can all be added in a python list under "Plex_LibraryNames".
       - It must be a list to work e.g. "'Plex_LibraryNames': ['Anime Shows', 'Anime Movies']"
-  - The "Posters_Folder" setting requires double backslashes on windows e.g. "'Posters_Folder': 'M:\\Anime\\Posters'".
+  - The "Posters_Folder" and "Plex_Folder" settings require double backslashes on windows e.g. "'Posters_Folder': 'M:\\Anime\\Posters'".
+  - The "Plex_Folder" setting is the base Plex Media Server data directory (where the Metadata folder is located).
 Usage:
   - Run in a terminal (collection-posters.py) to set Plex collection posters to Shoko's or user provided ones.
-  - Append the argument 'unlock' (force-metadata.py unlock) if you want to unlock all collection posters instead.
-  - To remove posters at a later date consider unlocking then using the powerful: Plex-Image-Cleanup
+  - Append the argument 'remove' (force-metadata.py remove) if you want to remove old collection posters instead.
+      - This works by deleting everything but the newest custom poster for all collections.
 """
 
 # user preferences
@@ -34,7 +35,8 @@ Prefs = {
     'Shoko_Port': 8111,
     'Shoko_Username': 'Default',
     'Shoko_Password': '',
-    'Posters_Folder': None
+    'Posters_Folder': None,
+    'Plex_Folder': None
 }
 
 # file formats that will work with plex
@@ -49,11 +51,11 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
-# check the arguments if the user is looking to unlock posters or not
-unlock_posters = False
+# check the arguments if the user is looking to remove posters or not
+remove_posters = False
 if len(sys.argv) == 2:
-    if sys.argv[1].lower() == 'unlock': # if the first argument is 'full'
-        unlock_posters = True
+    if sys.argv[1].lower() == 'remove': # if the first argument is 'remove'
+        remove_posters = True
     else:
         print(f'{error_prefix}Failed: Invalid Argument')
         exit(1)
@@ -80,11 +82,20 @@ for library in Prefs['Plex_LibraryNames']:
         print(f'├{error_prefix}Failed', error)
         continue
 
-    # check the arguments if the user is looking to unlock posters or not
-    if unlock_posters:
-        print_f(f'├─Unlocking Posters @ {Prefs['Plex_ServerName']}/{library}')
-        for collection in anime.collections():
-            collection.unlockPoster()
+    # check the arguments if the user is looking to remove posters or not
+    if remove_posters:
+        try:
+            print_f(f'├┬Removing Posters @ {Prefs['Plex_ServerName']}/{library}')
+            for collection in anime.collections():
+                # check for multiple custom posters and delete the oldest ones
+                if len(collection.posters()) > 2:
+                    posters_path = Prefs['Plex_Folder'] + os.path.sep + collection.metadataDirectory + os.path.sep + 'Uploads' + os.path.sep + 'posters'
+                    for poster in sorted(os.listdir(posters_path))[:-1]: # list all but the newest poster
+                        print_f(f'│├─Removing: {collection.title} → {poster}')
+                        os.remove(os.path.join(posters_path,poster))
+            print_f('│└─Finished!')
+        except Exception as error:
+            print(f'│├{error_prefix}Failed', error)
     else:
         # grab a shoko api key using the credentials from the prefs
         try:
