@@ -88,6 +88,7 @@ When encountering any issues with the scanner or agent, please note that there a
 - In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
   1. Navigate to the series > More "..." Button > Unmatch
   2. Settings > Manage > Troubleshooting > Clean Bundles
+    - Note: Certain types of metadata may require "Optimize Database" too.
   3. Navigate back to the series > More "..." Button > Match > Select top result
 - If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required
 

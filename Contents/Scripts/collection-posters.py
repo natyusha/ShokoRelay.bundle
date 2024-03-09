@@ -21,7 +21,7 @@ Preferences:
   - The "Plex_Folder" setting is the base Plex Media Server data directory (where the Metadata folder is located).
 Usage:
   - Run in a terminal (collection-posters.py) to set Plex collection posters to Shoko's or user provided ones.
-  - Append the argument 'remove' (force-metadata.py remove) if you want to remove old collection posters instead.
+  - Append the argument 'clean' (force-metadata.py clean) if you want to remove old collection posters instead.
       - This works by deleting everything but the newest custom poster for all collections.
 """
 
@@ -51,11 +51,11 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
-# check the arguments if the user is looking to remove posters or not
-remove_posters = False
+# check the arguments if the user is looking to clean posters or not
+clean_posters = False
 if len(sys.argv) == 2:
-    if sys.argv[1].lower() == 'remove': # if the first argument is 'remove'
-        remove_posters = True
+    if sys.argv[1].lower() == 'clean': # if the first argument is 'clean'
+        clean_posters = True
     else:
         print(f'{error_prefix}Failed: Invalid Argument')
         exit(1)
@@ -82,10 +82,10 @@ for library in Prefs['Plex_LibraryNames']:
         print(f'├{error_prefix}Failed', error)
         continue
 
-    # check the arguments if the user is looking to remove posters or not
-    if remove_posters:
+    # if the user is looking to clean posters
+    if clean_posters:
+        print_f(f'├┬Removing Posters @ {Prefs['Plex_ServerName']}/{library}')
         try:
-            print_f(f'├┬Removing Posters @ {Prefs['Plex_ServerName']}/{library}')
             for collection in anime.collections():
                 # check for multiple custom posters and delete the oldest ones
                 if len(collection.posters()) > 2:
