@@ -162,10 +162,8 @@ class ShokoRelayAgent:
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
         tags, tags_list, content_rating, content_descriptor, descriptor_s, descriptor_v = [], None, None, '', '', ''
-        ## Temporary TagBlacklist Additions  Until PR Merged: https://github.com/ShokoAnime/ShokoServer/pull/1104
-        TagBlackListTemp = ('description needs improvement', 'fetishes', 'no english subs available', 'pic needs improvement', 'pornography', 'staff missing', 'to be moved to character', 'to be moved to episode')
         for tag in series_tags:
-            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])) and tag['Name'].lower() not in TagBlackListTemp:
+            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])):
                 tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
             if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) here: https://wiki.anidb.net/Categories:Content_Indicators
                 # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
