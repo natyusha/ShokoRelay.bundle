@@ -49,7 +49,7 @@ class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         name = media.show
 
-        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search
+        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search (non negative integers are treated as anidb ids)
         ## https://github.com/ShokoAnime/ShokoServer/issues/1105
         if name == '86': name = 'Eighty-Six'
 

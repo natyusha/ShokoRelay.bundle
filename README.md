@@ -11,6 +11,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
 	- Port
 	- Username
 	- Password
+- Restart your Plex Media Server if it was running during the previous steps
 - Add a `TV Shows` library in Plex and configure the following options under `Advanced`:
 	- Scanner: `Shoko Relay Scanner`
 	- Agent: `ShokoRelay`
@@ -38,7 +39,7 @@ This is a Plex library metadata agent/scanner written to work with anything list
     - Note: Only supported if there is a single entry for each credit to avoid incorrect metadata
   - Will apply content ratings like "TV-14", "TV-Y" etc. (if the corresponding AniDB tags are present)
 - Removes the original tag hiding options and replaces them with a tag weight system similar to what HAMA uses
-  - Note: Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68) list
+  - Note: Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/9c0ae9208479420dea3b766156435d364794e809/Shoko.Server/Utilities/TagFilter.cs#L37) list
 - Series and movies will list the Studio as Animation Work (アニメーション制作) or Work (制作)
 - Support for:
   - Files which contain more than one episode or episodes which span multiple files
@@ -88,7 +89,7 @@ When encountering any issues with the scanner or agent, please note that there a
 - In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
   1. Navigate to the series > More "..." Button > Unmatch
   2. Settings > Manage > Troubleshooting > Clean Bundles
-    - Note: Certain types of metadata may require "Optimize Database" too.
+    - Note: Certain types of metadata may require "Optimize Database" too
   3. Navigate back to the series > More "..." Button > Match > Select top result
 - If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required
 
@@ -106,6 +107,8 @@ Due to custom agent limitations certain season names which contain special files
 - Season -2 → Trailers
 - Season -3 → Parodies
 - Season -4 → Other
+
+**Note:** "[Unknown Season]" may be displayed instead of Season -1.
 
 #### Ambiguous Title Replacement
 In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows:
