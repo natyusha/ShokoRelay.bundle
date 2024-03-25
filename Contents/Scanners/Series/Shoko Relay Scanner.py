@@ -1,4 +1,4 @@
-import os, json, urllib, inspect, urllib2, logging, logging.handlers
+import os, sys, json, urllib, inspect, urllib2, logging, logging.handlers
 import Media, Stack, VideoFiles
 
 Prefs = {
@@ -73,11 +73,11 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    Log.debug('[Path]           %s', path)
-    Log.debug('[Files]          %s', files)
+    Log.debug(u'[Path]           %s', path)
+    Log.debug(u'[Files]          %s', files)
 
     for subdir in subdirs:
-        Log.debug('[Folder]         %s' % os.path.relpath(subdir, root))
+        Log.debug(u'[Folder]         %s' % os.path.relpath(subdir, root))
     Log.info('=' * 400)
 
     if files:
@@ -86,7 +86,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
         for idx, file in enumerate(files):
             try:
-                Log.info('File:            %s' % file)
+                Log.info(u'File:            %s' % file)
 
                 # Get file data using the filename
                 filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
@@ -179,7 +179,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             path = os.path.relpath(full_path, root)
             reverse_path = list(reversed(path.split(os.sep)))
 
-            Log.info('Subfolder Scan:  %s' % full_path)
+            Log.info(u'Subfolder Scan:  %s' % full_path)
 
             subdir_dirs, subdir_files = [], []
 
@@ -190,10 +190,10 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 else:
                     subdir_files.append(path_item)
 
-            if subdir_dirs: Log.info('Subdirectories:  %s' % subdir_dirs)
+            if subdir_dirs: Log.info(u'Subdirectories:  %s' % subdir_dirs)
 
             for dir in subdir_dirs:
-                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
+                Log.info(u'Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
