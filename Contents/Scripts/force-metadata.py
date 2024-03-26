@@ -128,7 +128,7 @@ for library in Prefs['Plex_LibraryNames']:
         if not collection.smart: # ignore any smart collections as they are not managed by Shoko Relay
             if collection.childCount != 0:
                 if collection.title != collection.titleSort:
-                    collection.editSortTitle(collection.title, locked=False)
+                    collection.editSortTitle(collection.title, locked=True)
                     print_f(f'│├─Correcting Sort Title: {collection.title}')
                 continue
             else:

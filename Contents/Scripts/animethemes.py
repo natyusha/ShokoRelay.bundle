@@ -80,6 +80,12 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
+# check if subprocess is running
+def is_running(pid):        
+    try: os.kill(pid, -9)
+    except OSError: return False
+    return True
+
 ## check the arguments if the user is looking for a specific op/ed, a series match offset or to batch
 theme_slug = None
 offset = 0
@@ -223,7 +229,7 @@ print_f('')
 
 # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
 try:
-    duration = int(float(subprocess.check_output('ffprobe -i temp -show_entries format=duration -v quiet -of csv="p=0"').decode('ascii').strip())) # find the duration of the song
+    duration = int(float(subprocess.check_output('ffprobe -i temp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
     if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
 except Exception as error:
     print(f'{error_prefix}──FFProbe Failed\n│ ', error)
@@ -231,7 +237,7 @@ except Exception as error:
 # playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
 if Prefs['FFplay_Enabled']:
     try:
-        ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL) # playback the theme until the script is closed
+        ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
     except Exception as error:
         print(f'{error_prefix}──FFPlay Failed\n│ ', error)
 
@@ -249,9 +255,9 @@ metadata = {
 ## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
 print_f('└┬Converting...')
 try:
-    subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3')
+    subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True)
 except Exception as error:
-    print(f' {error_prefix}─FFmpeg Failed\n │ ', error)
+    print(f' {error_prefix}─FFmpeg Failed\n │', error)
 
 ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
 if Prefs['FFplay_Enabled']:
@@ -262,8 +268,7 @@ if Prefs['FFplay_Enabled']:
         print_f('')
     except KeyboardInterrupt:
         pass
-    ffplay.kill()
-    ffplay.wait()
+    while is_running(ffplay.pid): time.sleep(.25) # wait for ffplay to be killed before deleting the temp file
 else:
     print_f(' └─Finished!')
 os.remove('temp') # delete the original file
