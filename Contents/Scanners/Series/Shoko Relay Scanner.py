@@ -33,18 +33,12 @@ def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '')
     filename = 'Shoko Relay Scanner.log'
     format = '%(asctime)s %(message)s'
-    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1, encoding='utf-8')
+    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1)
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
     Log.addHandler(handler)
 
 set_logging() # Start logger
-
-# Force filesystem encoding for non unicode paths
-def sanitize_paths(p):
-    if not isinstance(p, unicode):
-        return p.decode(sys.getfilesystemencoding())
-    return p
 
 def GetApiKey():
     global API_KEY
@@ -79,17 +73,11 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    # Sanitize paths
-    path = sanitize_paths(path)
-    files = [sanitize_paths(p) for p in files]
-    subdirs = [sanitize_paths(p) for p in subdirs]
-    if root is not None: root = sanitize_paths(root)
-
-    Log.debug(u'[Path]           %s', path)
-    Log.debug(u'[Files]          %s', files)
+    Log.debug('[Path]           %s', path)
+    Log.debug('[Files]          %s', files)
 
     for subdir in subdirs:
-        Log.debug(u'[Folder]         %s' % os.path.relpath(subdir, root))
+        Log.debug('[Folder]         %s' % os.path.relpath(subdir, root))
     Log.info('=' * 400)
 
     if files:
@@ -98,7 +86,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
         for idx, file in enumerate(files):
             try:
-                Log.info(u'File:            %s' % file)
+                Log.info('File:            %s' % file)
 
                 # Get file data using the filename
                 filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
@@ -191,7 +179,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             path = os.path.relpath(full_path, root)
             reverse_path = list(reversed(path.split(os.sep)))
 
-            Log.info(u'Subfolder Scan:  %s' % full_path)
+            Log.info('Subfolder Scan:  %s' % full_path)
 
             subdir_dirs, subdir_files = [], []
 
@@ -202,10 +190,10 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 else:
                     subdir_files.append(path_item)
 
-            if subdir_dirs: Log.info(u'Subdirectories:  %s' % subdir_dirs)
+            if subdir_dirs: Log.info('Subdirectories:  %s' % subdir_dirs)
 
             for dir in subdir_dirs:
-                Log.info(u'Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
+                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
