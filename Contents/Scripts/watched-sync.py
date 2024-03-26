@@ -76,7 +76,7 @@ if Prefs['Plex_ExtraUsers'] is not None:
 
 # grab a shoko api key using the credentials from the prefs
 try:
-    auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+    auth = requests.post(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
 except Exception:
     print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
     exit(1)
@@ -95,7 +95,7 @@ for account in accounts:
 
     # loop through the configured libraries
     for library in Prefs['Plex_LibraryNames']:
-        print_f(f'├┬Querying: {account} @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Querying: {account} @ {Prefs["Plex_ServerName"]}/{library}')
         try:
             anime = plex.library.section(library)
         except Exception as error:
@@ -106,12 +106,12 @@ for account in accounts:
         for episode in anime.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
             for episode_path in episode.iterParts():
                 filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
-                path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth['apikey']}').json()
+                path_ends_with = requests.get(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
                 if path_ends_with[0]['Watched'] == None:
                     print_f(f'│├─Relaying: {filepath} → {episode.title}')
                     try:
                         for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
-                            requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={auth['apikey']}')
+                            requests.post(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={auth["apikey"]}')
                     except Exception:
                         print(f'│├{error_prefix}─Failed: Make sure that the video file listed above is matched by Shoko')
         print_f('│└─Finished!')

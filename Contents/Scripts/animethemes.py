@@ -118,7 +118,7 @@ if theme_slug is not None:
 
 # grab a shoko api key using the credentials from the prefs
 try:
-    auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+    auth = requests.post(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
 except Exception:
     print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
     exit(1)
@@ -143,7 +143,7 @@ except Exception:
 print_f('├┬Shoko')
 print_f(f'│├─File: {filepath}')
 # get the anidbid of a series by using the first filename present in its folder
-path_ends_with = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth['apikey']}').json()
+path_ends_with = requests.get(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
 try:
     try:
         anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
@@ -231,24 +231,27 @@ except Exception as error:
 # playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
 if Prefs['FFplay_Enabled']:
     try:
-        ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs['FFplay_Volume']} temp', stdout=subprocess.DEVNULL) # playback the theme until the script is closed
+        ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL) # playback the theme until the script is closed
     except Exception as error:
         print(f'{error_prefix}──FFPlay Failed\n│ ', error)
 
+# escape double quotes for titles/artists/albums which contain them
+def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
+
 # ffmpeg metadata with double quotes escaped for something like "Oshi no Ko"
 metadata = {
-    'title':    f' -metadata title="{song_title.replace('"','\\\"')}"',
+    'title':    f' -metadata title="{escape_quotes(song_title)}"',
     'subtitle': f' -metadata TIT3="{slug}"',
-    'artist':   f' -metadata artist="{artist_name.replace('"','\\\"')}"',
-    'album':    f' -metadata album="{anime_name.replace('"','\\\"')}"'
+    'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
+    'album':    f' -metadata album="{escape_quotes(anime_name)}"'
 }
 
 ## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
 print_f('└┬Converting...')
 try:
-    subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata['title']}{metadata['subtitle']}{metadata['artist']}{metadata['album']} Theme.mp3')
+    subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3')
 except Exception as error:
-    print(f'{error_prefix}└─FFmpeg Failed\n│ ', error)
+    print(f' {error_prefix}─FFmpeg Failed\n │ ', error)
 
 ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
 if Prefs['FFplay_Enabled']:

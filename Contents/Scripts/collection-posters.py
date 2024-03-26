@@ -84,7 +84,7 @@ for library in Prefs['Plex_LibraryNames']:
 
     # if the user is looking to clean posters
     if clean_posters:
-        print_f(f'├┬Removing Posters @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Removing Posters @ {Prefs["Plex_ServerName"]}/{library}')
         try:
             for collection in anime.collections():
                 # check for multiple custom posters and delete the oldest ones
@@ -99,7 +99,7 @@ for library in Prefs['Plex_LibraryNames']:
     else:
         # grab a shoko api key using the credentials from the prefs
         try:
-            auth = requests.post(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+            auth = requests.post(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
         except Exception:
             print(f'└{error_prefix}Failed: Unable to Connect to Shoko Server')
             exit(1)
@@ -117,7 +117,7 @@ for library in Prefs['Plex_LibraryNames']:
                 print(f'└{error_prefix}Failed', error)
                 exit(1)
 
-        print_f(f'├┬Applying Posters @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Applying Posters @ {Prefs["Plex_ServerName"]}/{library}')
         # loop through plex collections grabbing their names to compare to shoko's group names and user defined poster names
         for collection in anime.collections():
             # check for user defined posters first
@@ -139,10 +139,10 @@ for library in Prefs['Plex_LibraryNames']:
             # fallback to shoko group posters if no user defined psoter
             if fallback:
                 try:
-                    group_search = requests.get(f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth['apikey']}').json()
+                    group_search = requests.get(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth['apikey']}').json()
                     shoko_poster = group_search['List'][0]['Images']['Posters'][0]
-                    poster_url = f'http://{Prefs['Shoko_Hostname']}:{Prefs['Shoko_Port']}/api/v3/Image/' + shoko_poster['Source'] + '/Poster/' + shoko_poster['ID']
-                    print_f(f'│├─Relaying: Shoko/{shoko_poster['Source']}/{shoko_poster['ID']} → {collection.title}')
+                    poster_url = f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/Image/' + shoko_poster['Source'] + '/Poster/' + shoko_poster['ID']
+                    print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
                 except Exception as error:
                     print(f'│├{error_prefix}─Failed', error)

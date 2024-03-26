@@ -40,6 +40,12 @@ def set_logging(foldername='', filename='', format=''):
 
 set_logging() # Start logger
 
+# Force filesystem encoding for non unicode paths
+def sanitize_paths(p):
+    if not isinstance(p, unicode):
+        return p.decode(sys.getfilesystemencoding())
+    return p
+
 def GetApiKey():
     global API_KEY
     if not API_KEY:
@@ -73,6 +79,12 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
+    # Sanitize paths
+    path = sanitize_paths(path)
+    files = [sanitize_paths(p) for p in files]
+    subdirs = [sanitize_paths(p) for p in subdirs]
+    if root is not None: root = sanitize_paths(root)
+
     Log.debug(u'[Path]           %s', path)
     Log.debug(u'[Files]          %s', files)
 

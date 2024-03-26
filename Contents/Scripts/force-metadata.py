@@ -81,7 +81,7 @@ for library in Prefs['Plex_LibraryNames']:
     if full_clean:
         """ not fully compatible with files that were added through shoko relay scanner's subfolder scanner queue
         # split apart any merged series to allow each part to receive updated metadata
-        print_f(f'├┬Queueing Splits @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Queueing Splits @ {Prefs["Plex_ServerName"]}/{library}')
         for series in anime.search(title=''):
             print_f(f'│├─Splitting: {series.title}')
             series.split()
@@ -89,7 +89,7 @@ for library in Prefs['Plex_LibraryNames']:
         """
 
         # unmatch all anime to clear out bad metadata
-        print_f(f'├┬Queueing Unmatches @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Queueing Unmatches @ {Prefs["Plex_ServerName"]}/{library}')
         for series in anime.search(title=''):
             print_f(f'│├─Unmatch: {series.title}')
             series.unmatch()
@@ -101,7 +101,7 @@ for library in Prefs['Plex_LibraryNames']:
         input('│└─Clean Bundles Queued: Press Enter to continue once Plex is finished...')
 
         # fix match for all anime and grab fresh metadata
-        print_f(f'├┬Queueing Matches @ {Prefs['Plex_ServerName']}/{library}')
+        print_f(f'├┬Queueing Matches @ {Prefs["Plex_ServerName"]}/{library}')
         for series in anime.search(title=''):
             print_f(f'│├─Match: {series.title}')
             relay = series.matches(agent='shokorelay', title=series.title, year='')
@@ -114,7 +114,7 @@ for library in Prefs['Plex_LibraryNames']:
         input('│└─Matching Queued: Press Enter to continue once Plex is finished...')
 
     # rename negative seasons to their correct names
-    print_f(f'├┬Renaming Negative Seasons @ {Prefs['Plex_ServerName']}/{library}')
+    print_f(f'├┬Renaming Negative Seasons @ {Prefs["Plex_ServerName"]}/{library}')
     for season in anime.searchSeasons(title=''):
         if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
         elif season.title == 'Season -2': season.editTitle('Trailers')
@@ -123,7 +123,7 @@ for library in Prefs['Plex_LibraryNames']:
     print_f('│└─Finished Renaming Seasons!')
 
     # clear any empty collections that are left over and set the sort title to match the title
-    print_f(f'├┬Checking Collections @ {Prefs['Plex_ServerName']}/{library}')
+    print_f(f'├┬Checking Collections @ {Prefs["Plex_ServerName"]}/{library}')
     for collection in anime.collections():
         if not collection.smart: # ignore any smart collections as they are not managed by Shoko Relay
             if collection.childCount != 0:
