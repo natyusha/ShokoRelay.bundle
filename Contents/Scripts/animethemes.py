@@ -81,7 +81,7 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 def print_f(text): print(text, flush=True)
 
 # check if subprocess is running
-def is_running(pid):        
+def is_running(pid):
     try: os.kill(pid, -9)
     except OSError: return False
     return True
@@ -224,51 +224,64 @@ print_f(f'│├─{slug}: {artist_display}{song_title}')
 def progress(count, block_size, total_size): # track the progress with a simple reporthook
     percent = int(count*block_size*100/total_size)
     print(f'│└─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
-urllib.request.urlretrieve(audioURL, 'temp', reporthook=progress)
+try:
+    urllib.request.urlretrieve(audioURL, 'temp', reporthook=progress)
+except Exception as error:
+    print(f'{error_prefix}──Failed: Download Incomplete\n', error)
+    exit(1)
 print_f('')
 
-# grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
-try:
-    duration = int(float(subprocess.check_output('ffprobe -i temp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
-    if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
-except Exception as error:
-    print(f'{error_prefix}──FFProbe Failed\n│ ', error)
+# label for cleaning up files and skipping other commands if ffprobe fails
+class clean(Exception): pass
 
-# playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
-if Prefs['FFplay_Enabled']:
+try:
+    # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
     try:
-        ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+        duration = int(float(subprocess.check_output('ffprobe -i temp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
+        if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
-        print(f'{error_prefix}──FFPlay Failed\n│ ', error)
+        print(f'{error_prefix}──FFProbe Failed\n  ', error)
+        raise clean()
 
-# escape double quotes for titles/artists/albums which contain them
-def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
+    # playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
+    if Prefs['FFplay_Enabled']:
+        try:
+            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+        except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
+            print(f'{error_prefix}──FFPlay Failed\n │', error)
 
-# ffmpeg metadata with double quotes escaped for something like "Oshi no Ko"
-metadata = {
-    'title':    f' -metadata title="{escape_quotes(song_title)}"',
-    'subtitle': f' -metadata TIT3="{slug}"',
-    'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
-    'album':    f' -metadata album="{escape_quotes(anime_name)}"'
-}
+    # escape double quotes for titles/artists/albums which contain them
+    def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
 
-## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
-print_f('└┬Converting...')
-try:
-    subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True)
-except Exception as error:
-    print(f' {error_prefix}─FFmpeg Failed\n │', error)
+    # ffmpeg metadata for easily checking what a Theme.mp3 file contains
+    metadata = {
+        'title':    f' -metadata title="{escape_quotes(song_title)}"',
+        'subtitle': f' -metadata TIT3="{slug}"',
+        'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
+        'album':    f' -metadata album="{escape_quotes(anime_name)}"'
+    }
 
-## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
-if Prefs['FFplay_Enabled']:
+    ## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
     try:
-        for t in range(duration):
-            print(f' └─Finished! Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
-            time.sleep(1)
-        print_f('')
-    except KeyboardInterrupt:
-        pass
-    while is_running(ffplay.pid): time.sleep(.25) # wait for ffplay to be killed before deleting the temp file
-else:
-    print_f(' └─Finished!')
+        print_f('└┬Converting...')
+        subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
+        status = ' └─Finished!'
+    except Exception as error:
+        print(f' {error_prefix}─FFmpeg Failed\n  ', error)
+        status = ' Failed!'
+
+    ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
+    if Prefs['FFplay_Enabled']:
+        try:
+            for t in range(duration):
+                print(f'{status} Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
+                time.sleep(1)
+            print_f('')
+        except KeyboardInterrupt:
+            pass
+        while is_running(ffplay.pid): time.sleep(.25) # wait for ffplay to be killed before deleting the temp file
+    else:
+        print_f(f'{status}')
+except clean:
+    pass
 os.remove('temp') # delete the original file
