@@ -47,14 +47,17 @@ if len(sys.argv) == 2:
 
 # authenticate and connect to the Plex server/library specified
 try:
-    admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
+    if cfg.Plex['X-Plex-Token']:
+        admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
+    else:
+        admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
 except Exception:
     print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
     exit(1)
 
 # add the admin account to a list then append any other users to it
 accounts = [admin]
-if cfg.Plex['ExtraUsers'] is not None:
+if cfg.Plex['ExtraUsers']:
     try:
         extra_users = [admin.user(username) for username in cfg.Plex['ExtraUsers']]
         data = [admin.query(f'https://plex.tv/api/home/users/{user.id}/switch', method=admin._session.post) for user in extra_users]

@@ -11,8 +11,11 @@ Plex = {
     'ExtraUsers': None,
     # DataFolder requires double backslashes on windows e.g. "'DataFolder': '%LOCALAPPDATA%\\Plex Media Server',".
     'DataFolder': None,
-    # PostersFolder requires double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters'".
-    'PostersFolder': None
+    # PostersFolder requires double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters',".
+    'PostersFolder': None,
+    # Alternate Plex authentication method (primarily for those using two-factor authentication)
+    # https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
+    'X-Plex-Token': ''
 }
 
 ## Shoko Server Configuration

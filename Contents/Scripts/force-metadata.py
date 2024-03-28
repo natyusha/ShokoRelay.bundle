@@ -50,7 +50,10 @@ if len(sys.argv) == 2:
 
 # authenticate and connect to the Plex server/library specified
 try:
-    admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
+    if cfg.Plex['X-Plex-Token']:
+        admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
+    else:
+        admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
 except Exception:
     print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
     exit(1)
