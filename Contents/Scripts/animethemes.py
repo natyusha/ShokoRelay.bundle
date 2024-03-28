@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import os, re, requests, subprocess, sys, time, urllib
+import os, re, sys, time, urllib, requests, subprocess
+import config as cfg
 
 r"""
 Description:
@@ -10,14 +11,14 @@ Author:
 Requirements:
   - Python 3.7+, Requests Library (pip install requests), FFmpeg, Shoko Server
 Preferences:
-  - Before doing anything with this script you must enter your Shoko information into the Prefs below.
+  - Before doing anything with this script you must enter your Shoko credentials into config.py.
   - To allow the Theme.mp3 files to be used by Plex you must also enable Local Media Assets for whatever library has your Anime in it.
 Usage:
   - Run in a terminal with the working directory set to a folder containing an anime series.
   - If the anime has been matched by Shoko Server it will grab the anidbID and use that to match with an AnimeThemes anime entry.
 Behaviour:
   - By default this script will download the first OP (or ED if there is none) for the given series.
-  - If FFplay_Enabled is set to True in Prefs the song will begin playing in the background which helps with picking the correct theme.
+  - If FFplay_Enabled is set to True in config.py the song will begin playing in the background which helps with picking the correct theme.
   - FFmpeg will then encode it as a 320kbps mp3 and save it as Theme.mp3 in the anime folder.
   - FFmpeg will also apply the following metadata:
       - Title (with TV Size or not)
@@ -27,7 +28,7 @@ Behaviour:
   - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
   - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
-      - If Batch_Overwrite is set to true in Prefs the batch argument will instead overwrite existing Theme.mp3 files
+      - If BatchOverwrite is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
   - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
@@ -47,17 +48,6 @@ Examples (using bash / cmd respectively and assuming that the script and ffmpeg 
       cd "/PathToBleach"; animethemes.py op9
       cd /d "X:\PathToBleach" && animethemes.py op9
 """
-
-# user preferences
-Prefs = {
-    'Shoko_Hostname': '127.0.0.1',
-    'Shoko_Port': 8111,
-    'Shoko_Username': 'Default',
-    'Shoko_Password': '',
-    'Batch_Overwrite': False,
-    'FFplay_Enabled': True,
-    'FFplay_Volume': '10'
-}
 
 # file formats that will work with the script (uses shoko's defaults)
 file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg', '.mk3d', '.m4v')
@@ -90,6 +80,7 @@ def is_running(pid):
 theme_slug = None
 offset = 0
 batch = False
+FFplay = cfg.AnimeThemes['FFplay_Enabled']
 # if one argument supplied check if it is a theme slug, offset or batch
 if len(sys.argv) == 2:
     if re.match('^\\d$', sys.argv[1]): # if the first argument is a single digit set it as the offset
@@ -97,7 +88,7 @@ if len(sys.argv) == 2:
     elif re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I): # otherwise check if it is a viable slug
         theme_slug = sys.argv[1].upper()
     elif sys.argv[1].lower() == 'batch': # disable ffplay when running in batch mode and pad the console output
-        Prefs['FFplay_Enabled'] = False
+        FFplay = False
         batch = True
         print('')
     else:
@@ -124,7 +115,7 @@ if theme_slug is not None:
 
 # grab a shoko api key using the credentials from the prefs
 try:
-    auth = requests.post(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/auth', json={'user': Prefs['Shoko_Username'], 'pass': Prefs['Shoko_Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+    auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
 except Exception:
     print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
     exit(1)
@@ -137,7 +128,7 @@ print_f('┌Plex Theme.mp3 Generator')
 folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
 files = []
 for file in os.listdir('.'):
-    if batch == True and file.lower() == 'theme.mp3' and not Prefs['Batch_Overwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
+    if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
         print(f'{error_prefix}─Skipped: Theme.mp3 already exists in {folder}')
         exit(1)
     if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
@@ -149,7 +140,7 @@ except Exception:
 print_f('├┬Shoko')
 print_f(f'│├─File: {filepath}')
 # get the anidbid of a series by using the first filename present in its folder
-path_ends_with = requests.get(f'http://{Prefs["Shoko_Hostname"]}:{Prefs["Shoko_Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
+path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
 try:
     try:
         anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
@@ -244,9 +235,9 @@ try:
         raise clean()
 
     # playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
-    if Prefs['FFplay_Enabled']:
+    if FFplay:
         try:
-            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {Prefs["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
         except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
             print(f'{error_prefix}──FFPlay Failed\n │', error)
 
@@ -271,7 +262,7 @@ try:
         status = ' Failed!'
 
     ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
-    if Prefs['FFplay_Enabled']:
+    if FFplay:
         try:
             for t in range(duration):
                 print(f'{status} Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
