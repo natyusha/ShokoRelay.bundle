@@ -51,11 +51,20 @@ This is a Plex library metadata agent/scanner written to work with anything list
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ### Scripts
+- Each script contains a description which has far more information about functionality and usage than the synopses below.
 - The following scripts all require [Python 3](https://www.python.org/downloads/) to be installed.
 - Some of them also require additional Python Packages which can installed using [pip](https://pypi.org/project/pip/):
 	1. [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi`
 	2. [Requests](https://pypi.org/project/requests/) `pip install requests`
 - The animethemes script has the additional requirement of: [FFmpeg](https://ffmpeg.org/)
+- When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod.
+```
+- DOCKER_MODS=linuxserver/mods:universal-package-install
+- INSTALL_PIP_PACKAGES=plexapi|requests
+- INSTALL_PACKAGES=ffmpeg
+```
+
+**Note:** In order for the scripts to function Plex and Shoko credentials need to be entered into the `config.py` file contained in the Scripts folder.
 
 #### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
