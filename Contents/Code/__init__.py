@@ -81,14 +81,14 @@ class ShokoRelayAgent:
         series_titles = {}
         for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
-        series_titles['shoko'] = series_data['Name']
+        series_titles['shoko'] = series_data['Name'] # Add shoko's preferred series title to the dict
 
         # Get Title according to the language preference
         for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
             lang = lang.strip()
             title = try_get(series_titles, lang.lower(), None)
             if title: break
-        if title is None: title = series_titles['shoko'] # If not found, fallback to preferred title in Shoko
+        if title is None: title = series_titles['shoko'] # If not found, fallback to shoko's preferred series title
 
         metadata.title = title
         Log('Title:                         %s' % title)
@@ -311,6 +311,7 @@ class ShokoRelayAgent:
             # Make a dict of language -> title for all episode titles in the anidb episode data
             episode_titles = {}
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
+            episode_titles['shoko'] = episode_data['Name'] # Add shoko's preferred episode title to the dict
 
             # Get episode Title according to the language preference
             title_source = '(AniDB):       '
@@ -318,7 +319,7 @@ class ShokoRelayAgent:
                 lang = lang.strip()
                 title = try_get(episode_titles, lang.lower(), None)
                 if title: break
-            if title is None: title = episode_titles['en'] # If not found, fallback to EN title
+            if title is None: title = episode_titles['shoko'] # If not found, fallback to shoko's preferred episode title
 
             # Replace Ambiguous Title with series Title
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
@@ -338,8 +339,8 @@ class ShokoRelayAgent:
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
-            # TvDB episode title fallback
-            if title.startswith('Episode ') and try_get(episode_data['TvDB'], 'Title', None):
+            # TvDB episode title fallback (if the episode title is Episode/Volume # on AniDB) excluding Episode/Volume 0
+            if re.match(r'^(?:Episode|Volume) [1-9][0-9]*$', title) and try_get(episode_data['TvDB'], 'Title', None):
                 title = try_get(episode_data['TvDB'], 'Title')
                 title_source = '(TvDB):        '
 

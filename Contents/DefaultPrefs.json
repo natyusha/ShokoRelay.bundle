@@ -38,23 +38,23 @@
 
     {
         "id": "SeriesTitleLanguagePreference",
-        "label": "The preferred languages for the series title, separated by a comma. Set to \"SHOKO\" to use the preferred title",
+        "label": "The preferred languages for the series title, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title",
         "type": "text",
         "default": "SHOKO, X-JAT, EN"
     },
 
     {
         "id": "SeriesAltTitleLanguagePreference",
-        "label": "The preferred languages for the series alt title, separated by a comma. Set to \"SHOKO\" to use the preferred title",
+        "label": "The preferred languages for the series alt title, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title",
         "type": "text",
         "default": "EN, X-JAT, SHOKO"
     },
 
     {
         "id": "EpisodeTitleLanguagePreference",
-        "label": "The preferred languages for episode titles, separated by a comma",
+        "label": "The preferred languages for episode titles, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title",
         "type": "text",
-        "default": "EN, X-JAT"
+        "default": "SHOKO, EN, X-JAT"
     },
 
     {
@@ -77,13 +77,6 @@
         "label": "Enable using assumed content ratings",
         "type": "bool",
         "default": true
-    },
-
-    {
-        "id": "customThumbs",
-        "label": "Use Shoko's thumbnails",
-        "type": "bool",
-        "default": false
     },
 
     {
@@ -119,5 +112,12 @@
         "label": "Synopsis: Collapse excessive empty lines",
         "type": "bool",
         "default": true
+    },
+
+    {
+        "id": "customThumbs",
+        "label": "Use Shoko's episode thumbnails",
+        "type": "bool",
+        "default": false
     }
 ]
