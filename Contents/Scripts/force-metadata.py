@@ -5,7 +5,7 @@ import sys
 
 r"""
 Description:
-  - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's cacheing or other issues.
+  - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's caching or other issues.
   - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names and collection sort titles.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
   - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
