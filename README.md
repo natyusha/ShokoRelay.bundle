@@ -51,7 +51,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ## Scripts
-Each script contains a description which has far more information about functionality and usage than the synopses below. There are also several dependencies depending on the script:
+Each script has detailed information about its functionality and usage in the collapsible "Additional Information" sections below. There are also several dependencies depending on the script:
 - [Python 3](https://www.python.org/downloads/) (all scripts)
 - [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi` (collection-posters.py, force-metadata.py, watched-sync.py)
 - [Requests](https://pypi.org/project/requests/) `pip install requests` (animethemes.py, collection-posters.py, watched-sync.py)
@@ -61,32 +61,160 @@ Each script contains a description which has far more information about function
 > In order for the scripts to function your Plex and Shoko credentials need to be entered into the `config.py` file contained in the Scripts folder.
 
 > [!TIP]
-> When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod.
-```
-- DOCKER_MODS=linuxserver/mods:universal-package-install
-- INSTALL_PIP_PACKAGES=plexapi|requests
-- INSTALL_PACKAGES=ffmpeg
+> When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod. For ease of use adding the Scripts folder to the PATH is also recommended.
+```yaml
+environment:
+  - DOCKER_MODS=linuxserver/mods:universal-package-install
+  - INSTALL_PIP_PACKAGES=plexapi|requests
+  - INSTALL_PACKAGES=ffmpeg
 ```
 
-#### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
+### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
 - The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.
+<details>
+<summary><b>Additional Information</b></summary><br>
 
-#### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)
+**Requirements:**
+- Python 3.7+, Requests Library (pip install requests), FFmpeg, Shoko Server
+
+**Preferences:**
+- Before doing anything with this script you must enter your Shoko credentials into `config.py`.
+- To allow the Theme.mp3 files to be used by Plex you must also enable Local Media Assets for whatever library has your Anime in it.
+
+**Usage:**
+- Run in a terminal with the working directory set to a folder containing an anime series.
+- If the anime has been matched by Shoko Server it will grab the anidbID and use that to match with an AnimeThemes anime entry.
+
+**Behaviour:**
+- By default this script will download the first OP (or ED if there is none) for the given series.
+- If FFplay_Enabled is set to True in config.py the song will begin playing in the background which helps with picking the correct theme.
+- FFmpeg will then encode it as a 320kbps mp3 and save it as Theme.mp3 in the anime folder.
+- FFmpeg will also apply the following metadata:
+  - Title (with TV Size or not)
+  - Artist (if available)
+  - Album (as source anime)
+  - Subtitle (as OP/ED number + the version if there are multiple)
+- If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
+- For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
+- When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
+    - If BatchOverwrite is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
+
+**Arguments:**
+- `animethemes.py slug offset` OR `animethemes.py batch`
+- slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
+- offset: a single digit number which must be the second argument if the slug is provided
+- batch: must be the sole argument and is simply entered as 'batch'
+
+**Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):**
+- Library Batch Processing
+  - `for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done`
+  - `for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch`
+- Fix 'Mushoku Tensei II: Isekai Ittara Honki Dasu' Matching to Episode 0 (offset to the next animethemes match)
+  - `cd "/PathToMushokuTenseiII"; animethemes.py 1`
+  - `cd /d "X:\PathToMushokuTenseiII" && animethemes.py 1`
+- Same as above but download the second ending instead of the default OP
+  - `cd "/PathToMushokuTenseiII"; animethemes.py ed2 1`
+  - `cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1`
+- Download 9th Opening of Bleach
+  - `cd "/PathToBleach"; animethemes.py op9`
+  - `cd /d "X:\PathToBleach" && animethemes.py op9`
+
+</details>
+
+### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)
 - This script uses the Python-PlexAPI and Shoko Server to apply posters to the collections in Plex.
 - It will look for posters in a user defined folder and if none are found take the default poster from the corresponding Shoko group.
+  - Any Posters in the folder must have the same name as their respective collection name in Plex.
+  - The following characters must be stripped from the filenames: \ / : * ? " < > |
+  - The accepted file extension are: jpg / jpeg / png / tbn
+<details>
+<summary><b>Additional Information</b></summary><br>
 
-#### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
+**Requirements:**
+  - Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, ShokoRelay, Shoko Server
+
+**Preferences:**
+- Before doing anything with this script you must enter your Plex and Shoko Server credentials into `config.py`.
+- If your anime is split across multiple libraries they can all be added in a python list under "LibraryNames".
+  - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
+- The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. `'PostersFolder': 'M:\\Anime\\Posters'`.
+  - The "DataFolder" setting is the base [Plex Media Server Data Directory](https://support.plex.tv/articles/202915258-where-is-the-plex-media-server-data-directory-located/) (where the Metadata folder is located).
+  - The "PostersFolder" setting is the folder containing any custom collection posters.
+
+**Usage:**
+- Run in a terminal `collection-posters.py` to set Plex collection posters to Shoko's or user provided ones.
+- Append the argument 'clean' `force-metadata.py clean` if you want to remove old collection posters instead.
+  - This works by deleting everything but the newest custom poster for all collections.
+
+</details>
+
+### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
 - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's caching or other issues.
 - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names and collection sort titles.
 - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
+- Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
+  - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
+  - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
+<details>
+<summary><b>Additional Information</b></summary><br>
 
-#### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)
+**Requirements:**
+- Python 3.7+, Python-PlexAPI (pip install plexapi), Plex, ShokoRelay, Shoko Server
+
+**Preferences:**
+- Before doing anything with this script you must enter your Plex credentials into `config.py`.
+- If your anime is split across multiple libraries they can all be added in a python list under Plex "LibraryNames".
+  - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
+
+**Usage:**
+- Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons and normalise sort titles.
+- Append the argument 'full' `force-metadata.py full` if you want to do the time consuming full metadata clean up.
+
+**Behaviour:**
+- This script will ignore locked fields/posters assuming that the user wants to keep them intact.
+- Manually merged series will not be split apart and may need to be handled manually to correctly refresh their metadata.
+- If the main title of an anime was changed on AniDB or overridden in Shoko after it was first scanned into Plex it might fail to match using this method.
+  - In these cases the original title will be output to the console for the user to fix with a Plex dance or manual match.
+- Video preview thumbnails and watched states are maintained with this script (unless an anime encounters the above naming issue).
+- Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
+- The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
+- All Smart Collection are ignored as they are not managed by Shoko Relay
+
+</details>
+
+### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)
 - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to Shoko or Shoko to Plex.
 - If something is marked as watched in Plex it will also be marked as watched in Shoko and AniDB.
 - This was created due to various issues with Plex and Shoko's built in watched status syncing.
   1. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
   2. Shoko's "Sync Plex Watch Status" command [doesn't work](https://github.com/ShokoAnime/ShokoServer/issues/1086) with cross platform setups.
+<details>
+<summary><b>Additional Information</b></summary><br>
+
+**Requirements:**
+- Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, ShokoRelay, Shoko Server
+
+**Preferences:**
+- Before doing anything with this script you must enter your Plex and Shoko Server credentials into `config.py`.
+- If your anime is split across multiple libraries they can all be added in a python list under Plex "LibraryNames".
+  - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
+- If you want to track watched states from managed/home accounts on your Plex server you can add them to Plex "ExtraUsers" following the same list format as above.
+  - Leave it as "None" otherwise.
+
+**Usage:**
+- Run in a terminal `watched-sync.py` to sync watched states from Plex to Shoko.
+- Append a relative date suffix as an argument to narrow down the time frame and speed up the process:
+  - `watched-sync.py 2w` would return results from the last 2 weeks
+  - `watched-sync.py 3d` would return results from the last 3 days
+- The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
+- Append the argument 'import' `watched-sync.py import` if you want to sync watched states from Shoko to Plex instead.
+  - The script will ask for (Y/N) confirmation for each Plex user that has been configured.
+
+**Behaviour:**
+- Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
+
+</details>
 
 ## Notes
 ### Troubleshooting

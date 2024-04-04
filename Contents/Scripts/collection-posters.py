@@ -19,7 +19,7 @@ Preferences:
   - If your anime is split across multiple libraries they can all be added in a python list under "LibraryNames".
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
   - The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters'".
-      - The "DataFolder" setting is the base Plex Media Server data directory (where the Metadata folder is located).
+      - The "DataFolder" setting is the base Plex Media Server Data Directory (where the Metadata folder is located).
       - The "PostersFolder" setting is the folder containing any custom collection posters.
 Usage:
   - Run in a terminal (collection-posters.py) to set Plex collection posters to Shoko's or user provided ones.
