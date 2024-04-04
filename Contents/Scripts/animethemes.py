@@ -142,15 +142,11 @@ print_f(f'│├─File: {filepath}')
 # get the anidbid of a series by using the first filename present in its folder
 path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
 try:
-    try:
-        anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
-    except Exception as error:
-        print(f'{error_prefix}└─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
-        exit(1)
-    print_f(f'│└─URL: https://anidb.net/anime/{str(anidbID)}')
+    anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
 except Exception as error:
-    print(f'{error_prefix}└─Failed: Bad response from Shoko Server (Try Checking your login credentials in the script)\n', error)
+    print(f'{error_prefix}└─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
     exit(1)
+print_f(f'│└─URL: https://anidb.net/anime/{str(anidbID)}')
 
 ## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
 ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
