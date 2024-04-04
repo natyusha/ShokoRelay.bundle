@@ -21,7 +21,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - The Shoko Server Port
   - Collections: `Hide items which are in collections`
   - Seasons: `Hide for single-season series`
-- In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
+- In Plex Settings: `Settings` > `Agents` > `Shows` > `ShokoRelay` move the following entry to the top of the list and enable it:
   - [x] Local Media Assets (TV)
 
 ## Changes from Shoko Metadata
@@ -80,7 +80,8 @@ environment:
 
 **Preferences:**
 - Before doing anything with this script you must enter your Shoko credentials into `config.py`.
-- To allow the Theme.mp3 files to be used by Plex you must also enable Local Media Assets for whatever library has your Anime in it.
+- To allow Theme.mp3 files to be used by Plex you must also enable "Local Media Assets" for the libraries that have your Anime in it.
+  - The "Play Theme Music" option also has to be enabled in the settings for the Plex client.
 
 **Usage:**
 - Run in a terminal with the working directory set to a folder containing an anime series.
@@ -88,7 +89,7 @@ environment:
 
 **Behaviour:**
 - By default this script will download the first OP (or ED if there is none) for the given series.
-- If FFplay_Enabled is set to True in config.py the song will begin playing in the background which helps with picking the correct theme.
+- If "FFplay_Enabled" is set to True in `config.py` the song will begin playing in the background which helps with picking the correct theme.
 - FFmpeg will then encode it as a 320kbps mp3 and save it as Theme.mp3 in the anime folder.
 - FFmpeg will also apply the following metadata:
   - Title (with TV Size or not)
@@ -97,20 +98,20 @@ environment:
   - Subtitle (as OP/ED number + the version if there are multiple)
 - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
 - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
-- When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
-    - If BatchOverwrite is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
+- When running this on multiple folders at once it is recommended to add the "batch" argument which disables audio playback and skips folders already containing a Theme.mp3 file.
+    - If "BatchOverwrite" is set to true in `config.py` the batch argument will instead overwrite existing Theme.mp3 files
 
 **Arguments:**
 - `animethemes.py slug offset` OR `animethemes.py batch`
-- slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
+- slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
 - offset: a single digit number which must be the second argument if the slug is provided
-- batch: must be the sole argument and is simply entered as 'batch'
+- batch: must be the sole argument and is simply entered as "batch"
 
 **Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):**
 - Library Batch Processing
   - `for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done`
   - `for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch`
-- Fix 'Mushoku Tensei II: Isekai Ittara Honki Dasu' Matching to Episode 0 (offset to the next animethemes match)
+- Fix "Mushoku Tensei II: Isekai Ittara Honki Dasu" Matching to Episode 0 (offset to the next animethemes match)
   - `cd "/PathToMushokuTenseiII"; animethemes.py 1`
   - `cd /d "X:\PathToMushokuTenseiII" && animethemes.py 1`
 - Same as above but download the second ending instead of the default OP
@@ -119,15 +120,12 @@ environment:
 - Download 9th Opening of Bleach
   - `cd "/PathToBleach"; animethemes.py op9`
   - `cd /d "X:\PathToBleach" && animethemes.py op9`
-
 </details>
 
 ### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)
 - This script uses the Python-PlexAPI and Shoko Server to apply posters to the collections in Plex.
 - It will look for posters in a user defined folder and if none are found take the default poster from the corresponding Shoko group.
-  - Any Posters in the folder must have the same name as their respective collection name in Plex.
-  - The following characters must be stripped from the filenames: \ / : * ? " < > |
-  - The accepted file extension are: jpg / jpeg / png / tbn
+
 <details>
 <summary><b>Additional Information</b></summary><br>
 
@@ -143,19 +141,19 @@ environment:
   - The "PostersFolder" setting is the folder containing any custom collection posters.
 
 **Usage:**
-- Run in a terminal `collection-posters.py` to set Plex collection posters to Shoko's or user provided ones.
-- Append the argument 'clean' `force-metadata.py clean` if you want to remove old collection posters instead.
+- Run in a terminal `collection-posters.py` to set Plex collection posters to the user provided ones or Shoko's.
+  - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
+  - The following characters must be stripped from the filenames: \ / : * ? " < > |
+  - The accepted file extension are: jpg / jpeg / png / tbn
+- Append the argument "clean" `collection-posters.py clean` if you want to remove old collection posters instead.
   - This works by deleting everything but the newest custom poster for all collections.
-
 </details>
 
 ### [force-metadata.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/force-metadata.py)
 - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's caching or other issues.
 - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names and collection sort titles.
 - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
-- Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
-  - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
-  - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
+
 <details>
 <summary><b>Additional Information</b></summary><br>
 
@@ -169,7 +167,12 @@ environment:
 
 **Usage:**
 - Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons and normalise sort titles.
-- Append the argument 'full' `force-metadata.py full` if you want to do the time consuming full metadata clean up.
+- Append the argument "full" `force-metadata.py full` if you want to do the time consuming full metadata clean up.
+
+> :warning: **Important**  
+> In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
+> - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
+> - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
 
 **Behaviour:**
 - This script will ignore locked fields/posters assuming that the user wants to keep them intact.
@@ -180,7 +183,6 @@ environment:
 - Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
 - The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
 - All Smart Collection are ignored as they are not managed by Shoko Relay
-
 </details>
 
 ### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)
@@ -208,12 +210,11 @@ environment:
   - `watched-sync.py 2w` would return results from the last 2 weeks
   - `watched-sync.py 3d` would return results from the last 3 days
 - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
-- Append the argument 'import' `watched-sync.py import` if you want to sync watched states from Shoko to Plex instead.
+- Append the argument "import" `watched-sync.py import` if you want to sync watched states from Shoko to Plex instead.
   - The script will ask for (Y/N) confirmation for each Plex user that has been configured.
 
 **Behaviour:**
 - Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
-
 </details>
 
 ## Notes

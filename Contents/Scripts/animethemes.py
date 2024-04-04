@@ -12,13 +12,14 @@ Requirements:
   - Python 3.7+, Requests Library (pip install requests), FFmpeg, Shoko Server
 Preferences:
   - Before doing anything with this script you must enter your Shoko credentials into config.py.
-  - To allow the Theme.mp3 files to be used by Plex you must also enable Local Media Assets for whatever library has your Anime in it.
+  - To allow Theme.mp3 files to be used by Plex you must also enable "Local Media Assets" for the libraries that have your Anime in it.
+      - The "Play Theme Music" option also has to be enabled in the settings for the Plex client.
 Usage:
   - Run in a terminal with the working directory set to a folder containing an anime series.
   - If the anime has been matched by Shoko Server it will grab the anidbID and use that to match with an AnimeThemes anime entry.
 Behaviour:
   - By default this script will download the first OP (or ED if there is none) for the given series.
-  - If FFplay_Enabled is set to True in config.py the song will begin playing in the background which helps with picking the correct theme.
+  - If "FFplay_Enabled" is set to True in config.py the song will begin playing in the background which helps with picking the correct theme.
   - FFmpeg will then encode it as a 320kbps mp3 and save it as Theme.mp3 in the anime folder.
   - FFmpeg will also apply the following metadata:
       - Title (with TV Size or not)
@@ -27,18 +28,18 @@ Behaviour:
       - Subtitle (as OP/ED number + the version if there are multiple)
   - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
-  - When running this on multiple folders at once it is recommended to add the 'batch' argument which disables audio playback and skips folders already containing a Theme.mp3 file.
-      - If BatchOverwrite is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
+  - When running this on multiple folders at once it is recommended to add the "batch" argument which disables audio playback and skips folders already containing a Theme.mp3 file.
+      - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
-  - slug: must be the first argument and is formatted as 'op', 'ed', 'op2', 'ed2' and so on
+  - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
   - offset: a single digit number which must be the second argument if the slug is provided
-  - batch: must be the sole argument and is simply entered as 'batch'
+  - batch: must be the sole argument and is simply entered as "batch"
 Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):
   - Library Batch Processing
       for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done
       for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch
-  - Fix 'Mushoku Tensei II: Isekai Ittara Honki Dasu' Matching to Episode 0 (offset to the next animethemes match)
+  - Fix "Mushoku Tensei II: Isekai Ittara Honki Dasu" Matching to Episode 0 (offset to the next animethemes match)
       cd "/PathToMushokuTenseiII"; animethemes.py 1
       cd /d "X:\PathToMushokuTenseiII" && animethemes.py 1
   - Same as above but download the second ending instead of the default OP

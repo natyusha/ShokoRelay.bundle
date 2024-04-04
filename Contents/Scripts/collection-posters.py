@@ -7,9 +7,6 @@ r"""
 Description:
   - This script uses the Python-PlexAPI and Shoko Server to apply posters to the collections in Plex.
   - It will look for posters in a user defined folder and if none are found take the default poster from the corresponding Shoko group.
-      - Any Posters in the folder must have the same name as their respective collection name in Plex.
-      - The following characters must be stripped from the filenames: \ / : * ? " < > |
-      - The accepted file extension are: jpg / jpeg / png / tbn
 Author:
   - natyusha
 Requirements:
@@ -22,8 +19,11 @@ Preferences:
       - The "DataFolder" setting is the base Plex Media Server Data Directory (where the Metadata folder is located).
       - The "PostersFolder" setting is the folder containing any custom collection posters.
 Usage:
-  - Run in a terminal (collection-posters.py) to set Plex collection posters to Shoko's or user provided ones.
-  - Append the argument 'clean' (force-metadata.py clean) if you want to remove old collection posters instead.
+  - Run in a terminal (collection-posters.py) to set Plex collection posters to the user provided ones or Shoko's.
+      - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
+      - The following characters must be stripped from the filenames: \ / : * ? " < > |
+      - The accepted file extension are: jpg / jpeg / png / tbn
+  - Append the argument 'clean' (collection-posters.py clean) if you want to remove old collection posters instead.
       - This works by deleting everything but the newest custom poster for all collections.
 """
 
