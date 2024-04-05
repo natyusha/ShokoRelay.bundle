@@ -98,8 +98,8 @@ environment:
   - Subtitle (as OP/ED number + the version if there are multiple)
 - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
 - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
-- When running this on multiple folders at once it is recommended to add the "batch" argument which disables audio playback and skips folders already containing a Theme.mp3 file.
-    - If "BatchOverwrite" is set to true in `config.py` the batch argument will instead overwrite existing Theme.mp3 files
+- When running this on multiple folders at once adding the "batch" argument is recommended. This disables audio playback and skips folders already containing a Theme.mp3 file.
+    - If "BatchOverwrite" is set to true in `config.py` the batch argument will instead overwrite any existing Theme.mp3 files.
 
 **Arguments:**
 - `animethemes.py slug offset` OR `animethemes.py batch`

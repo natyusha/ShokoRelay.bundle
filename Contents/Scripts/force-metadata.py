@@ -47,6 +47,9 @@ if len(sys.argv) == 2:
     else:
         print(f'{error_prefix}Failed: Invalid Argument')
         exit(1)
+elif len(sys.argv) > 2:
+    print(f'{error_prefix}Failed: Too Many Arguments')
+    exit(1)
 
 # authenticate and connect to the Plex server/library specified
 try:

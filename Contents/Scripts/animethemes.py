@@ -28,8 +28,8 @@ Behaviour:
       - Subtitle (as OP/ED number + the version if there are multiple)
   - If you want a different OP/ED than the default simply supply the AnimeThemes slug as an argument.
   - For the rare cases where there are multiple anime mapped to the same anidbID on AnimeThemes you can add an offset as an argument to select the next matched entry.
-  - When running this on multiple folders at once it is recommended to add the "batch" argument which disables audio playback and skips folders already containing a Theme.mp3 file.
-      - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite existing Theme.mp3 files
+  - When running this on multiple folders at once adding the "batch" argument is recommended. This disables audio playback and skips folders already containing a Theme.mp3 file.
+      - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite any existing Theme.mp3 files.
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
   - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
@@ -178,15 +178,15 @@ if anidbID is not None:
 ## https://api.animethemes.moe/animetheme/11808?include=animethemeentries.videos,song.artists
 if animethemeID is not None:
     animetheme = requests.get(f'https://api.animethemes.moe/animetheme/{animethemeID}?include=animethemeentries.videos,song.artists').json()
+    try:    song_title = animetheme['animetheme']['song']['title']
+    except: song_title = ''
+    try:    artist_name = animetheme['animetheme']['song']['artists'][0]['name']
+    except: artist_name = ''
     try:
-        song_title = animetheme['animetheme']['song']['title']
-    except:
-        song_title = ''
-    try:
-        artist_name = animetheme['animetheme']['song']['artists'][0]['name']
-    except:
-        artist_name = ''
-    videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
+        videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
+    except Exception as error:
+        print(f'{error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
+        exit(1)    
     if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
         artist_display = f'{artist_name} - '
     else:
