@@ -177,12 +177,10 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
         while subfolders: # Subfolder scanning queue
             full_path = subfolders.pop(0)
             path = os.path.relpath(full_path, root)
-            reverse_path = list(reversed(path.split(os.sep)))
 
             Log.info('Subfolder Scan:  %s' % full_path)
 
             subdir_dirs, subdir_files = [], []
-
             for file in os.listdir(full_path):
                 path_item = os.path.join(full_path, file)
                 if os.path.isdir(path_item):
@@ -197,8 +195,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 subfolders.append(dir)
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
-            if subdir_files and (len(reverse_path)>1 or subdir_dirs):
-                Log.info('Files Detected:  Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
+            if subdir_files: # If there are files present remove the parent folder from Plex grouping to avoid any file overlaps
                 if grouping_dir in subdirs:
                     subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
                 Log.info('-' * 400)
