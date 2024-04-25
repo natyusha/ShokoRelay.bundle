@@ -18,7 +18,7 @@ Preferences:
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
 Usage:
   - Run in a terminal (force-metadata.py) to remove empty collections, rename negative seasons and normalise sort titles.
-  - Append the argument "full" (force-metadata.py full) if you want to do the time consuming full metadata clean up.
+  - Append the argument "full" (force-metadata.py full) if you want to do a time consuming full metadata clean up.
   - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.

@@ -15,7 +15,7 @@ Preferences:
   - To allow Theme.mp3 files to be used by Plex you must also enable "Local Media Assets" for the libraries that have your Anime in it.
       - The "Play Theme Music" option also has to be enabled in the settings for the Plex client.
 Usage:
-  - Run in a terminal with the working directory set to a folder containing an anime series.
+  - Run in a terminal (animethemes.py) with the working directory set to a folder containing an anime series.
   - If the anime has been matched by Shoko Server it will grab the anidbID and use that to match with an AnimeThemes anime entry.
 Behaviour:
   - By default this script will download the first OP (or ED if there is none) for the given series.
@@ -33,9 +33,10 @@ Behaviour:
 Arguments:
   - animethemes.py slug offset OR animethemes.py batch
   - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
-  - offset: a single digit number which must be the second argument if the slug is provided
+  - offset: an optional single digit number which must be the second argument if the slug is provided
   - batch: must be the sole argument and is simply entered as "batch"
-Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):
+Examples Commands:
+  - Using bash / cmd respectively and assuming that both the script and FFmpeg can be called directly from the PATH.
   - Library Batch Processing
       for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done
       for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch
@@ -45,7 +46,7 @@ Examples (using bash / cmd respectively and assuming that the script and ffmpeg 
   - Same as above but download the second ending instead of the default OP
       cd "/PathToMushokuTenseiII"; animethemes.py ed2 1
       cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1
-  - Download 9th Opening of Bleach
+  - Download the 9th Opening of Bleach
       cd "/PathToBleach"; animethemes.py op9
       cd /d "X:\PathToBleach" && animethemes.py op9
 """

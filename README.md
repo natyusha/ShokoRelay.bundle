@@ -55,7 +55,7 @@ Each script has detailed information about its functionality and usage in the co
 - [Python 3](https://www.python.org/downloads/) (all scripts)
 - [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi` (collection-posters.py, force-metadata.py, watched-sync.py)
 - [Requests](https://pypi.org/project/requests/) `pip install requests` (animethemes.py, collection-posters.py, watched-sync.py)
-- [FFmpeg](https://ffmpeg.org/) (animethemes.py)
+- [FFmpeg](https://ffmpeg.org/download.html) (animethemes.py)
 
 > [!IMPORTANT]
 > In order for the scripts to function your Plex and Shoko credentials need to be entered into the `config.py` file contained in the Scripts folder.
@@ -84,7 +84,7 @@ environment:
   - The "Play Theme Music" option also has to be enabled in the settings for the Plex client.
 
 **Usage:**
-- Run in a terminal with the working directory set to a folder containing an anime series.
+- Run in a terminal `animethemes.py` with the working directory set to a folder containing an anime series.
 - If the anime has been matched by Shoko Server it will grab the anidbID and use that to match with an AnimeThemes anime entry.
 
 **Behaviour:**
@@ -104,10 +104,12 @@ environment:
 **Arguments:**
 - `animethemes.py slug offset` OR `animethemes.py batch`
 - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
-- offset: a single digit number which must be the second argument if the slug is provided
+- offset: an optional single digit number which must be the second argument if the slug is provided
 - batch: must be the sole argument and is simply entered as "batch"
 
-**Examples (using bash / cmd respectively and assuming that the script and ffmpeg can be called directly from path):**
+**Example Commands:**
+> :pencil2: **Note**  
+> Using bash / cmd respectively and assuming that both the script and FFmpeg can be called directly from the PATH.
 - Library Batch Processing
   - `for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done`
   - `for /d %d in ("X:\PathToAnime\*") do cd /d %d && animethemes.py batch`
@@ -117,7 +119,7 @@ environment:
 - Same as above but download the second ending instead of the default OP
   - `cd "/PathToMushokuTenseiII"; animethemes.py ed2 1`
   - `cd /d "X:\PathToMushokuTenseiII" && animethemes.py ed2 1`
-- Download 9th Opening of Bleach
+- Download the 9th Opening of Bleach
   - `cd "/PathToBleach"; animethemes.py op9`
   - `cd /d "X:\PathToBleach" && animethemes.py op9`
 </details>
@@ -136,7 +138,7 @@ environment:
 - Before doing anything with this script you must enter your Plex and Shoko Server credentials into `config.py`.
 - If your anime is split across multiple libraries they can all be added in a python list under "LibraryNames".
   - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
-- The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. `'PostersFolder': 'M:\\Anime\\Posters'`.
+- The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. `'PostersFolder': 'M:\\Anime\\Posters',`.
   - The "DataFolder" setting is the base [Plex Media Server Data Directory](https://support.plex.tv/articles/202915258-where-is-the-plex-media-server-data-directory-located/) (where the Metadata folder is located).
   - The "PostersFolder" setting is the folder containing any custom collection posters.
 
@@ -167,7 +169,7 @@ environment:
 
 **Usage:**
 - Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons and normalise sort titles.
-- Append the argument "full" `force-metadata.py full` if you want to do the time consuming full metadata clean up.
+- Append the argument "full" `force-metadata.py full` if you want to do a time consuming full metadata clean up.
 
 > :warning: **Important**  
 > In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.

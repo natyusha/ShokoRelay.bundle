@@ -15,7 +15,7 @@ Preferences:
   - Before doing anything with this script you must enter your Plex and Shoko Server credentials into config.py.
   - If your anime is split across multiple libraries they can all be added in a python list under "LibraryNames".
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
-  - The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters'".
+  - The Plex "PostersFolder" and "DataFolder" settings require double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters',".
       - The "DataFolder" setting is the base Plex Media Server Data Directory (where the Metadata folder is located).
       - The "PostersFolder" setting is the folder containing any custom collection posters.
 Usage:
