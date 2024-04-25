@@ -28,12 +28,12 @@ if not os.path.isdir(LOG_ROOT):
     }
     LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
 
-# Define logger parameters with a max size of 10MB and a single backup for file rotation
+# Define logger parameters with a max size of 12MiB and five backups for file rotation
 def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '')
     filename = 'Shoko Relay Scanner.log'
     format = '%(asctime)s %(message)s'
-    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=10*1024*1024, backupCount=1)
+    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=12*1024*1024, backupCount=5)
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
     Log.addHandler(handler)
