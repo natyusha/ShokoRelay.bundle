@@ -226,7 +226,10 @@ When encountering any issues with the scanner or agent, please note that there a
 - Scanner Logs: `\Plex Media Server\Logs\Shoko Relay Scanner.log`
 
 > [!IMPORTANT]
-> When encountering bad metadata the first thing to check for is if TheTVDB match is correct in Shoko for the series in question.
+> When encountering bad matches/metadata the first thing to check for is if TheTVDB match and episode mapping is correct in Shoko for the series in question.
+
+> [!WARNING]
+> Under extremely specific circumstances Plex will automatically group files together without user intervention. This occurs when storing all of the files from multiple AniDB entries in a single folder (located in the root directory of the Plex library) with no other subfolders present inside of it. To resolve this simply create an empty subfolder in any directory affected by this or separate the files from each AniDB series into their own folders/subfolders.
 
 ### Handling "Stuck" Metadata
 - In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
