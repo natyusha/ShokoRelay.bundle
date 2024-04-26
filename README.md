@@ -21,7 +21,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - The Shoko Server Port
   - Collections: `Hide items which are in collections`
   - Seasons: `Hide for single-season series`
-- In Plex Settings: `Settings` > `Agents` > `Shows` > `ShokoRelay` move the following entry to the top of the list and enable it:
+- In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
   - [x] Local Media Assets (TV)
 
 ## Changes from Shoko Metadata
@@ -51,14 +51,17 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ## Scripts
-Each script has detailed information about its functionality and usage in the collapsible "Additional Information" sections below. There are also several dependencies depending on the script:
-- [Python 3](https://www.python.org/downloads/) (all scripts)
-- [Python-PlexAPI](https://pypi.org/project/PlexAPI/) `pip install plexapi` (collection-posters.py, force-metadata.py, watched-sync.py)
-- [Requests](https://pypi.org/project/requests/) `pip install requests` (animethemes.py, collection-posters.py, watched-sync.py)
-- [FFmpeg](https://ffmpeg.org/download.html) (animethemes.py)
+### Prerequisites
+Before using any of the scripts you must have the requisite dependencies installed. For more information on using Python scripts in general check out the Python 3 docs for [linux](https://docs.python.org/3/using/unix.html#on-linux) or [windows](https://docs.python.org/3/using/windows.html).
+| Dependency                                          | AnimeThemes  | Collection-Posters | Force-Metadata | Watched-Sync |
+| :-------------------------------------------------- | :----------: | :----------------: | :------------: | :----------: |
+| [Python 3](https://www.python.org/downloads/)       | ✔️           | ✔️                 | ✔️             | ✔️           |
+| [Python-PlexAPI](https://pypi.org/project/PlexAPI/) | ❌           | ✔️                 | ✔️             | ✔️           |
+| [Requests](https://pypi.org/project/requests/)      | ✔️           | ✔️                 | ❌             | ✔️           |
+| [FFmpeg](https://ffmpeg.org/download.html)          | ✔️           | ❌                 | ❌             | ❌           |
 
 > [!IMPORTANT]
-> In order for the scripts to function your Plex and Shoko credentials need to be entered into the `config.py` file contained in the Scripts folder.
+> When installing FFmpeg on Windows make sure to add it to the **PATH** by editing [Windows environment variables](https://phoenixnap.com/kb/ffmpeg-windows#ftoc-heading-4) or using the following command: `setx /m PATH "PATHTOFFMPEG"`.
 
 > [!TIP]
 > When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod. For ease of use adding the Scripts folder to the PATH is also recommended.
@@ -68,6 +71,9 @@ environment:
   - INSTALL_PIP_PACKAGES=plexapi|requests
   - INSTALL_PACKAGES=ffmpeg
 ```
+
+### Configuration
+After installing the dependencies you must use a text editor to enter your Shoko and Plex credentials (as well as several other options) into the included `config.py` file. The configuration file contains 3 sections which are fairly self explanatory.
 
 ### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
@@ -232,29 +238,26 @@ When encountering any issues with the scanner or agent, please note that there a
 > Under extremely specific circumstances Plex will automatically group files together without user intervention. This occurs when storing all of the files from multiple AniDB entries in a single folder (located in the root directory of the Plex library) with no other subfolders present inside of it. To resolve this simply create an empty subfolder in any directory affected by this or separate the files from each AniDB series into their own folders/subfolders.
 
 ### Handling "Stuck" Metadata
-- In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
-  1. Navigate to the series > More "..." Button > Unmatch
-  2. Settings > Manage > Troubleshooting > Clean Bundles
-    - **Note:** Certain types of metadata may require "Optimize Database" too
-  3. Navigate back to the series > More "..." Button > Match > Select top result
-- If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required
+In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
+1. Navigate to the series > More "..." Button > Unmatch
+2. Settings > Manage > Troubleshooting > Clean Bundles + Optimize Database
+3. Navigate back to the series > More "..." Button > Match > Select top result
+
+If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required.
 
 ### Cast & Crew Limitations
 If "staff listings" are enabled in the settings the following custom agent limitations apply:
 - All Cast & Crew members are listed under the cast section only
 - Directors, Producers and Writers will be empty when attempting to filter for them in Plex
 - All Crew members are available for filtering under Actor only
-- The links in the Cast & Crew section under individual episodes don't work
-  - The "Directed by" and "Written by" links still work though
+- The links in the Cast & Crew section under individual episodes won't return any results
 
 ### Automatic Season Naming Limitations
 Due to custom agent limitations certain season names which contain special files will not name themselves correctly. These can be renamed manually or with the included [force-metadata.py](#force-metadatapy) script that accesses the Plex API. The affected season names and their intended names are listed below:
-- Season -1 → Credits
+- Season -1 → Credits **OR** [Unknown Season] → Credits
 - Season -2 → Trailers
 - Season -3 → Parodies
 - Season -4 → Other
-
-**Note:** "[Unknown Season]" may be displayed instead of Season -1.
 
 ### Ambiguous Title Replacement
 In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows:
@@ -266,7 +269,8 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 - TV Special
 - Web
 
-**Note:** The appended titles will appear after an em dash (—) making it easy to search for anything affected by this.
+> [!NOTE]
+> The appended titles will appear after an em dash (**—**) making it easy to search for anything affected by this.
 
 ### Combining Series
 If you have TheTVDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
@@ -286,7 +290,7 @@ Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star
 ### Assumed Content Ratings
 If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
 | Tag                               | Rating  |
-| --------------------------------- | ------- |
+| :-------------------------------- | :------ |
 | Kodomo                            | TV-Y    |
 | Mina                              | TV-G    |
 | Shoujo, Shounen                   | TV-PG   |
@@ -299,4 +303,5 @@ If "assumed content ratings" are enabled in the agent settings the [target audie
 | **\*\*\+** Violence               | TV-MA-V |
 | 18 Restricted (override)          | X       |
 
-**Note:** Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.
+> [!NOTE]
+> Many series are missing these tags on AniDB so adding them is encouraged to help improve everyone's metadata.
