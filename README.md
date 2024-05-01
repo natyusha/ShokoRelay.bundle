@@ -53,12 +53,12 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 ## Scripts
 ### Prerequisites
 Before using any of the scripts you must have the requisite dependencies installed. For more information on using Python scripts in general check out the Python 3 docs for [linux](https://docs.python.org/3/using/unix.html#on-linux) or [windows](https://docs.python.org/3/using/windows.html).
-| Dependency                                          | AnimeThemes  | Collection-Posters | Force-Metadata | Watched-Sync |
-| :-------------------------------------------------- | :----------: | :----------------: | :------------: | :----------: |
-| [Python 3](https://www.python.org/downloads/)       | ✔️           | ✔️                 | ✔️             | ✔️           |
-| [Python-PlexAPI](https://pypi.org/project/PlexAPI/) | ❌           | ✔️                 | ✔️             | ✔️           |
-| [Requests](https://pypi.org/project/requests/)      | ✔️           | ✔️                 | ❌             | ✔️           |
-| [FFmpeg](https://ffmpeg.org/download.html)          | ✔️           | ❌                 | ❌             | ❌           |
+| Dependency                                          | AnimeThemes  | Collection-Posters | Force-Metadata | Rescan-Recent | Watched-Sync |
+| :-------------------------------------------------- | :----------: | :----------------: | :------------: | :-----------: | :----------: |
+| [Python 3](https://www.python.org/downloads/)       | ✔️           | ✔️                 | ✔️             | ✔️           | ✔️           |
+| [Python-PlexAPI](https://pypi.org/project/PlexAPI/) | ❌           | ✔️                 | ✔️             | ❌           | ✔️           |
+| [Requests](https://pypi.org/project/requests/)      | ✔️           | ✔️                 | ❌             | ✔️           | ✔️           |
+| [FFmpeg](https://ffmpeg.org/download.html)          | ✔️           | ❌                 | ❌             | ❌           | ❌           |
 
 > [!IMPORTANT]
 > When installing FFmpeg on Windows make sure to add it to the **PATH** by editing [Windows environment variables](https://phoenixnap.com/kb/ffmpeg-windows#ftoc-heading-4) or using the following command: `setx /m PATH "PATHTOFFMPEG"`.
@@ -73,7 +73,7 @@ environment:
 ```
 
 ### Configuration
-After installing the dependencies you must use a text editor to enter your Shoko and Plex credentials (as well as several other options) into the included `config.py` file. The configuration file contains 3 sections which are fairly self explanatory.
+After installing the dependencies you must use a text editor to enter your Shoko and Plex credentials (as well as several other options) into the included `config.py` file. The configuration file contains 4 sections which are fairly self explanatory.
 
 ### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
@@ -191,6 +191,27 @@ After installing the dependencies you must use a text editor to enter your Shoko
 - Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
 - The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
 - All Smart Collection are ignored as they are not managed by Shoko Relay
+</details>
+
+### [rescan-recent.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/rescan-recent.py)
+- This is mostly used for quickly adding currently airing series to Plex that were unrecognized when initially imported into Shoko.
+- Once the files are recognized running this script will trigger a rescan in Plex for any series that they are attached to.
+- This requires Plex's partial scanning (or an alternative) to be enabled.
+
+<details>
+<summary><b>Additional Information</b></summary><br>
+
+**Requirements:**
+- Python 3.7+, Requests Library (pip install requests), Plex, Shoko Server
+
+**Preferences:**
+- Before doing anything with this script you must enter your Shoko Server credentials into `config.py`.
+- The Path Remapping section can be configured when running the scripts from a location where the paths differ from Shoko's.
+
+**Usage:**
+- Run in a terminal `rescan-recent.py` to trigger a Plex rescan of the 5 most recently added series in Shoko.
+- Append the number of recently added series (from 1-99) to rescan as an argument when 5 isn't enough:
+  - `rescan-recent.py 20` would rescan the 20 most recently added series
 </details>
 
 ### [watched-sync.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/watched-sync.py)

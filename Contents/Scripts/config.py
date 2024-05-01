@@ -33,3 +33,11 @@ AnimeThemes = {
     'FFplay_Volume': '10',
     'BatchOverwrite': False
 }
+
+## Path Remapping for Rescan-Recent
+PathRemapping = {
+    # This section is for remapping paths from Shoko's to the system where the scripts are running
+    # It uses regex substitution pairs to achieve this in the following format: "'^/ShokoPath/': '/LocalPath/'"
+    # Regex substitution pairs require double backslashes on windows e.g. "'^/anime/': 'M:\\Anime\\'"
+    # As many pairs as required can be manually added below
+}
