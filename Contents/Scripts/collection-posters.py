@@ -128,7 +128,7 @@ for library in cfg.Plex['LibraryNames']:
                             fallback = False # don't fallback to the shoko group if user poster found
                             continue
                 except Exception as error:
-                    print(f'│├{error_prefix}Failed', error)
+                    print(f'│├{error_prefix}──Failed', error)
 
             # fallback to shoko group posters if no user defined psoter
             if fallback:
@@ -138,7 +138,7 @@ for library in cfg.Plex['LibraryNames']:
                     poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/' + shoko_poster['Source'] + '/Poster/' + shoko_poster['ID']
                     print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
-                except Exception as error:
-                    print(f'│├{error_prefix}─Failed', error)
+                except:
+                    print(f'│├{error_prefix}──Failed: No Shoko Group → {collection.title}')
         print_f('│└─Finished!')
 print_f('└Posters Task Complete')
