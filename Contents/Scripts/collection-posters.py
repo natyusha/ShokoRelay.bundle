@@ -133,7 +133,7 @@ for library in cfg.Plex['LibraryNames']:
             # fallback to shoko group posters if no user defined psoter
             if fallback:
                 try:
-                    group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth['apikey']}').json()
+                    group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth["apikey"]}').json()
                     shoko_poster = group_search['List'][0]['Images']['Posters'][0]
                     poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/' + shoko_poster['Source'] + '/Poster/' + shoko_poster['ID']
                     print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
