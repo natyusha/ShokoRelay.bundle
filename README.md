@@ -108,9 +108,10 @@ After installing the dependencies you must use a text editor to enter your Shoko
     - If "BatchOverwrite" is set to true in `config.py` the batch argument will instead overwrite any existing Theme.mp3 files.
 
 **Arguments:**
-- `animethemes.py slug offset` OR `animethemes.py batch`
+- `animethemes.py slug offset` OR `animethemes.py slug offset play`  OR `animethemes.py batch`
 - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
 - offset: an optional single digit number which must be the second argument if the slug is provided
+- play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
 - batch: must be the sole argument and is simply entered as "batch"
 
 **Example Commands:**
@@ -128,6 +129,9 @@ After installing the dependencies you must use a text editor to enter your Shoko
 - Download the 9th Opening of Bleach
   - `cd "/PathToBleach"; animethemes.py op9`
   - `cd /d "X:\PathToBleach" && animethemes.py op9`
+- Preview the 9th Opening of Bleach
+  - `cd "/PathToBleach"; animethemes.py op9 play`
+  - `cd /d "X:\PathToBleach" && animethemes.py op9 play`
 </details>
 
 ### [collection-posters.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/collection-posters.py)

@@ -31,9 +31,10 @@ Behaviour:
   - When running this on multiple folders at once adding the "batch" argument is recommended. This disables audio playback and skips folders already containing a Theme.mp3 file.
       - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite any existing Theme.mp3 files.
 Arguments:
-  - animethemes.py slug offset OR animethemes.py batch
+  - animethemes.py slug offset OR animethemes.py slug offset play OR animethemes.py batch
   - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
   - offset: an optional single digit number which must be the second argument if the slug is provided
+  - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
   - batch: must be the sole argument and is simply entered as "batch"
 Examples Commands:
   - Using bash / cmd respectively and assuming that both the script and FFmpeg can be called directly from the PATH.
@@ -49,6 +50,9 @@ Examples Commands:
   - Download the 9th Opening of Bleach
       cd "/PathToBleach"; animethemes.py op9
       cd /d "X:\PathToBleach" && animethemes.py op9
+  - Preview the 9th Opening of Bleach
+      cd "/PathToBleach"; animethemes.py op9 play
+      cd /d "X:\PathToBleach" && animethemes.py op9 play
 """
 
 # file formats that will work with the script (uses shoko's defaults)
@@ -81,14 +85,16 @@ def is_running(pid):
 ## check the arguments if the user is looking for a specific op/ed, a series match offset or to batch
 theme_slug = None
 offset = 0
-batch = False
+play = batch = False
 FFplay = cfg.AnimeThemes['FFplay_Enabled']
-# if one argument supplied check if it is a theme slug, offset or batch
+# if one argument supplied check if it is a theme slug, offset, play or batch
 if len(sys.argv) == 2:
     if re.match('^\\d$', sys.argv[1]): # if the first argument is a single digit set it as the offset
         offset = int(sys.argv[1])
     elif re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I): # otherwise check if it is a viable slug
         theme_slug = sys.argv[1].upper()
+    elif sys.argv[1].lower() == 'play': # enable ffplay and disable conversion when running in play mode
+        FFplay = play = True
     elif sys.argv[1].lower() == 'batch': # disable ffplay when running in batch mode and pad the console output
         FFplay = False
         batch = True
@@ -96,16 +102,30 @@ if len(sys.argv) == 2:
     else:
         print(f'{error_prefix}Failed: Invalid Argument')
         exit(1)
-
 # if two arguments supplied make sure they follow the same rules as above but without batch
 elif len(sys.argv) == 3:
     if re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and re.match('^\\d$', sys.argv[2]):
         theme_slug = sys.argv[1].upper()
         offset = int(sys.argv[2])
+    elif re.match('^\\d$', sys.argv[1]) and sys.argv[2].lower() == 'play':
+        offset = int(sys.argv[1])
+        FFplay = play = True
+    elif re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and sys.argv[2].lower() == 'play':
+        theme_slug = sys.argv[1].upper()
+        FFplay = play = True
     else:
         print(f'{error_prefix}Failed: Invalid Arguments')
         exit(1)
-elif len(sys.argv) > 3:
+# if three arguments supplied it must be slug, offset and play
+elif len(sys.argv) == 4:
+    if (re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and re.match('^\\d$', sys.argv[2]) and sys.argv[3].lower() == 'play'):
+        theme_slug = sys.argv[1].upper()
+        offset = int(sys.argv[2])
+        FFplay = play = True
+    else:
+        print(f'{error_prefix}Failed: Invalid Arguments')
+        exit(1)
+elif len(sys.argv) > 4:
     print(f'{error_prefix}Failed: Too Many Arguments')
     exit(1)
 
@@ -209,7 +229,7 @@ for key, value in slug_formatting.items():
     slug = re.sub(key, value, slug)
 print_f(f'│├─{slug}: {artist_display}{song_title}')
 
-# download .ogg and convert to mp3
+# download .ogg file from animethemes
 def progress(count, block_size, total_size): # track the progress with a simple reporthook
     percent = int(count*block_size*100/total_size)
     print(f'│└─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
@@ -232,7 +252,7 @@ try:
         print(f'{error_prefix}──FFProbe Failed\n  ', error)
         raise clean()
 
-    # playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
+    # if ffplay is enabled playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
     if FFplay:
         try:
             ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
@@ -250,20 +270,24 @@ try:
         'album':    f' -metadata album="{escape_quotes(anime_name)}"'
     }
 
-    ## convert the temp ogg file to mp3 with ffmpeg and add title + artist metadata
-    try:
-        print_f('└┬Converting...')
-        subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
-        status = ' └─Finished!'
-    except Exception as error:
-        print(f' {error_prefix}─FFmpeg Failed\n  ', error)
-        status = ' Failed!'
+    ## if not just playing convert the temp .ogg file to .mp3 with ffmpeg and add title + artist metadata
+    if not play:
+        try:
+            print_f('└┬Converting...')
+            subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
+            status = ' └─Finished! '
+        except Exception as error:
+            print(f' {error_prefix}─FFmpeg Failed\n  ', error)
+            status = ' Failed! '
+    else:
+        print_f('└┬Playing...')
+        status = ' └─'
 
     ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
     if FFplay:
         try:
             for t in range(duration):
-                print(f'{status} Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
+                print(f'{status}Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
                 time.sleep(1)
             print_f('')
         except KeyboardInterrupt:
