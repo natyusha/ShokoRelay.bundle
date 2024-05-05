@@ -6,7 +6,7 @@ import sys
 r"""
 Description:
   - This script uses the Python-PlexAPI to force all metadata in your anime library to update to Shoko's bypassing Plex's caching or other issues.
-  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names and collection sort titles.
+  - Any unused posters or empty collections will be removed from your library automatically while also updating negative season names, collection sort titles and original titles.
   - After making sweeping changes to the metadata in Shoko (like collections or title languages) this is a great way to ensure everything updates correctly in Plex.
 Author:
   - natyusha
@@ -28,6 +28,7 @@ Behaviour:
   - If the main title of an anime was changed on AniDB or overridden in Shoko after it was first scanned into Plex it might fail to match using this method.
       - In these cases the original title will be output to the console for the user to fix with a Plex dance or manual match.
   - Video preview thumbnails and watched states are maintained with this script (unless an anime encounters the above naming issue).
+  - The "Original Title" for all series will be set using info Shoko Relay added to the "Sort Title" (if available).
   - Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
   - The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
   - All Smart Collection are ignored as they are not managed by Shoko Relay
@@ -120,6 +121,13 @@ for library in cfg.Plex['LibraryNames']:
         elif season.title == 'Season -3': season.editTitle('Parodies')
         elif season.title == 'Season -4': season.editTitle('Other')
     print_f('│└─Finished Renaming Seasons!')
+
+    # add original titles if there are sort title additions from shoko relay
+    print_f(f'├┬Adding Original Titles @ {cfg.Plex["ServerName"]}/{library}')
+    for series in anime.search(title=''):
+        if series.title != series.titleSort:
+            series.editOriginalTitle(series.titleSort.replace(series.title + ' [', '')[:-1], locked=False)
+    print_f('│└─Finished Adding Original Titles!')
 
     # clear any empty collections that are left over and set the sort title to match the title
     print_f(f'├┬Checking Collections @ {cfg.Plex["ServerName"]}/{library}')
