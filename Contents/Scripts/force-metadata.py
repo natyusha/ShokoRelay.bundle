@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from plexapi.myplex import MyPlexAccount
 import config as cfg
 import sys

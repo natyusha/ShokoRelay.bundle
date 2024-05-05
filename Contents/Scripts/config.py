@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# Shoko Relay: Scripts Configuration
 
 ## Plex Server Configuration
 Plex = {
