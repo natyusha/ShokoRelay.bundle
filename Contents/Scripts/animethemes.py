@@ -31,11 +31,13 @@ Behaviour:
   - When running this on multiple folders at once adding the "batch" argument is recommended. This disables audio playback and skips folders already containing a Theme.mp3 file.
       - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite any existing Theme.mp3 files.
 Arguments:
-  - animethemes.py slug offset OR animethemes.py slug offset play OR animethemes.py batch
-  - slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
-  - offset: an optional single digit number which must be the second argument if the slug is provided
-  - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
-  - batch: must be the sole argument and is simply entered as "batch"
+  - Append the arguments "slug" / "offset" (animethemes.py slug offset) in order to specify which opening or ending to download.
+      - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
+      - offset: an optional single digit number which must be the second argument if the slug is provided
+  - Append the argument "play" to the commands above to run in "Preview" mode.
+      - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
+  - Append the argument "batch" (animethemes.py batch) when running the script on multiple folders at a time.
+      - batch: must be the sole argument and is simply entered as "batch"
 Examples Commands:
   - Using bash / cmd respectively and assuming that both the script and FFmpeg can be called directly from the PATH.
   - Library Batch Processing

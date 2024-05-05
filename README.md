@@ -108,11 +108,13 @@ After installing the dependencies you must use a text editor to enter your Shoko
     - If "BatchOverwrite" is set to true in `config.py` the batch argument will instead overwrite any existing Theme.mp3 files.
 
 **Arguments:**
-- `animethemes.py slug offset` OR `animethemes.py slug offset play`  OR `animethemes.py batch`
-- slug: must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
-- offset: an optional single digit number which must be the second argument if the slug is provided
-- play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
-- batch: must be the sole argument and is simply entered as "batch"
+- Append the arguments "slug" / "offset" `animethemes.py slug offset` in order to specify which opening or ending to download.
+  - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
+  - offset: an optional single digit number which must be the second argument if the slug is provided
+- Append the argument "play" to the commands above to run in "Preview" mode.
+  - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
+- Append the argument "batch" `animethemes.py batch` when running the script on multiple folders at a time.
+  - batch: must be the sole argument and is simply entered as "batch"
 
 **Example Commands:**
 > :pencil2: **Note**  
@@ -178,7 +180,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
 
 **Usage:**
-- Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons and normalise sort titles.
+- Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons, normalise sort titles and add original titles.
 - Append the argument "full" `force-metadata.py full` if you want to do a time consuming full metadata clean up.
 
 > :warning: **Important**  
