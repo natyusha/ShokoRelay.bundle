@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+from argparse import RawTextHelpFormatter
 from plexapi.myplex import MyPlexAccount
-import os, re, sys, requests
+import os, re, sys, argparse, requests
 import config as cfg
 
 r"""
@@ -17,7 +18,7 @@ Preferences:
   - The Path Remapping section can be configured when running the scripts from a location where the paths differ from Shoko's.
 Usage:
   - Run in a terminal (rescan-recent.py) to trigger a Plex rescan of the 5 most recently added series in Shoko.
-  - Append the number of recently added series (from 1-99) to rescan as an argument when 5 isn't enough:
+  - Change the number of recently added series (from 1-99) to rescan with an argument when 5 isn't enough:
       - (rescan-recent.py 20) would rescan the 20 most recently added series
 """
 
@@ -28,16 +29,9 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 def print_f(text): print(text, flush=True)
 
 # check the arguments for how many recent series to rescan
-series_count = '5' # set the default series count to 5
-if len(sys.argv) == 2:
-    if re.match('^(?:[1-9]|[1-9][0-9])$', sys.argv[1]): # if the argument is a valid number from 1-99
-        series_count = sys.argv[1]
-    else:
-        print(f'{error_prefix}Failed: Invalid Argument')
-        exit(1)
-elif len(sys.argv) > 2:
-    print(f'{error_prefix}Failed: Too Many Arguments')
-    exit(1)
+parser = argparse.ArgumentParser(description='Trigger a Plex rescan of the 5 most recently added series in Shoko.', formatter_class=RawTextHelpFormatter)
+parser.add_argument('recent_series', metavar='range', type=int, choices=range(1, 100), nargs='?', default=5, help='Change the number of recently added series (from 1-99) to rescan.\n*must be the sole argument and is entered as an Integer')
+series_count = parser.parse_args().recent_series
 
 # grab a shoko api key using the credentials from the prefs
 try:

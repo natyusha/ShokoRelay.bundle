@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+from argparse import RawTextHelpFormatter
 from plexapi.myplex import MyPlexAccount
-import os, re, sys, urllib, requests
+import os, re, sys, urllib, argparse, requests
 import config as cfg
 
 r"""
@@ -19,7 +20,7 @@ Preferences:
       - The "DataFolder" setting is the base Plex Media Server Data Directory (where the Metadata folder is located).
       - The "PostersFolder" setting is the folder containing any custom collection posters.
 Usage:
-  - Run in a terminal (collection-posters.py) to set Plex collection posters to the user provided ones or Shoko's.
+  - Run in a terminal (collection-posters.py) to set Plex collection posters to user provided ones or Shoko's.
       - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
       - The following characters must be stripped from the filenames: \ / : * ? " < > |
       - The accepted file extension are: jpg / jpeg / png / tbn
@@ -40,16 +41,10 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 def print_f(text): print(text, flush=True)
 
 # check the arguments if the user is looking to clean posters or not
+parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=RawTextHelpFormatter)
+parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
 clean_posters = False
-if len(sys.argv) == 2:
-    if sys.argv[1].lower() == 'clean': # if the first argument is 'clean'
-        clean_posters = True
-    else:
-        print(f'{error_prefix}Failed: Invalid Argument')
-        exit(1)
-elif len(sys.argv) > 2:
-    print(f'{error_prefix}Failed: Too Many Arguments')
-    exit(1)
+if parser.parse_args().clean_posters == 'clean': clean_posters = True
 
 # authenticate and connect to the plex server/library specified
 try:

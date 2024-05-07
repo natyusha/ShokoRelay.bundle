@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os, re, sys, time, urllib, requests, subprocess
+from argparse import RawTextHelpFormatter
+import os, re, sys, time, urllib, argparse, requests, subprocess
 import config as cfg
 
 r"""
@@ -84,52 +85,56 @@ def is_running(pid):
     except OSError: return False
     return True
 
-## check the arguments if the user is looking for a specific op/ed, a series match offset or to batch
-theme_slug = None
-offset = 0
+# initialise default values for the arguments and their regex
+theme_slug, offset = None, 0
 play = batch = False
-FFplay = cfg.AnimeThemes['FFplay_Enabled']
-# if one argument supplied check if it is a theme slug, offset, play or batch
-if len(sys.argv) == 2:
-    if re.match('^\\d$', sys.argv[1]): # if the first argument is a single digit set it as the offset
-        offset = int(sys.argv[1])
-    elif re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I): # otherwise check if it is a viable slug
-        theme_slug = sys.argv[1].upper()
-    elif sys.argv[1].lower() == 'play': # enable ffplay and disable conversion when running in play mode
-        FFplay = play = True
-    elif sys.argv[1].lower() == 'batch': # disable ffplay when running in batch mode and pad the console output
-        FFplay = False
-        batch = True
-        print('')
+FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
+slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}$', '^\\d$'
+
+# define functions for if there are 1, 2 or 3 arguments supplied
+def arg_parse_1(arg1):
+    arg1 = arg1.lower()
+    global slug_regex, offset_regex, theme_slug, offset, play, batch, FFplay
+    if re.match(slug_regex, arg1):
+        theme_slug = arg1.upper()
+    elif re.match(offset_regex, arg1):
+        offset = int(arg1)
+    elif arg1 == 'play':
+        play = True
+    elif arg1 == 'batch':
+        batch, FFplay = True, False
     else:
-        print(f'{error_prefix}Failed: Invalid Argument')
-        exit(1)
-# if two arguments supplied make sure they follow the same rules as above but without batch
-elif len(sys.argv) == 3:
-    if re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and re.match('^\\d$', sys.argv[2]):
-        theme_slug = sys.argv[1].upper()
-        offset = int(sys.argv[2])
-    elif re.match('^\\d$', sys.argv[1]) and sys.argv[2].lower() == 'play':
-        offset = int(sys.argv[1])
-        FFplay = play = True
-    elif re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and sys.argv[2].lower() == 'play':
-        theme_slug = sys.argv[1].upper()
-        FFplay = play = True
+        raise argparse.ArgumentTypeError('invalid slug, offset, play or batch')
+    return arg1
+def arg_parse_2(arg2):
+    arg1, arg2 = sys.argv[1], arg2.lower()
+    global slug_regex, offset_regex, theme_slug, offset, play
+    if re.match(slug_regex, arg1) and re.match(offset_regex, arg2):
+        theme_slug, offset = arg1.upper(), int(arg2)
+    elif re.match(offset_regex, arg1) and arg2 == 'play':
+        offset, play = int(arg1), True
+    elif re.match(slug_regex, arg1) and arg2 == 'play':
+        theme_slug, play = arg1.upper(), True
     else:
-        print(f'{error_prefix}Failed: Invalid Arguments')
-        exit(1)
-# if three arguments supplied it must be slug, offset and play
-elif len(sys.argv) == 4:
-    if (re.match('^(?:op|ed)(?!0)[0-9]{0,2}$', sys.argv[1], re.I) and re.match('^\\d$', sys.argv[2]) and sys.argv[3].lower() == 'play'):
-        theme_slug = sys.argv[1].upper()
-        offset = int(sys.argv[2])
-        FFplay = play = True
+        raise argparse.ArgumentTypeError('invalid (slug + offset), (slug + play) or (offset + play')
+    return arg2
+def arg_parse_3(arg3):
+    arg1, arg2, arg3 = sys.argv[1], sys.argv[2], arg3.lower()
+    global slug_regex, offset_regex, offset, theme_slug, play
+    if (re.match(slug_regex, arg1.lower()) and re.match(offset_regex, arg2) and arg3 == 'play'):
+        theme_slug, offset, play = arg1.upper(), int(arg2), True
     else:
-        print(f'{error_prefix}Failed: Invalid Arguments')
-        exit(1)
-elif len(sys.argv) > 4:
-    print(f'{error_prefix}Failed: Too Many Arguments')
-    exit(1)
+        raise argparse.ArgumentTypeError('invalid (slug + offset + play)')
+    return arg3
+
+## check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
+parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=RawTextHelpFormatter)
+parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2" and so on\n\n')
+parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*if the slug is provided it must be the second argument\n\n')
+parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
+args = parser.parse_args()
+args.arg1, args.arg2, args.arg3 # grab the arguments if available
+if play == True: FFplay = True # force FFplay if the play argument was supplied
 
 # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
 # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
@@ -292,7 +297,9 @@ try:
                 print(f'{status}Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
                 time.sleep(1)
             print_f('')
+            time.sleep(1.5) # account for ending the countdown 1 second early to avoid file locks
         except KeyboardInterrupt:
+            print_f('')
             pass
         while is_running(ffplay.pid): time.sleep(.25) # wait for ffplay to be killed before deleting the temp file
     else:

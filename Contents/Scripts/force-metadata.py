@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+from argparse import RawTextHelpFormatter
 from plexapi.myplex import MyPlexAccount
+import sys, argparse
 import config as cfg
-import sys
 
 r"""
 Description:
@@ -17,7 +18,7 @@ Preferences:
   - If your anime is split across multiple libraries they can all be added in a python list under Plex "LibraryNames".
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
 Usage:
-  - Run in a terminal (force-metadata.py) to remove empty collections, rename negative seasons and normalise sort titles.
+  - Run in a terminal (force-metadata.py) to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
   - Append the argument "full" (force-metadata.py full) if you want to do a time consuming full metadata clean up.
   - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
@@ -41,16 +42,10 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 def print_f(text): print(text, flush=True)
 
 # check the arguments if the user is looking to run a full clean or not
+parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly.', formatter_class=RawTextHelpFormatter)
+parser.add_argument('full_clean', metavar='full', choices=['full'], nargs='?', type=str.lower, help='If you want to do a time consuming full metadata clean up.\n*must be the sole argument and is simply entered as "full"')
 full_clean = False
-if len(sys.argv) == 2:
-    if sys.argv[1].lower() == 'full': # if the first argument is 'full'
-        full_clean = True
-    else:
-        print(f'{error_prefix}Failed: Invalid Argument')
-        exit(1)
-elif len(sys.argv) > 2:
-    print(f'{error_prefix}Failed: Too Many Arguments')
-    exit(1)
+if parser.parse_args().full_clean == 'full': full_clean = True
 
 # authenticate and connect to the Plex server/library specified
 try:

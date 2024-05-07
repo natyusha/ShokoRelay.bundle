@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+from argparse import RawTextHelpFormatter
 from plexapi.myplex import MyPlexAccount
-import os, re, sys, urllib, requests
+import os, re, sys, urllib, argparse, requests
 import config as cfg
 
 r"""
@@ -38,20 +39,18 @@ error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
+# relative date regex definition and import check for argument type
+def arg_parse(arg):
+    arg = arg.lower()
+    if not re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', arg) and arg != 'import':
+        raise argparse.ArgumentTypeError('invalid range or import')
+    return arg
+
 # check the arguments if the user is looking to use a relative date or not
-relative_date = '999y' # set the relative date to 999 years by default
-shoko_import = False
-if len(sys.argv) == 2:
-    if re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', sys.argv[1]): # if the argument is a valid relative date
-        relative_date = sys.argv[1]
-    elif sys.argv[1].lower() == 'import': # switch to shoko import mode
-        shoko_import = True
-    else:
-        print(f'{error_prefix}Failed: Invalid Argument')
-        exit(1)
-elif len(sys.argv) > 2:
-    print(f'{error_prefix}Failed: Too Many Arguments')
-    exit(1)
+parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: In "import" mode the script will ask for (Y/N) confirmation for each Plex user that has been configured.', formatter_class=RawTextHelpFormatter)
+parser.add_argument('relative_date', metavar='range | import', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"')
+relative_date, shoko_import = parser.parse_args().relative_date, False
+if relative_date == 'import': relative_date, shoko_import = '999y', True
 
 # authenticate and connect to the Plex server/library specified
 try:

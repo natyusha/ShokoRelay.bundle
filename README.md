@@ -75,6 +75,9 @@ environment:
 ### Configuration
 After installing the dependencies you must use a text editor to enter your Shoko and Plex credentials (as well as several other options) into the included `config.py` file. The configuration file contains 4 sections which are fairly self explanatory.
 
+> [!TIP]
+> Append `-h` or `--help` as an argument when running the scripts to access their help pages and avoid having to consult the readme for all of the commands.
+
 ### [animethemes.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/animethemes.py)
 - This script uses the Shoko and [AnimeThemes](https://animethemes.moe/) APIs to find the OP/ED for a series and convert it into a Theme.mp3 file which will play when viewing the series in Plex.
 - The default themes grabbed by Plex are limited to 30 seconds long and are completely missing for a massive amount of anime making this a great upgrade to local metadata.
@@ -155,7 +158,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - The "PostersFolder" setting is the folder containing any custom collection posters.
 
 **Usage:**
-- Run in a terminal `collection-posters.py` to set Plex collection posters to the user provided ones or Shoko's.
+- Run in a terminal `collection-posters.py` to set Plex collection posters to user provided ones or Shoko's.
   - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
   - The following characters must be stripped from the filenames: \ / : * ? " < > |
   - The accepted file extension are: jpg / jpeg / png / tbn
@@ -180,7 +183,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
 
 **Usage:**
-- Run in a terminal `force-metadata.py` to remove empty collections, rename negative seasons, normalise sort titles and add original titles.
+- Run in a terminal `force-metadata.py` to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
 - Append the argument "full" `force-metadata.py full` if you want to do a time consuming full metadata clean up.
 
 > :warning: **Important**  
@@ -217,7 +220,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 
 **Usage:**
 - Run in a terminal `rescan-recent.py` to trigger a Plex rescan of the 5 most recently added series in Shoko.
-- Append the number of recently added series (from 1-99) to rescan as an argument when 5 isn't enough:
+- Change the number of recently added series (from 1-99) to rescan with an argument when 5 isn't enough:
   - `rescan-recent.py 20` would rescan the 20 most recently added series
 </details>
 
@@ -327,7 +330,7 @@ If "assumed content ratings" are enabled in the agent settings the [target audie
 | **\*\*** Violence                 | TV-14-V |
 | **\*\*** Nudity                   | TV-14-S |
 | Borderline Porn (override)        | TV-MA   |
-| **\*\*\+** Nudity, **\*\*** sex   | TV-MA-S |
+| **\*\*\+** Nudity, **\*\*** Sex   | TV-MA-S |
 | **\*\*\+** Violence               | TV-MA-V |
 | 18 Restricted (override)          | X       |
 
