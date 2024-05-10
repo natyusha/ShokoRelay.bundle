@@ -95,18 +95,18 @@ slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}$', '^\\d$'
 def arg_parse_1(arg1):
     arg1 = arg1.lower()
     global slug_regex, offset_regex, theme_slug, offset, play, batch, FFplay
-    if re.match(slug_regex, arg1):
+    if re.match(slug_regex, arg1): # check if the argument is a slug via regex
         theme_slug = arg1.upper()
-    elif re.match(offset_regex, arg1):
+    elif re.match(offset_regex, arg1): # else check if it is a single digit offset via regex
         offset = int(arg1)
-    elif arg1 == 'play':
+    elif arg1 == 'play': # else check if the user wants to run in preview mode
         play = True
-    elif arg1 == 'batch':
+    elif arg1 == 'batch': # else check if the user want to run in batch mode
         batch, FFplay = True, False
     else:
-        raise argparse.ArgumentTypeError('invalid slug, offset, play or batch')
+        raise argparse.ArgumentTypeError('invalid (slug, offset, play or batch)')
     return arg1
-def arg_parse_2(arg2):
+def arg_parse_2(arg2): # use a combination of the single argument logic for the second argument (excluding batch)
     arg1, arg2 = sys.argv[1], arg2.lower()
     global slug_regex, offset_regex, theme_slug, offset, play
     if re.match(slug_regex, arg1) and re.match(offset_regex, arg2):
@@ -118,7 +118,7 @@ def arg_parse_2(arg2):
     else:
         raise argparse.ArgumentTypeError('invalid (slug + offset), (slug + play) or (offset + play')
     return arg2
-def arg_parse_3(arg3):
+def arg_parse_3(arg3): # there is only a single possible format if there are three arguments at once
     arg1, arg2, arg3 = sys.argv[1], sys.argv[2], arg3.lower()
     global slug_regex, offset_regex, offset, theme_slug, play
     if (re.match(slug_regex, arg1.lower()) and re.match(offset_regex, arg2) and arg3 == 'play'):
@@ -127,14 +127,14 @@ def arg_parse_3(arg3):
         raise argparse.ArgumentTypeError('invalid (slug + offset + play)')
     return arg3
 
-## check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
+# check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
 parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=RawTextHelpFormatter)
 parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2" and so on\n\n')
-parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*if the slug is provided it must be the second argument\n\n')
+parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*must be the second argument if the slug is provided\n\n')
 parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
 args = parser.parse_args()
 args.arg1, args.arg2, args.arg3 # grab the arguments if available
-if play == True: FFplay = True # force FFplay if the play argument was supplied
+if play == True: FFplay = True # force enable FFplay if the play argument was supplied
 
 # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
 # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
