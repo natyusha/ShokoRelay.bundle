@@ -6,8 +6,6 @@ Prefs = {
     'Port': 8111,
     'Username': 'Default',
     'Password': '',
-    'IncludeSpecials': True,
-    'IncludeOther': True,
     'SingleSeasonOrdering': False
 }
 
@@ -145,10 +143,6 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         if episode_data['TvDB'] is not None:
                             season = episode_data['TvDB']['Season']
                             episode_source = '(TvDB): '
-
-                    # Ignore these by choice
-                    if season == 0 and Prefs['IncludeSpecials'] == False: continue
-                    if season < 0 and Prefs['IncludeOther'] == False: continue
 
                     if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
                         episode_number = episode_data['TvDB']['Number']
