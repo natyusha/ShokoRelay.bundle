@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('Shoko Relay Agent Started [v1.1.7]')
+    Log('Shoko Relay Agent Started [v1.1.8]')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -285,7 +285,7 @@ class ShokoRelayAgent:
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
             episode_type = episode_data['AniDB']['Type'] # Get episode type
 
-            # Get season number
+            # Get season and episode numbers
             season = 0
             episode_source = '(AniDB):'
             if   episode_type == 'Normal'    : season =  1
@@ -294,14 +294,12 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if not Prefs['SingleSeasonOrdering']:
-                episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Grab TvDB info when SingleSeasonOrdering isn't enabled
-                if episode_data['TvDB']:
-                    season         = episode_data['TvDB']['Season']
-                    episode_number = episode_data['TvDB']['Number']
-                    episode_source = '(TvDB): '
-                else:
-                    episode_number = episode_data['AniDB']['EpisodeNumber']
+            if not Prefs['SingleSeasonOrdering'] and try_get(episode_data['TvDB'], 0, None): # Grab TvDB info when SingleSeasonOrdering isn't enabled
+                episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None)
+                season               = episode_data['TvDB']['Season']
+                episode_number       = episode_data['TvDB']['Number']
+                episode_source       = '(TvDB): '
+            else: episode_number     = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
             Log('Season %s                %s' % (episode_source, season))
             Log('Episode %s               %s' % (episode_source, episode_number))

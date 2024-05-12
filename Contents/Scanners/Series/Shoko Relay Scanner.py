@@ -129,7 +129,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     # Get episode type
                     episode_type = episode_data['AniDB']['Type']
 
-                    # Get season number
+                    # Get season and episode numbers
                     season = 0
                     episode_source = '(AniDB):'
                     if episode_type   == 'Normal'    : season =  1
@@ -138,15 +138,12 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Trailer'   : season = -2
                     elif episode_type == 'Parody'    : season = -3
                     elif episode_type == 'Other'     : season = -4
-                    if not Prefs['SingleSeasonOrdering']: # Grab TvDB info when SingleSeasonOrdering isn't enabled
-                        episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None) # Take the first link, as explained before
-                        if episode_data['TvDB'] is not None:
-                            season = episode_data['TvDB']['Season']
-                            episode_source = '(TvDB): '
-
-                    if not Prefs['SingleSeasonOrdering'] and episode_data['TvDB'] is not None:
-                        episode_number = episode_data['TvDB']['Number']
-                    else: episode_number = episode_data['AniDB']['EpisodeNumber']
+                    if not Prefs['SingleSeasonOrdering'] and try_get(episode_data['TvDB'], 0, None): # Grab TvDB info when SingleSeasonOrdering isn't enabled
+                        episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None)
+                        season               = episode_data['TvDB']['Season']
+                        episode_number       = episode_data['TvDB']['Number']
+                        episode_source       = '(TvDB): '
+                    else: episode_number     = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
                     Log.info('Season %s  %s' % (episode_source, season))
                     Log.info('Episode %s %s' % (episode_source, episode_number))
