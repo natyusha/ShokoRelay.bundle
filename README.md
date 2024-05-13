@@ -3,8 +3,8 @@
 This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) and [Plex Media Server](https://www.plex.tv/media-server-downloads/). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
-- Extract [this repository](https://github.com/natyusha/ShokoRelay.bundle/archive/refs/heads/master.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
-- Remove `-master` from the end of the resulting folder name (the folder name should be `ShokoRelay.bundle`)
+- Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
+- Ensure that the resulting folder name is `ShokoRelay.bundle` and navigate to it
 - Move the `Scanners` folder located in `Contents` to `\Plex Media Server\`
 - Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Relay Scanner.py` with a text editor:
   - Hostname
