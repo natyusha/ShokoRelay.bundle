@@ -1,0 +1,24 @@
+name: Upload Zipped Release Assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  upload_zipped_asset:
+    name: Upload Zipped Assets
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ShokoRelay.bundle
+        run: |
+            zip -r ../ShokoRelay.bundle.zip Contents README.md
+            gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.zip
+        env:
+          GITHUB_TOKEN: ${{ github.TOKEN }}
