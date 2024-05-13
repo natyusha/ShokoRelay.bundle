@@ -12,13 +12,13 @@ jobs:
     name: Upload Zipped Assets
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: ShokoRelay.bundle
+      - name: Create ShokoRelay.bundle
         run: |
-            zip -r ../ShokoRelay.bundle.zip Contents README.md
+            cd ..
+            zip -r ShokoRelay.bundle.zip ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
+            cd ShokoRelay.bundle
             gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.zip
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
