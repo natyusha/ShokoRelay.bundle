@@ -133,12 +133,10 @@ class ShokoRelayAgent:
 
         # Get Studio as Animation Work (アニメーション制作)
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
-        studio = try_get(studio, 0, None)
-        studio_source = '(Animation Work):      '
+        studio_source, studio = '(Animation Work):      ', try_get(studio, 0, None)
         if not studio: # If no Studio use Work (制作) listing
             studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
-            studio = try_get(studio, 0, None)
-            studio_source = '(Work):                '
+            studio_source, studio = '(Work):                ', try_get(studio, 0, None)
         if studio:
             metadata.studio = studio['Staff']['Name']
             Log('Studio %s %s' % (studio_source, studio['Staff']['Name']))
@@ -286,8 +284,7 @@ class ShokoRelayAgent:
             episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Get season and episode numbers
-            season = 0
-            episode_source = '(AniDB):'
+            episode_source, season = '(AniDB):', 0
             if   episode_type == 'Normal'    : season =  1
             elif episode_type == 'Special'   : season =  0
             elif episode_type == 'ThemeSong' : season = -1
@@ -323,38 +320,37 @@ class ShokoRelayAgent:
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the language preference
-                original_title = title
+                title_source, original_title = '(AniDB Series):', title
                 for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
                     lang = lang.strip()
                     title = try_get(series_titles, lang.lower(), title)
-                    title_source = '(AniDB Series):'
                     if title is not original_title: break
                 if title is original_title: title = try_get(series_titles, 'en', title) # If not found, fallback to EN series title
                 if title is original_title: # Fallback to TvDB title as a last resort
                     if try_get(episode_data['TvDB'], 'Title', None):
-                        title = try_get(episode_data['TvDB'], 'Title')
-                        title_source = '(TvDB):        '
+                        title_source, title = '(TvDB):        ', try_get(episode_data['TvDB'], 'Title')
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
             # TvDB episode title fallback (if the episode title is Episode/Volume # on AniDB) excluding Episode/Volume 0
             if re.match(r'^(?:Episode|Volume) [1-9][0-9]*$', title) and try_get(episode_data['TvDB'], 'Title', None):
-                title = try_get(episode_data['TvDB'], 'Title')
-                title_source = '(TvDB):        '
+                title_source, title = '(TvDB):        ', try_get(episode_data['TvDB'], 'Title')
 
             episode_obj.title = title
             Log('Title %s          %s' % (title_source, episode_obj.title))
 
             # Get Originally Available
-            airdate = try_get(episode_data['AniDB'], 'AirDate', None)
+            airdate_status, airdate = '', try_get(episode_data['AniDB'], 'AirDate', None)
             if airdate:
-                if (season == -4 and Prefs['disableOtherSeasonAirdate']):
-                    Log('Originally Available:          (skipped)')
-                elif (-3 <= season and season < 0 and Prefs['disableNegativeSeasonAirdate']):
-                    Log('Originally Available:          (skipped)')
-                else:
-                    episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-                    Log('Originally Available:          %s' % episode_obj.originally_available_at)
+                episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
+                # Remove the airdate for negative seasons according to the preference
+                if season == -4 and Prefs['disableNegativeSeasonAirdates'] == 'Exclude Other':
+                    pass
+                elif season < 0 and Prefs['disableNegativeSeasonAirdates'] != 'None':
+                    airdate_status, episode_obj.originally_available_at = 'Disabled in Agent Settings - ', None
+                Log('Originally Available:          %s%s' % (airdate_status, episode_obj.originally_available_at))
+            else:
+                Log('Originally Available:          %s' % None)
 
             # Get Content Ratings (from series)
             episode_obj.content_rating = metadata.content_rating

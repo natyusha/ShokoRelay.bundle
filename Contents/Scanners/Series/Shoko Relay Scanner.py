@@ -130,8 +130,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     episode_type = episode_data['AniDB']['Type']
 
                     # Get season and episode numbers
-                    season = 0
-                    episode_source = '(AniDB):'
+                    episode_source, season = '(AniDB):', 0
                     if episode_type   == 'Normal'    : season =  1
                     elif episode_type == 'Special'   : season =  0
                     elif episode_type == 'ThemeSong' : season = -1
