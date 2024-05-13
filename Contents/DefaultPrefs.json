@@ -119,5 +119,17 @@
         "label": "Use Shoko's episode thumbnails",
         "type": "bool",
         "default": false
+    },
+    {
+        "id": "disableNegativeSeasonAirdate",
+        "label": "Leave 'Originally Available' date blank for theme songs, trailers, and parodies. This is a workaround to prevent Plex from playing all of them before episodes",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "disableOtherSeasonAirdate",
+        "label": "Leave 'Originally Available' date blank for episodes of type 'Other'. This is a workaround to prevent Plex from playing all of them before episodes",
+        "type": "bool",
+        "default": false
     }
 ]

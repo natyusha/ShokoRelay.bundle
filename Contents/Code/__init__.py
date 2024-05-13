@@ -348,8 +348,13 @@ class ShokoRelayAgent:
             # Get Originally Available
             airdate = try_get(episode_data['AniDB'], 'AirDate', None)
             if airdate:
-                episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-                Log('Originally Available:          %s' % episode_obj.originally_available_at)
+                if (season == -4 and Prefs['disableOtherSeasonAirdate']):
+                    Log('Originally Available:          (skipped)')
+                elif (-3 <= season and season < 0 and Prefs['disableNegativeSeasonAirdate']):
+                    Log('Originally Available:          (skipped)')
+                else:
+                    episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
+                    Log('Originally Available:          %s' % episode_obj.originally_available_at)
 
             # Get Content Ratings (from series)
             episode_obj.content_rating = metadata.content_rating
