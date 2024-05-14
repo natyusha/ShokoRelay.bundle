@@ -22,7 +22,7 @@ def GetApiKey():
             'device': 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        Log.Debug('Got API KEY: %s' % resp)
+        # Log.debug('Got API KEY:                   %s' % resp) # Not needed
         API_KEY = resp
         return resp
     return API_KEY
