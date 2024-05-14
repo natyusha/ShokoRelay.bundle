@@ -168,7 +168,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
             path = os.path.relpath(full_path, root)
             Log.info('Subfolder Scan:  %s' % full_path)
 
-            subdir_dirs = subdir_files = []
+            subdir_dirs, subdir_files = [], []
             for file in os.listdir(full_path):
                 path_item = os.path.join(full_path, file)
                 if os.path.isdir(path_item): subdir_dirs.append(path_item)
