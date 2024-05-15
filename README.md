@@ -51,6 +51,12 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
 ## Scripts
+Shoko Relay includes several utility / automation scripts which can help to quickly add full length theme songs, automatic collection posters, correct negative season numbers, synced watched states, and more.
+
+The scripts require basic knowledge of running Python and other simple commands in a terminal. They are located in the `.\Contents\Scripts` folder inside `ShokoRelay.bundle` and can be moved to whatever location is convenient for the user (as long as the `config.py` file is kept in the same folder).
+
+For ease of use, adding the Scripts folder to the **[PATH](https://en.wikipedia.org/wiki/PATH_(variable))** is also recommended.
+
 ### Prerequisites
 Before using any of the scripts you must have the requisite dependencies installed. For more information on using Python scripts in general check out the Python 3 docs for [linux](https://docs.python.org/3/using/unix.html#on-linux) or [windows](https://docs.python.org/3/using/windows.html).
 | Dependency                                          | AnimeThemes  | Collection-Posters | Force-Metadata | Rescan-Recent | Watched-Sync |
@@ -64,7 +70,7 @@ Before using any of the scripts you must have the requisite dependencies install
 > When installing FFmpeg on Windows make sure to add it to the **PATH** by editing [Windows environment variables](https://phoenixnap.com/kb/ffmpeg-windows#ftoc-heading-4) or using the following command: `setx /m PATH "PATHTOFFMPEG"`.
 
 > [!TIP]
-> When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod. For ease of use adding the Scripts folder to the PATH is also recommended.
+> When running Plex from a Docker container consider installing the additional packages via the [Universal Package Install](https://github.com/linuxserver/docker-mods/tree/universal-package-install) Docker mod. If this isn't feasible the entire Scripts folder can simply be moved outside of the container with full functionality intact.
 ```yaml
 environment:
   - DOCKER_MODS=linuxserver/mods:universal-package-install
