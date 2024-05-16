@@ -107,11 +107,16 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     continue
 
                 # Get series data using the series id
-                series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
+                series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TvDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TvDB
 
                 # Get the preferred/overridden title (preferred title follows shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
                 Log.info(' Title [ShokoID]:  %s [%s]' % (show_title, series_id))
+
+                # If TvDB info is available and SingleSeasonOrdering isn't enabled add the title as a comparison to the regular one to help spot mismatches
+                if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
+                    tvdb_title, tvdb_id = series_data['TvDB'][0]['Title'].encode('utf-8'), series_data['TvDB'][0]['ID']
+                    Log.info(' Title [TvDB_ID]:  %s [%s]' % (tvdb_title, tvdb_id))
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
@@ -119,7 +124,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
                     episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
 
-                    # Ignore multi episode files of differing types (anidb episode relations)
+                    # Ignore multi episode files of differing types (AniDB episode relations)
                     if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
 
                     # Get episode type

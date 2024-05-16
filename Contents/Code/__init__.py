@@ -49,7 +49,7 @@ class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         name = media.show
 
-        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search (non negative integers are treated as anidb ids)
+        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search (non negative integers are treated as AniDB ids)
         ## https://github.com/ShokoAnime/ShokoServer/issues/1105
         if name == '86': name = 'Eighty-Six'
 
@@ -77,7 +77,7 @@ class ShokoRelayAgent:
         Log('################## ShokoRelay for Series ID: %-*s ##################' % (7, aid))
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
-        # Make a dict of language -> title for all series titles in the anidb series data (one pair per language)
+        # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         series_titles = {}
         for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
@@ -280,7 +280,7 @@ class ShokoRelayAgent:
 
             episode_obj = metadata.seasons[season].episodes[episode_number]
 
-            # Make a dict of language -> title for all episode titles in the anidb episode data
+            # Make a dict of language -> title for all episode titles in the AniDB episode data
             episode_titles = {}
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
             episode_titles['shoko'] = episode_data['Name'] # Add shoko's preferred episode title to the dict
