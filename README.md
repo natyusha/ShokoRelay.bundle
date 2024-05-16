@@ -50,7 +50,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - Inconsistently capitalised genre tags with ones using [AniDB Capitalisation Rules](https://wiki.anidb.net/Capitalisation)
 - Will use TheTVDB episode descriptions and titles if AniDB is missing that information
 
-## Scripts
+## Utility Scripts
 Shoko Relay includes several utility / automation scripts which can help to quickly add full length theme songs, automatic collection posters, correct negative season numbers, synced watched states, and more.
 
 The scripts require basic knowledge of running Python and other simple commands in a terminal. They are located in the `.\Contents\Scripts` folder inside `ShokoRelay.bundle` and can be moved to whatever location is convenient for the user (as long as the `config.py` file is kept in the same folder).
