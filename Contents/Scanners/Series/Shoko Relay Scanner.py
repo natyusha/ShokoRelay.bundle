@@ -30,7 +30,7 @@ if not os.path.isdir(LOG_ROOT):
 def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '')
     filename = 'Shoko Relay Scanner.log'
-    format = '%(asctime)s %(message)s'
+    format = '%(asctime)s : %(levelname)s - %(message)s'
     handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=12*1024*1024, backupCount=5)
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
@@ -59,7 +59,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    Log.info('Requesting:      %s' % url)
+    Log.info(' Requesting:       %s' % url)
     myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}
     try:
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
@@ -71,11 +71,11 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    Log.debug('[Path]           %s', path)
-    Log.debug('[Files]          %s', files)
+    Log.debug('[Path]            %s', path)
+    Log.debug('[Files]           %s', files)
 
-    for subdir in subdirs: Log.debug('[Folder]         %s' % os.path.relpath(subdir, root))
-    Log.info('=' * 400)
+    for subdir in subdirs: Log.debug('[Folder]          %s' % os.path.relpath(subdir, root))
+    Log.info('=' * 300)
 
     if files:
         # Scan for video files
@@ -83,38 +83,35 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
         for idx, file in enumerate(files):
             try:
-                Log.info('File:            %s' % file)
+                Log.info(' File:             %s' % file)
 
                 # Get file data using the filename
                 filename = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
                 file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename))) # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Kowarekake%20no%20Orgel%5CKowarekake%20no%20Orgel%20-%2001.mkv
-                if len(file_data) == 0: continue # Skip if file data is not found
 
-                # Take the first file - Searching with both parent folder and filename should only return a single result
-                if len(file_data) > 1:
-                    Log.info('Multiple Files:  File Search Detected More Than One Result - Skipping!')
+                # Take the first file from the search - Searching with both parent folder and filename should only return a single result
+                if len(file_data) == 1:
+                    file_data = file_data[0]
+                elif len(file_data) > 1: # This will usually trigger for edge cases where the user only uses season subfolders coupled with file name that only use episode and season numbers
+                    Log.error('Multiple Files:   File Search Returned More Than One Result - Skipping!')
+                    continue
+                else: # This will usually trigger if files are scanned by plex before they are hashed in shoko
+                    Log.error('Missing File:     File Search Returned No Results - Skipping!')
                     continue
 
-                file_data = file_data[0]
-
-                # Ignore unrecognized files
-                if 'SeriesIDs' not in file_data or file_data['SeriesIDs'] is None:
-                    Log.info('Missing ID:      Unrecognized or Ignored File Detected - Skipping!')
+                # Take the first series id from the file - Make sure a series id exists
+                if try_get(file_data['SeriesIDs'], 0, None):
+                    series_id = file_data['SeriesIDs'][0]['SeriesID']['ID'] # Take the first matching anime in case of crossover episodes
+                else:
+                    Log.error('Missing ID:       Unrecognized or Ignored File Detected - Skipping!')
                     continue
 
-                # Get series data
-                series_ids = try_get(file_data['SeriesIDs'], 0, None)
-
-                if series_ids is None:
-                    Log.info('Missing ID:      Unrecognized or Ignored File Detected - Skipping!')
-                    continue
-
-                series_id = series_ids['SeriesID']['ID'] # Take the first matching anime in case of crossover episodes
+                # Get series data using the series id
                 series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
                 # Get the preferred/overridden title (preferred title follows shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
-                Log.info('Title:           %s' % show_title)
+                Log.info(' Title [ShokoID]:  %s [%s]' % (show_title, series_id))
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
@@ -137,36 +134,33 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Parody'    : season = -3
                     elif episode_type == 'Other'     : season = -4
                     if not Prefs['SingleSeasonOrdering'] and try_get(episode_data['TvDB'], 0, None): # Grab TvDB info when SingleSeasonOrdering isn't enabled
-                        episode_data['TvDB'] = try_get(episode_data['TvDB'], 0, None)
-                        season               = episode_data['TvDB']['Season']
-                        episode_number       = episode_data['TvDB']['Number']
-                        episode_source       = '(TvDB): '
-                    else: episode_number     = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
+                        episode_source, season, episode_number = '(TvDB): ', episode_data['TvDB'][0]['Season'], episode_data['TvDB'][0]['Number']
+                    else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
-                    Log.info('Season %s  %s' % (episode_source, season))
-                    Log.info('Episode %s %s' % (episode_source, episode_number))
+                    Log.info(' Season %s   %s' % (episode_source, season))
+                    Log.info(' Episode %s  %s' % (episode_source, episode_number))
 
                     vid = Media.Episode(show_title, season, episode_number)
                     if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # Required for multi episode files
-                    Log.info('Mapping:         %s' % vid)
-                    Log.info('-' * 400)
+                    Log.info(' Mapping:          %s' % vid)
+                    Log.info('-' * 300)
                     vid.parts.append(file)
                     mediaList.append(vid)
             except Exception as e:
-                Log.error('Error in Scan:   "%s"' % e)
+                Log.error('Error in Scan:     "%s"' % e)
                 continue
 
         Stack.Scan(path, files, mediaList, subdirs)
 
     if not path: # If current folder is root folder
-        Log.info('Initiating Global Subfolder Scan & Plex Grouping Removal') # Log once during the root scan
-        Log.info('=' * 400)
+        Log.info(' Initiating Global Subfolder Scan & Plex Grouping Removal') # Log once during the root scan
+        Log.info('=' * 300)
         subfolders = subdirs[:]
 
         while subfolders: # Subfolder scanning queue
             full_path = subfolders.pop(0)
             path = os.path.relpath(full_path, root)
-            Log.info('Subfolder Scan:  %s' % full_path)
+            Log.info(' Subfolder Scan:   %s' % full_path)
 
             subdir_dirs, subdir_files = [], []
             for file in os.listdir(full_path):
@@ -174,17 +168,17 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 if os.path.isdir(path_item): subdir_dirs.append(path_item)
                 else: subdir_files.append(path_item)
 
-            if subdir_dirs: Log.info('Subdirectories:  %s' % subdir_dirs)
+            if subdir_dirs: Log.info(' Subdirectories:   %s' % subdir_dirs)
 
             for dir in subdir_dirs:
                 subfolders.append(dir)
-                Log.info('Added to Scan:   %s' % dir) # Add the subfolder to subfolder scanning queue
+                Log.info(' Added to Scan:    %s' % dir) # Add the subfolder to subfolder scanning queue
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(list(reversed(path.split(os.sep))))>1 or subdir_dirs):
-                Log.info('Files Detected:  Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
+                Log.info(' Files Detected:  Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
                 if grouping_dir in subdirs: subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
-                Log.info('-' * 400)
+                Log.info('-' * 300)
                 # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards
                 Scan(path, sorted(subdir_files), mediaList, [], language, root)
 
