@@ -21,6 +21,8 @@ Preferences:
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
   - If you want to track watched states from managed/home accounts on your Plex server you can add them to Plex "ExtraUsers" following the same list format as above.
       - Leave it as "None" otherwise.
+  - If you don't want to track watched states from your Plex Server's Admin account set "SyncAdmin" to "False".
+      - Leave it as "True" otherwise.
 Usage:
   - Run in a terminal (watched-sync.py) to sync watched states from Plex to Shoko.
   - Append a relative date suffix as an argument to narrow down the time frame and speed up the process:
@@ -62,8 +64,8 @@ except Exception:
     print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
     exit(1)
 
-# add the admin account to a list then append any other users to it
-accounts = [admin]
+# add the admin account to a list (if it is enabled) then append any other users to it
+accounts = [admin] if cfg.Plex['SyncAdmin'] else []
 if cfg.Plex['ExtraUsers']:
     try:
         extra_users = [admin.user(username) for username in cfg.Plex['ExtraUsers']]

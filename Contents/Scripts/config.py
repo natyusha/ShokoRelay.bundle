@@ -14,6 +14,8 @@ Plex = {
     'DataFolder': None,
     # PostersFolder (for collection-posters.py) requires double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters',"
     'PostersFolder': None,
+    # SyncAdmin (for watched-sync.py)
+    'SyncAdmin': True,
     # Alternate Plex authentication method (primarily for those using two-factor authentication)
     # https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
     'X-Plex-Token': ''

@@ -248,6 +248,8 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - It must be a list to work e.g. `'LibraryNames': ['Anime Shows', 'Anime Movies']`
 - If you want to track watched states from managed/home accounts on your Plex server you can add them to Plex "ExtraUsers" following the same list format as above.
   - Leave it as "None" otherwise.
+- If you don't want to track watched states from your Plex Server's Admin account set "SyncAdmin" to "False".
+  - Leave it as "True" otherwise.
 
 **Usage:**
 - Run in a terminal `watched-sync.py` to sync watched states from Plex to Shoko.
