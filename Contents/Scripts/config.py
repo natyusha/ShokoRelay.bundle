@@ -8,12 +8,12 @@ Plex = {
     'ServerName': 'Media',
     # LibraryNames must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies'],"
     'LibraryNames': ['Anime'],
-    # ExtraUsers (for watched-sync.py) must be a list to work e.g. "'ExtraUsers': ['Family'],"
-    'ExtraUsers': None,
-    # DataFolder (for collection-posters.py clean) requires double backslashes on windows e.g. "'DataFolder': '%LOCALAPPDATA%\\Plex Media Server',"
-    'DataFolder': None,
     # PostersFolder (for collection-posters.py) requires double backslashes on windows e.g. "'PostersFolder': 'M:\\Anime\\Posters',"
     'PostersFolder': None,
+    # DataFolder (for collection-posters.py clean) requires double backslashes on windows e.g. "'DataFolder': '%LOCALAPPDATA%\\Plex Media Server',"
+    'DataFolder': None,
+    # ExtraUsers (for watched-sync.py) must be a list to work e.g. "'ExtraUsers': ['Family'],"
+    'ExtraUsers': None,
     # SyncAdmin (for watched-sync.py)
     'SyncAdmin': True,
     # Alternate Plex authentication method (primarily for those using two-factor authentication)

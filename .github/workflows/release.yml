@@ -1,4 +1,4 @@
-name: Upload Zipped Release Assets
+name: Upload Archived Release Assets
 
 on:
   release:
@@ -8,8 +8,8 @@ permissions:
   contents: write
 
 jobs:
-  upload_zipped_asset:
-    name: Upload Zipped Assets
+  upload_archived_asset:
+    name: Upload Archived Assets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,7 +18,9 @@ jobs:
         run: |
             cd ..
             zip -r ShokoRelay.bundle.zip ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
+            tar -zcvf ShokoRelay.bundle.tar.gz ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
             cd ShokoRelay.bundle
             gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.zip
+            gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.tar.gz
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
