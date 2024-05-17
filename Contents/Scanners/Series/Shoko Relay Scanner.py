@@ -6,6 +6,7 @@ Prefs = {
     'Port': 8111,
     'Username': 'Default',
     'Password': '',
+    # SingleSeasonOrdering set to "True" to ignore TvDB season ordering (must be Changed in Agent settings too)
     'SingleSeasonOrdering': False
 }
 
@@ -47,7 +48,7 @@ def GetApiKey():
             'device': 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
-        # Log.debug('Got API Key:     %s' % resp) # Not needed
+        # Log.debug('Got API Key:      %s' % resp) # Not needed
         API_KEY = resp
         return resp
     return API_KEY
@@ -71,11 +72,11 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    Log.debug('[Path]            %s', path)
-    Log.debug('[Files]           %s', files)
+    if path:  Log.debug('[Path]            %s' % path)
+    if files: Log.debug('[Files]           %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]          %s' % os.path.relpath(subdir, root))
-    Log.info('=' * 300)
+    Log.info('===================[Shoko Relay Scanner v1.1.12]' + '=' * 252)
 
     if files:
         # Scan for video files
@@ -173,7 +174,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 if os.path.isdir(path_item): subdir_dirs.append(path_item)
                 else: subdir_files.append(path_item)
 
-            if subdir_dirs: Log.info(' Subdirectories:   %s' % subdir_dirs)
+            if subdir_dirs: Log.info(' Subdirectories:   %s' % ', '.join(subdir_dirs))
 
             for dir in subdir_dirs:
                 subfolders.append(dir)
@@ -181,7 +182,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
             grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
             if subdir_files and (len(list(reversed(path.split(os.sep))))>1 or subdir_dirs):
-                Log.info(' Files Detected:  Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
+                Log.info(' Files Detected:   Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
                 if grouping_dir in subdirs: subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
                 Log.info('-' * 300)
                 # Relative path for dir or it will group multiple series into one as before and no empty subdirs array because they will be scanned afterwards

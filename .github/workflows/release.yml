@@ -17,10 +17,10 @@ jobs:
       - name: Create ShokoRelay.bundle
         run: |
             cd ..
-            zip -r ShokoRelay.bundle.zip ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
             tar -zcvf ShokoRelay.bundle.tar.gz ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
+            zip -r ShokoRelay.bundle.zip ShokoRelay.bundle/Contents ShokoRelay.bundle/README.md
             cd ShokoRelay.bundle
-            gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.zip
             gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.tar.gz
+            gh release upload ${{ github.event.release.tag_name }} ../ShokoRelay.bundle.zip
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
