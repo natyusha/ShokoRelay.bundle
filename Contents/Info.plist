@@ -5,7 +5,7 @@
         <key>CFBundleName</key>
         <string>Shoko Relay</string>
         <key>CFBundleVersion</key>
-        <string>1.1.13</string>
+        <string>1.1.14</string>
         <key>CFBundleIdentifier</key>
         <string>com.plexapp.agents.shokorelay</string>
         <key>PlexClientPlatforms</key>

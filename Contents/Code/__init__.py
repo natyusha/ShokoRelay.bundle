@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.1.13]======================')
+    Log('======================[Shoko Relay Agent v1.1.14]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata

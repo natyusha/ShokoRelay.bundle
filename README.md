@@ -300,13 +300,13 @@ Due to custom agent limitations certain season names which contain special files
 - Season -4 → Other
 
 ### Automatic Title Modification
-**Common Prefixes for Series**
-When a series starts with a common title prefix it will optionally move it to the end of the title (for improved alphabetical sorting). A list of the prefixes considered common by the agent are as follows:
+**Common Prefixes for Series**  
+When a series starts with a common title prefix it will optionally be moved to the end of the title (for improved alphabetical sorting). A list of the prefixes considered common by the agent are as follows:
 - Gekijouban
 - Eiga
 - OVA
 
-**Ambiguous Titles for Episodes**
+**Ambiguous Titles for Episodes**  
 In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows:
 - Complete Movie
 - Music Video
