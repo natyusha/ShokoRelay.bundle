@@ -66,6 +66,13 @@
     },
 
     {
+        "id": "moveCommonTitlePrefixes",
+        "label": "Move common series title prefixes like \"Gekijouban\", \"Eiga\" etc. to the end of the title",
+        "type": "bool",
+        "default": true
+    },
+
+    {
         "id": "crewListings",
         "label": "Enable staff listings in the Cast & Crew section",
         "type": "bool",

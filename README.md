@@ -38,6 +38,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - Individual episodes will list the Writer as Original Work (原作) and Director as Direction (監督)
     - **Note:** Only supported if there is a single entry for each credit to avoid incorrect metadata
   - Will apply content ratings like "TV-14", "TV-Y" etc. (if the corresponding AniDB tags are present)
+  - Will move common series title prefixes like "Gekijouban", "Eiga" etc. to the end of the title
 - Removes the original tag hiding options and replaces them with a tag weight system similar to what [HAMA](https://github.com/ZeroQI/Hama.bundle) uses
   - Note: Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/9c0ae9208479420dea3b766156435d364794e809/Shoko.Server/Utilities/TagFilter.cs#L37) list
 - Series and movies will list the Studio as Animation Work (アニメーション制作) or Work (制作)
@@ -298,7 +299,14 @@ Due to custom agent limitations certain season names which contain special files
 - Season -3 → Parodies
 - Season -4 → Other
 
-### Ambiguous Title Replacement
+### Automatic Title Modification
+**Common Prefixes for Series**
+When a series starts with a common title prefix it will optionally move it to the end of the title (for improved alphabetical sorting). A list of the prefixes considered common by the agent are as follows:
+- Gekijouban
+- Eiga
+- OVA
+
+**Ambiguous Titles for Episodes**
 In cases where AniDB uses ambiguous episode titles the series title will be used instead (with the original title appended to it as necessary). A list of the titles considered ambiguous by the agent are as follows:
 - Complete Movie
 - Music Video

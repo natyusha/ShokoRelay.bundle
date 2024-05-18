@@ -78,7 +78,7 @@ class ShokoRelayAgent:
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
-        series_titles = {}
+        title_mod, series_titles = ':               ', {}
         for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
         series_titles['shoko'] = series_data['Name'] # Add shoko's preferred series title to the dict
@@ -89,8 +89,13 @@ class ShokoRelayAgent:
             if title: break
         if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to shoko's preferred series title
 
+        # Move common title prefixes to the end of the title
+        if Prefs['moveCommonTitlePrefixes']:
+            CommonTitlePrefixes = ('Gekijouban ', 'Eiga ', 'OVA ') # List of prefixes considered common and padded with a space
+            if title.startswith(CommonTitlePrefixes): title_mod, title = ' (Prefix Moved):', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
+
         metadata.title = title
-        Log('Title:                         %s [%s]' % (title, lang.upper()))
+        Log('Title%s          %s [%s]' % (title_mod, title, lang.upper()))
 
         # Get Alternate Title according to the language preference
         for lang in (l.strip().lower() for l in Prefs['SeriesAltTitleLanguagePreference'].split(',')):
@@ -416,11 +421,11 @@ def title_case(text):
     force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv')
     # Special cases where a specific capitalisation style is preferred
     force_special = {'comicfesta': 'ComicFesta', 'd\'etat': 'd\'Etat', 'noitamina': 'noitaminA'}
-    text = re.sub(r'[\'\w\d]+\b', lambda m:m.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
+    text = re.sub(r'[\'\w\d]+\b', lambda t: t.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
     for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
     for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
     text = text[:1].upper() + text[1:] # Force capitalise the first character no matter what
-    if ' ' in text: text = (lambda t:t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1)) # Force capitalise the first character of the last word no matter what
+    if ' ' in text: text = (lambda t: t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1)) # Force capitalise the first character of the last word no matter what
     for key, value in force_special.items(): text = re.sub(r'\b' + key + r'\b', value, text, flags=re.I) # Apply special cases as a last step
     return text
 
