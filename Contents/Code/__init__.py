@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('################# Shoko Relay Agent Started [v1.1.12] #################')
+    Log('======================[Shoko Relay Agent v1.1.13]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -74,7 +74,7 @@ class ShokoRelayAgent:
         aid = metadata.id
 
         # Get series data
-        Log('################## ShokoRelay for Series ID: %-*s ##################' % (7, aid))
+        Log('==================[Shoko Relay for Series ID: %s]==================' % aid.zfill(6))
         series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
@@ -84,23 +84,23 @@ class ShokoRelayAgent:
         series_titles['shoko'] = series_data['Name'] # Add shoko's preferred series title to the dict
 
         # Get Title according to the language preference
-        for lang in Prefs['SeriesTitleLanguagePreference'].split(','):
-            title = try_get(series_titles, lang.strip().lower(), None)
+        for lang in (l.strip().lower() for l in Prefs['SeriesTitleLanguagePreference'].split(',')):
+            title = try_get(series_titles, lang, None)
             if title: break
         if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to shoko's preferred series title
 
         metadata.title = title
-        Log('Title:                         %s [%s]' % (title, lang.strip().upper()))
+        Log('Title:                         %s [%s]' % (title, lang.upper()))
 
         # Get Alternate Title according to the language preference
-        for lang in Prefs['SeriesAltTitleLanguagePreference'].split(','):
-            alt_title = try_get(series_titles, lang.strip().lower(), None)
+        for lang in (l.strip().lower() for l in Prefs['SeriesAltTitleLanguagePreference'].split(',')):
+            alt_title = try_get(series_titles, lang, None)
             if alt_title: break
 
         # Append the Alternate title to the Sort Title to make it searchable
         if alt_title is not None and alt_title != metadata.title: metadata.title_sort = title + ' [' + alt_title + ']'
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
-        Log('Alternate Title (AddedToSort): %s [%s]' % (alt_title, lang.strip().upper()))
+        Log('Alternate Title (AddedToSort): %s [%s]' % (alt_title, lang.upper()))
 
         """ Enable if Plex Fixes Blocking Legacy Agent Issue
         # Get Original Title
@@ -215,10 +215,7 @@ class ShokoRelayAgent:
         for role in cast_crew:
             role_type = role['RoleName']
             if role_type != 'Seiyuu': continue # Skip if not Seiyuu
-            cv_check = True
-            meta_role = metadata.roles.new()
-            meta_role.name = role['Staff']['Name']
-            meta_role.role = role['Character']['Name']
+            cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], role['Character']['Name']
             Log('%-30s %s' % (meta_role.role, meta_role.name))
             # Grab staff image (if available)
             image = role['Staff']['Image']
@@ -233,9 +230,7 @@ class ShokoRelayAgent:
             for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
                 role_type = role['RoleName']
                 if role_type == 'Seiyuu': continue # Skip if Seiyuu
-                staff_check = True
-                meta_role = metadata.roles.new()
-                meta_role.name = role['Staff']['Name']
+                staff_check, meta_role, meta_role.name = True, metadata.roles.new(), role['Staff']['Name']
                 if role_type == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Director' # Direction (監督)
                     director_name.append(meta_role.name)
@@ -272,7 +267,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if not Prefs['SingleSeasonOrdering'] and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a TvDB match 
+            if not Prefs['SingleSeasonOrdering'] and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a TvDB match
                 episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
@@ -288,8 +283,8 @@ class ShokoRelayAgent:
 
             # Get episode Title according to the language preference
             title_source = '(AniDB):                '
-            for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
-                title = try_get(episode_titles, lang.strip().lower(), None)
+            for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
+                title = try_get(episode_titles, lang, None)
                 if title: break
             if not title: title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to shoko's preferred episode title
 
@@ -298,9 +293,8 @@ class ShokoRelayAgent:
             if title in SingleEntryTitles:
                 # Get series title according to the language preference
                 title_source, original_title = '(ReplacementFromSeries):', title
-                for lang in Prefs['EpisodeTitleLanguagePreference'].split(','):
-                    lang = lang.strip().lower()
-                    if lang != 'shoko': title = try_get(series_titles, lang, title) # Exclude "shoko" as it will return the preferred language for series and not episodes'
+                for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
+                    if lang != 'shoko': title = try_get(series_titles, lang, title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                     if title is not original_title: break
                 if title is original_title: title, lang = try_get(series_titles, 'en', title), 'en (fallback)' # If not found, fallback to EN series title
                 if title is original_title and tvdb_ep_data and try_get(tvdb_ep_data, 'Title', None): # Fallback to the TvDB title as a last resort if there is a TvDB match
@@ -313,7 +307,7 @@ class ShokoRelayAgent:
                 title_source, title = '(TvDB Override):        ', tvdb_ep_data['Title']
 
             episode_obj.title = title
-            Log('Title %s %s [%s]' % (title_source, episode_obj.title, lang.strip().upper()))
+            Log('Title %s %s [%s]' % (title_source, episode_obj.title, lang.upper()))
 
             # Get Originally Available
             airdate_log, airdate = None, try_get(episode_data['AniDB'], 'AirDate', None)
@@ -421,11 +415,12 @@ def title_case(text):
     # Abbreviations or acronyms that should be fully capitalised
     force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv')
     # Special cases where a specific capitalisation style is preferred
-    force_special = {'comicfesta': 'ComicFesta', 'D\'etat': 'd\'Etat', 'Noitamina': 'noitaminA'}
+    force_special = {'comicfesta': 'ComicFesta', 'd\'etat': 'd\'Etat', 'noitamina': 'noitaminA'}
     text = re.sub(r'[\'\w\d]+\b', lambda m:m.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
     for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
     for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
     text = text[:1].upper() + text[1:] # Force capitalise the first character no matter what
+    if ' ' in text: text = (lambda t:t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1)) # Force capitalise the first character of the last word no matter what
     for key, value in force_special.items(): text = re.sub(r'\b' + key + r'\b', value, text, flags=re.I) # Apply special cases as a last step
     return text
 
