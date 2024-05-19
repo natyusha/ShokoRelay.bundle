@@ -35,40 +35,29 @@ def HttpReq(url, retry=True):
     global API_KEY
     # Log('Requesting:                    %s' % url) # Not needed since debug logging shows these requests anyways
     myheaders = {'apikey': GetApiKey()}
-
     try:
         return JSON.ObjectFromString(HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders).content)
     except Exception, e:
-        if not retry:
-            raise e
-
+        if not retry: raise e
         API_KEY = ''
         return HttpReq(url, False)
 
 class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
-        name = media.show
-
-        # Hardcode search replacement for "86" since it currently doesn't work as a search term with /api/v3/Series/Search (non negative integers are treated as AniDB ids)
-        ## https://github.com/ShokoAnime/ShokoServer/issues/1105
-        if name == '86': name = 'Eighty-Six'
-
         # Search for the series using the name
-        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=true&limit=10
-
+        name = media.show
+        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=false&limit=10
         for index, series_data in enumerate(prelimresults):
-            # Get series data
+            # Get series data from series id
             series_id = series_data['IDs']['ID']
             anidb_series_data = HttpReq('api/v3/Series/%s/AniDB' % series_id)
-
             # Get year from air date
             airdate = try_get(anidb_series_data, 'AirDate', None)
             year = airdate.split('-')[0] if airdate else None
-
+            # Get score from name vs distance
             score = 100 if series_data['Name'] == name else 99 - index - int(series_data['Distance'] * 100)
-
-            meta = MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)
-            results.Append(meta)
+            # Display the results
+            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang))
 
     def Update(self, metadata, media, lang, force):
         aid = metadata.id
@@ -81,13 +70,13 @@ class ShokoRelayAgent:
         title_mod, series_titles = ':               ', {}
         for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
-        series_titles['shoko'] = series_data['Name'] # Add shoko's preferred series title to the dict
+        series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
         # Get Title according to the language preference
         for lang in (l.strip().lower() for l in Prefs['SeriesTitleLanguagePreference'].split(',')):
             title = try_get(series_titles, lang, None)
             if title: break
-        if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to shoko's preferred series title
+        if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
         # Move common title prefixes to the end of the title
         if Prefs['moveCommonTitlePrefixes']:
@@ -154,18 +143,17 @@ class ShokoRelayAgent:
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
         tags, content_rating, content_descriptor, descriptor_s, descriptor_v = [], None, '', '', ''
         for tag in series_tags:
-            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])):
-                tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
-            if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) here: https://wiki.anidb.net/Categories:Content_Indicators
-                # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
-                if tag['Name'].lower() == 'nudity':
+            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])): tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
+            if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) using the content indicators described here: https://wiki.anidb.net/Categories:Content_Indicators
+                indicator = tag['Name'].lower() # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
+                if indicator == 'nudity':
                     descriptor_s = 'S'
                     if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Full frontal nudity with nipples and/or visible genitals
                     if tag['Weight'] >= 500: content_rating = 'TV-MA' # Most borderline porn / hentai
-                if tag['Name'].lower() == 'sex':
+                if indicator == 'sex':
                     descriptor_s = 'S' # 400 for sex is 99% TV-MA material
                     if tag['Weight'] >= 400: content_rating = 'TV-MA' # Sexual activity that is "on camera", but most of the action is indirectly visible
-                if tag['Name'].lower() == 'violence':
+                if indicator == 'violence':
                     descriptor_v = 'V'
                     if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
                     if tag['Weight'] >= 500: content_rating = 'TV-MA' # Added gore, repetitive killing/mutilation of more than 1 individual
@@ -284,14 +272,14 @@ class ShokoRelayAgent:
             # Make a dict of language -> title for all episode titles in the AniDB episode data
             episode_titles = {}
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
-            episode_titles['shoko'] = episode_data['Name'] # Add shoko's preferred episode title to the dict
+            episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
 
             # Get episode Title according to the language preference
             title_source = '(AniDB):                '
             for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
                 title = try_get(episode_titles, lang, None)
                 if title: break
-            if not title: title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to shoko's preferred episode title
+            if not title: title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
 
             # Replace Ambiguous Title with series Title
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous

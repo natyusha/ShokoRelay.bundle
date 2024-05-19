@@ -66,8 +66,7 @@ def HttpReq(url, retry=True):
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
     except Exception, e:
-        if not retry:
-            raise e
+        if not retry: raise e
         API_KEY = ''
         return HttpReq(url, False)
 
@@ -96,7 +95,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 elif len(file_data) > 1: # This will usually trigger for edge cases where the user only uses season subfolders coupled with file name that only use episode and season numbers
                     Log.error('Multiple Files:   File Search Returned More Than One Result - Skipping!')
                     continue
-                else: # This will usually trigger if files are scanned by plex before they are hashed in shoko
+                else: # This will usually trigger if files are scanned by plex before they are hashed in Shoko
                     Log.error('Missing File:     File Search Returned No Results - Skipping!')
                     continue
 
@@ -110,7 +109,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 # Get series data using the series id
                 series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TvDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TvDB
 
-                # Get the preferred/overridden title (preferred title follows shoko's language settings)
+                # Get the preferred/overridden title (preferred title follows Shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
                 Log.info(' Title [ShokoID]:  %s [%s]' % (show_title, series_id))
 
