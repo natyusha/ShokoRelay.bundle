@@ -65,7 +65,7 @@ def HttpReq(url, retry=True):
     try:
         req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
-    except Exception, e:
+    except Exception as e:
         if not retry: raise e
         API_KEY = ''
         return HttpReq(url, False)
@@ -95,7 +95,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 elif len(file_data) > 1: # This will usually trigger for edge cases where the user only uses season subfolders coupled with file name that only use episode and season numbers
                     Log.error('Multiple Files:   File Search Returned More Than One Result - Skipping!')
                     continue
-                else: # This will usually trigger if files are scanned by plex before they are hashed in Shoko
+                else: # This will usually trigger if files are scanned by Plex before they are hashed in Shoko
                     Log.error('Missing File:     File Search Returned No Results - Skipping!')
                     continue
 

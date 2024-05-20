@@ -37,7 +37,7 @@ def HttpReq(url, retry=True):
     myheaders = {'apikey': GetApiKey()}
     try:
         return JSON.ObjectFromString(HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders).content)
-    except Exception, e:
+    except Exception as e:
         if not retry: raise e
         API_KEY = ''
         return HttpReq(url, False)
