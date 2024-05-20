@@ -313,6 +313,7 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 - OAD
 - OVA
 - Short Movie
+- Special
 - TV Special
 - Web
 
