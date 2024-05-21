@@ -64,7 +64,7 @@ class ShokoRelayAgent:
 
         # Get series data
         Log('==================[Shoko Relay for Series ID: %s]==================' % aid.zfill(6))
-        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
+        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TvDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = ':               ', {}
@@ -83,8 +83,16 @@ class ShokoRelayAgent:
             CommonTitlePrefixes = ('Gekijouban ', 'Eiga ', 'OVA ') # List of prefixes considered common and padded with a space
             if title.startswith(CommonTitlePrefixes): title_mod, title = ' (Prefix Moved):', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
+        # If TvDB info is populated and SingleSeasonOrdering isn't enabled add the title as a comparison to the regular one to help spot mismatches
+        if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
+            tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
+            if tvdb_title: tvdb = True
+            else: tvdb, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data)' # Account for rare cases where Shoko has a TvDb ID that returns no data
+            Log('TvDB Check (Title [ID]):       %s [%s]' % (tvdb_title, tvdb_id))
+        else: tvdb = False
+
         metadata.title = title
-        Log('Title%s          %s [%s]' % (title_mod, title, lang.upper()))
+        Log('Title [LANG]%s   %s [%s]' % (title_mod, title, lang.upper()))
 
         # Get Alternate Title according to the language preference
         for lang in (l.strip().lower() for l in Prefs['SeriesAltTitleLanguagePreference'].split(',')):
@@ -94,7 +102,7 @@ class ShokoRelayAgent:
         # Append the Alternate title to the Sort Title to make it searchable
         if alt_title is not None and alt_title != metadata.title: metadata.title_sort = title + ' [' + alt_title + ']'
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
-        Log('Alternate Title (AddedToSort): %s [%s]' % (alt_title, lang.upper()))
+        Log('Alt Title (AddToSort) [LANG]:  %s [%s]' % (alt_title, lang.upper()))
 
         """ Enable if Plex Fixes Blocking Legacy Agent Issue
         # Get Original Title
@@ -260,7 +268,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if not Prefs['SingleSeasonOrdering'] and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a TvDB match
+            if tvdb and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
                 episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
@@ -275,7 +283,7 @@ class ShokoRelayAgent:
             episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
 
             # Get episode Title according to the language preference
-            title_source = '(AniDB):                '
+            title_source = '(AniDB):         '
             for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
                 title = try_get(episode_titles, lang, None)
                 if title: break
@@ -285,22 +293,22 @@ class ShokoRelayAgent:
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the language preference
-                title_source, original_title = '(ReplacementFromSeries):', title
+                title_source, original_title = '(FromSeries):    ', title
                 for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
                     if lang != 'shoko': title = try_get(series_titles, lang, title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                     if title is not original_title: break
                 if title is original_title: title, lang = try_get(series_titles, 'en', title), 'en (fallback)' # If not found, fallback to EN series title
                 if title is original_title and tvdb_ep_data and try_get(tvdb_ep_data, 'Title', None): # Fallback to the TvDB title as a last resort if there is a TvDB match
-                    title_source, title = '(TvDB):                 ', tvdb_ep_data['Title']
+                    title_source, title = '(TvDB):          ', tvdb_ep_data['Title']
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
             # TvDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TvDB match
             if re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', title) and tvdb_ep_data:
-                title_source, title = '(TvDB Override):        ', tvdb_ep_data['Title']
+                title_source, title = '(TvDB Ovrd):     ', tvdb_ep_data['Title']
 
             episode_obj.title = title
-            Log('Title %s %s [%s]' % (title_source, episode_obj.title, lang.upper()))
+            Log('Title [LANG] %s %s [%s]' % (title_source, episode_obj.title, lang.upper()))
 
             # Get Originally Available
             airdate_log, airdate = None, try_get(episode_data['AniDB'], 'AirDate', None)

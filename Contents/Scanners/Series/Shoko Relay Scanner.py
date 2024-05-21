@@ -113,17 +113,21 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
                 Log.info(' Title [ShokoID]:  %s [%s]' % (show_title, series_id))
 
-                # If TvDB info is available and SingleSeasonOrdering isn't enabled add the title as a comparison to the regular one to help spot mismatches
+                # If TvDB info is populated and SingleSeasonOrdering isn't enabled add the title as a comparison to the regular one to help spot mismatches
                 if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
-                    tvdb_title, tvdb_id = series_data['TvDB'][0]['Title'].encode('utf-8'), series_data['TvDB'][0]['ID']
-                    Log.info(' Title [TvDB_ID]:  %s [%s]' % (tvdb_title, tvdb_id))
+                    tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
+                    if tvdb_title: tvdb, tvdb_title = True, tvdb_title.encode('utf-8')
+                    else: tvdb, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data)' # Account for rare cases where Shoko has a TvDb ID that returns no data
+                    Log.info(' TvDB Title [ID]:  %s [%s]' % (tvdb_title, tvdb_id))
+                else: tvdb = False
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
                 for episode in range(episode_multi):
                     episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
                     episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
-
+                    tvdb_ep_data = try_get(episode_data['TvDB'], 0, None) # Enable TvDB fallbacks if there is a TvDB match
+                    
                     # Ignore multi episode files of differing types (AniDB episode relations)
                     if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
 
@@ -138,8 +142,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Trailer'   : season = -2
                     elif episode_type == 'Parody'    : season = -3
                     elif episode_type == 'Other'     : season = -4
-                    if not Prefs['SingleSeasonOrdering'] and try_get(episode_data['TvDB'], 0, None): # Grab TvDB info when SingleSeasonOrdering isn't enabled
-                        episode_source, season, episode_number = '(TvDB): ', episode_data['TvDB'][0]['Season'], episode_data['TvDB'][0]['Number']
+                    if tvdb and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
+                        episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
                     else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
                     Log.info(' Season %s   %s' % (episode_source, season))
