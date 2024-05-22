@@ -44,20 +44,15 @@ def HttpReq(url, retry=True):
 
 class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
-        # Search for the series using the name
+        # Search for the series using the name from the scanner
         name = media.show
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=false&limit=10
-        for index, series_data in enumerate(prelimresults):
-            # Get series data from series id
-            series_id = series_data['IDs']['ID']
-            anidb_series_data = HttpReq('api/v3/Series/%s/AniDB' % series_id)
-            # Get year from air date
-            airdate = try_get(anidb_series_data, 'AirDate', None)
-            year = airdate.split('-')[0] if airdate else None
-            # Get score from name vs distance
-            score = 100 if series_data['Name'] == name else 99 - index - int(series_data['Distance'] * 100)
-            # Display the results
-            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang))
+        for idx, series_data in enumerate(prelimresults):
+            series_id = series_data['IDs']['ID'] # Get series series id from series data
+            airdate = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None) # Get airdate from series id
+            year = airdate.split('-')[0] if airdate else None # Get year from air date
+            score = 100 if series_data['Name'] == name else 99 - idx - int(series_data['Distance'] * 100) # Get score from name vs distance
+            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)) # Tabulate the results
 
     def Update(self, metadata, media, lang, force):
         aid = metadata.id
@@ -83,13 +78,13 @@ class ShokoRelayAgent:
             CommonTitlePrefixes = ('Gekijouban ', 'Eiga ', 'OVA ') # List of prefixes considered common and padded with a space
             if title.startswith(CommonTitlePrefixes): title_mod, title = ' (Prefix Moved):', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
-        # If TvDB info is populated and SingleSeasonOrdering isn't enabled add the title as a comparison to the regular one to help spot mismatches
+        # If SingleSeasonOrdering isn't enabled and TvDB info is populated add the title as a comparison to the regular one to help spot mismatches
         if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
             tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
-            if tvdb_title: tvdb = True
-            else: tvdb, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data)' # Account for rare cases where Shoko has a TvDb ID that returns no data
+            if tvdb_title: tvdb_check = True
+            else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDb ID that returns no data
             Log('TvDB Check (Title [ID]):       %s [%s]' % (tvdb_title, tvdb_id))
-        else: tvdb = False
+        else: tvdb_check = False
 
         metadata.title = title
         Log('Title [LANG]%s   %s [%s]' % (title_mod, title, lang.upper()))
@@ -122,7 +117,7 @@ class ShokoRelayAgent:
 
         # Get Rating
         metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
-        Log('Rating:                        %s' % metadata.rating)
+        Log('Rating (Critic):               %s' % metadata.rating)
 
         # Get Studio as Animation Work (アニメーション制作)
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
@@ -257,8 +252,8 @@ class ShokoRelayAgent:
             # Get episode data
             episode_id   = episode['IDs']['ID']
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
-            episode_type = episode_data['AniDB']['Type'] # Get episode type
             tvdb_ep_data = try_get(episode_data['TvDB'], 0, None) # Enable TvDB fallbacks if there is a TvDB match
+            episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Get season and episode numbers
             episode_source, season = '(AniDB):', 0
@@ -268,7 +263,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if tvdb and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
+            if tvdb_check and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
                 episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
