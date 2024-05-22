@@ -35,7 +35,7 @@ series_count = parser.parse_args().recent_series
 
 # grab a shoko api key using the credentials from the prefs
 try:
-    auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'ShokoRelay Scripts for Plex'}).json()
+    auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
 except Exception:
     print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
     exit(1)
