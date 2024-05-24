@@ -85,7 +85,7 @@ if 'status' in auth and auth['status'] in (400, 401):
     exit(1)
 
 # loop through all of the accounts listed and sync watched states
-print_f('\n┌ShokoRelay Watched Sync')
+print_f('\n┌Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in shoko and add them to a list
 if shoko_import == True:
     print_f(f'├─Generating: Shoko Watched Episode List...')

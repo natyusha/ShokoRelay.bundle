@@ -44,8 +44,7 @@ def print_f(text): print(text, flush=True)
 # check the arguments if the user is looking to run a full clean or not
 parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly.', formatter_class=RawTextHelpFormatter)
 parser.add_argument('full_clean', metavar='full', choices=['full'], nargs='?', type=str.lower, help='If you want to do a time consuming full metadata clean up.\n*must be the sole argument and is simply entered as "full"')
-full_clean = False
-if parser.parse_args().full_clean == 'full': full_clean = True
+full_clean = True if parser.parse_args().full_clean == 'full' else False
 
 # authenticate and connect to the Plex server/library specified
 try:
@@ -64,7 +63,7 @@ except Exception:
     exit(1)
 
 # loop through the configured libraries
-print_f('\n┌ShokoRelay: Force Plex Metadata')
+print_f('\n┌Shoko Relay: Force Plex Metadata')
 for library in cfg.Plex['LibraryNames']:
     try:
         anime = plex.library.section(library)

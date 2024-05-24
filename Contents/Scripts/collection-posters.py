@@ -43,8 +43,7 @@ def print_f(text): print(text, flush=True)
 # check the arguments if the user is looking to clean posters or not
 parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=RawTextHelpFormatter)
 parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
-clean_posters = False
-if parser.parse_args().clean_posters == 'clean': clean_posters = True
+clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
 
 # authenticate and connect to the plex server/library specified
 try:
@@ -63,7 +62,7 @@ except Exception:
     exit(1)
 
 # loop through the configured libraries
-print_f('\n┌ShokoRelay: Collection Posters')
+print_f('\n┌Shoko Relay: Collection Posters')
 for library in cfg.Plex['LibraryNames']:
     try:
         anime = plex.library.section(library)
