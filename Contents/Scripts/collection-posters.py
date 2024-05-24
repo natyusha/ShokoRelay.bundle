@@ -23,7 +23,7 @@ Usage:
   - Run in a terminal (collection-posters.py) to set Plex collection posters to user provided ones or Shoko's.
       - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
       - The following characters must be stripped from the filenames: \ / : * ? " < > |
-      - The accepted file extension are: jpg / jpeg / png / tbn
+      - The accepted file extensions are: jpg / jpeg / png / tbn
   - Append the argument 'clean' (collection-posters.py clean) if you want to remove old collection posters instead.
       - This works by deleting everything but the newest custom poster for all collections.
 """
@@ -78,10 +78,10 @@ for library in cfg.Plex['LibraryNames']:
             for collection in anime.collections():
                 # check for multiple custom posters and delete the oldest ones
                 if len(collection.posters()) > 2:
-                    posters_path = cfg.Plex['DataFolder'] + os.path.sep + collection.metadataDirectory + os.path.sep + 'Uploads' + os.path.sep + 'posters'
-                    for poster in sorted(os.listdir(posters_path))[:-1]: # list all but the newest poster
+                    posters_path = os.path.join(cfg.Plex['DataFolder'], collection.metadataDirectory, 'Uploads', 'posters')
+                    for poster in sorted(os.listdir(posters_path), key=lambda poster: os.path.getctime(os.path.join(posters_path, poster)))[:-1]: # list all but the newest poster
                         print_f(f'│├─Removing: {collection.title} → {poster}')
-                        os.remove(os.path.join(posters_path,poster))
+                        os.remove(os.path.join(posters_path, poster))
             print_f('│└─Finished!')
         except Exception as error:
             print(f'│├{error_prefix}Failed', error)
@@ -119,7 +119,7 @@ for library in cfg.Plex['LibraryNames']:
                             tile_formatted = re.sub(key, '', tile_formatted)
                         if os.path.splitext(user_poster)[0] == tile_formatted:
                             print_f(f'│├─Relaying: {user_poster} → {collection.title}')
-                            collection.uploadPoster(filepath=cfg.Plex['PostersFolder'] + os.path.sep + user_poster)
+                            collection.uploadPoster(filepath=os.path.join(cfg.Plex['PostersFolder'], user_poster))
                             fallback = False # don't fallback to the shoko group if user poster found
                             continue
                 except Exception as error:

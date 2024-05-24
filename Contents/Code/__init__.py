@@ -63,7 +63,7 @@ class ShokoRelayAgent:
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
-        for item in sorted(series_data['AniDB']['Titles'], key=lambda sort: sort['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
+        for item in sorted(series_data['AniDB']['Titles'], key=lambda item: item['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
             if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
         series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
