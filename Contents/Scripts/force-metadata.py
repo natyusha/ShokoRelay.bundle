@@ -73,7 +73,7 @@ for library in cfg.Plex['LibraryNames']:
 
     ## if running a full scan execute the next 3 steps
     if full_clean:
-        """ not fully compatible with files that were added through shoko relay scanner's subfolder scanner queue
+        """ not fully compatible with files that were added through Shoko Relay scanner's subfolder scanner queue
         # split apart any merged series to allow each part to receive updated metadata
         print_f(f'├┬Queueing Splits @ {cfg.Plex["ServerName"]}/{library}')
         for series in anime.search(title=''):
@@ -116,7 +116,7 @@ for library in cfg.Plex['LibraryNames']:
         elif season.title == 'Season -4': season.editTitle('Other')
     print_f('│└─Finished Renaming Seasons!')
 
-    # add original titles if there are sort title additions from shoko relay
+    # add original titles if there are sort title additions from Shoko Relay
     print_f(f'├┬Adding Original Titles @ {cfg.Plex["ServerName"]}/{library}')
     for series in anime.search(title=''):
         if series.title != series.titleSort:

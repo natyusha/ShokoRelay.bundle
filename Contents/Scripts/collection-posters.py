@@ -23,13 +23,13 @@ Usage:
   - Run in a terminal (collection-posters.py) to set Plex collection posters to user provided ones or Shoko's.
       - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
       - The following characters must be stripped from the filenames: \ / : * ? " < > |
-      - The accepted file extensions are: jpg / jpeg / png / tbn
+      - The accepted file extensions are: bmp / gif / jpe / jpeg / jpg / png / tbn / tif / tiff / webp
   - Append the argument 'clean' (collection-posters.py clean) if you want to remove old collection posters instead.
       - This works by deleting everything but the newest custom poster for all collections.
 """
 
-# file formats that will work with plex
-file_formats = ('.jpg', '.jpeg', '.png', '.tbn')
+# file formats that will work with Plex (several are not listed in Plex's documentation but still work)
+file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif' , '.tiff', '.webp')
 
 # characters to replace in the collection name when comparing it to the filename using regex substitution
 file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
@@ -45,7 +45,7 @@ parser = argparse.ArgumentParser(description='Set Plex collection posters to use
 parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
 clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
 
-# authenticate and connect to the plex server/library specified
+# authenticate and connect to the Plex server/library specified
 try:
     if cfg.Plex['X-Plex-Token']:
         admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
@@ -85,7 +85,7 @@ for library in cfg.Plex['LibraryNames']:
         except Exception as error:
             print(f'│├{error_prefix}Failed', error)
     else:
-        # grab a shoko api key using the credentials from the prefs
+        # grab a Shoko API key using the credentials from the prefs
         try:
             auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
         except Exception:
@@ -106,7 +106,7 @@ for library in cfg.Plex['LibraryNames']:
                 exit(1)
 
         print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
-        # loop through plex collections grabbing their names to compare to shoko's group names and user defined poster names
+        # loop through Plex collections grabbing their names to compare to Shoko's group names and user defined poster names
         for collection in anime.collections():
             # check for user defined posters first
             fallback = True
@@ -119,12 +119,12 @@ for library in cfg.Plex['LibraryNames']:
                         if os.path.splitext(user_poster)[0] == tile_formatted:
                             print_f(f'│├─Relaying: {user_poster} → {collection.title}')
                             collection.uploadPoster(filepath=os.path.join(cfg.Plex['PostersFolder'], user_poster))
-                            fallback = False # don't fallback to the shoko group if user poster found
+                            fallback = False # don't fallback to the Shoko group if user poster found
                             continue
                 except Exception as error:
                     print(f'│├{error_prefix}──Failed', error)
 
-            # fallback to shoko group posters if no user defined psoter
+            # fallback to Shoko group posters if no user defined poster
             if fallback:
                 try:
                     group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth["apikey"]}').json()

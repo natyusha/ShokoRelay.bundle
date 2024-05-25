@@ -20,7 +20,7 @@ Usage:
   - Run in a terminal (rescan-recent.py) to trigger a Plex rescan of the 5 most recently added series in Shoko.
   - Change the number of recently added series (from 1-99) to rescan with an argument when 5 isn't enough:
       - (rescan-recent.py 20) would rescan the 20 most recently added series
-- Append the argument 'import' (rescan-recent.py import) if you want to force shoko to import unrecognized files instead.
+- Append the argument "import" (rescan-recent.py import) if you want to force Shoko to import unrecognized files instead.
 """
 
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
@@ -38,11 +38,11 @@ def arg_parse(arg):
 
 # check the arguments for how many recent series to rescan
 parser = argparse.ArgumentParser(description='Trigger a Plex rescan of the 5 most recently added series in Shoko.', formatter_class=RawTextHelpFormatter)
-parser.add_argument('recent_series', metavar='range | import', nargs='?', type=arg_parse, default='5', help='range:  Change the number of recently added series (from 1-99) to rescan.\n        *must be the sole argument and is entered as an Integer\n\nimport: If you want to force shoko to import unrecognized files instead.\n        *must be the sole argument and is simply entered as "import"')
+parser.add_argument('recent_series', metavar='range | import', nargs='?', type=arg_parse, default='5', help='range:  Change the number of recently added series (from 1-99) to rescan.\n        *must be the sole argument and is entered as an Integer\n\nimport: If you want to force Shoko to import unrecognized files instead.\n        *must be the sole argument and is simply entered as "import"')
 series_count, shoko_import = parser.parse_args().recent_series, False
 if series_count == 'import': series_count, shoko_import = '5', True
 
-# grab a shoko api key using the credentials from the prefs
+# grab a Shoko API key using the credentials from the prefs
 try:
     auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
 except Exception:
@@ -65,7 +65,7 @@ if shoko_import:
     except Exception as error:
         print(f'│{error_prefix}─Failed:', error)
 else:
-    # grab a list of shoko's most recently added series
+    # grab a list of Shoko's most recently added series
     print_f(f'├┬Checking Shoko\'s ({series_count}) most recently added series...')
     recently_added = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Dashboard/RecentlyAddedSeries?pageSize={series_count}&page=1&includeRestricted=true&apikey={auth["apikey"]}').json()
 

@@ -74,7 +74,7 @@ if cfg.Plex['ExtraUsers']:
     except Exception as error: # if the extra users can't be found show an error and continue
         print(f'{error_prefix}Failed:', error)
 
-# grab a shoko api key using the credentials from the prefs
+# grab a Shoko API key using the credentials from the prefs
 try:
     auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
 except Exception:
@@ -86,7 +86,7 @@ if 'status' in auth and auth['status'] in (400, 401):
 
 # loop through all of the accounts listed and sync watched states
 print_f('\n┌Shoko Relay Watched Sync')
-# if importing grab the filenames for all the watched episodes in shoko and add them to a list
+# if importing grab the filenames for all the watched episodes in Shoko and add them to a list
 if shoko_import == True:
     print_f(f'├─Generating: Shoko Watched Episode List...')
     watched_episodes = []
@@ -121,16 +121,16 @@ for account in accounts:
             print(f'│{error_prefix}─Failed', error)
             continue
 
-        # if importing loop through all the unwatched episodes in the plex library
+        # if importing loop through all the unwatched episodes in the Plex library
         if shoko_import == True:
             for episode in anime.searchEpisodes(unwatched=True):
                 for episode_path in episode.iterParts():
                     filepath = os.path.basename(episode_path.file)
-                    if filepath in watched_episodes: # if an unwatched episode's filename in plex is found in shoko's watched episodes list mark it as played
+                    if filepath in watched_episodes: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played
                         episode.markPlayed()
                         print_f(f'│├─Importing: {filepath}')
         else:
-            # loop through all the watched episodes in the plex library within the time frame of the relative date
+            # loop through all the watched episodes in the Plex library within the time frame of the relative date
             for episode in anime.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
                 for episode_path in episode.iterParts():
                     filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches

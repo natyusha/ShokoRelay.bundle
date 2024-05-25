@@ -58,7 +58,7 @@ Examples Commands:
       cd /d "X:\PathToBleach" && animethemes.py op9 play
 """
 
-# file formats that will work with the script (uses shoko's defaults)
+# file formats that will work with the script (uses Shoko's defaults)
 file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg', '.mk3d', '.m4v')
 
 # regex substitution pairs for additional slug formatting (executed top to bottom)
@@ -142,7 +142,7 @@ if theme_slug is not None:
     if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
     if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
 
-# grab a shoko api key using the credentials from the prefs
+# grab a Shoko API key using the credentials from the prefs
 try:
     auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
 except Exception:
@@ -152,7 +152,7 @@ if 'status' in auth and auth['status'] in (400, 401):
     print(f'{error_prefix}Failed: Shoko Credentials Invalid')
     exit(1)
 
-## grab the anidb id using shoko api and a video file path
+## grab the anidb id using Shoko API and a video file path
 print_f('┌Plex Theme.mp3 Generator')
 folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
 files = []
