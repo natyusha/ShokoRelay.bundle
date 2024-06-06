@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.1.16]======================')
+    Log('======================[Shoko Relay Agent v1.1.17]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -82,7 +82,7 @@ class ShokoRelayAgent:
         if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
             tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
             if tvdb_title: tvdb_check = True
-            else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDb ID that returns no data
+            else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDB ID that returns no data
             Log('TvDB Check (Title [ID]):       %s [%s]' % (tvdb_title, tvdb_id))
         else: tvdb_check = False
 
@@ -143,24 +143,24 @@ class ShokoRelayAgent:
         series_tags = HttpReq('api/v3/Series/%s/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true
         metadata.genres.clear()
 
-        ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted tags
-        tags, content_rating, content_descriptor, descriptor_s, descriptor_v = [], None, '', '', ''
+        ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted (high priority) tags
+        tags, c_rating, descriptor, descriptor_d, descriptor_s, descriptor_v = [], None, '', '', '', ''
         for tag in series_tags:
             if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])): tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
-            if Prefs['contentRatings']: # Prep weight based content ratings (if enabled) using the content indicators described here: https://wiki.anidb.net/Categories:Content_Indicators
-                indicator = tag['Name'].lower() # Raise ratings to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
-                if indicator == 'nudity':
-                    descriptor_s = 'S'
-                    if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Full frontal nudity with nipples and/or visible genitals
-                    if tag['Weight'] >= 500: content_rating = 'TV-MA' # Most borderline porn / hentai
-                if indicator == 'sex':
-                    descriptor_s = 'S' # 400 for sex is 99% TV-MA material
-                    if tag['Weight'] >= 400: content_rating = 'TV-MA' # Sexual activity that is "on camera", but most of the action is indirectly visible
-                if indicator == 'violence':
-                    descriptor_v = 'V'
-                    if tag['Weight'] >= 400 and content_rating != 'TV-MA': content_rating = 'TV-14' # Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
-                    if tag['Weight'] >= 500: content_rating = 'TV-MA' # Added gore, repetitive killing/mutilation of more than 1 individual
-        if descriptor_s or descriptor_v: content_descriptor = '-' + descriptor_s + descriptor_v
+            ## Prep weight based content ratings (if enabled) using the content indicators described here: https://wiki.anidb.net/Categories:Content_Indicators
+            if Prefs['contentRatings']:
+                indicator, weight = tag['Name'].lower(), tag['Weight']
+                if indicator == 'nudity' or indicator == 'violence':             # Raise ratings for the "Nudity" and "Violence" tags to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
+                    if indicator == 'nudity': descriptor_s = 'S'                 # Apply the "Sexual Situations" descriptor for the "Nudity" tag
+                    if indicator == 'violence': descriptor_v = 'V'               # Apply the "Violence" descriptor for the "Violence" tag
+                    if weight >= 400 and c_rating != 'TV-MA': c_rating = 'TV-14' # Weight:400 = Full frontal nudity with nipples and/or visible genitals OR Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
+                    if weight >= 500: c_rating = 'TV-MA'                         # Weight:500 = Most borderline porn / hentai OR Added gore, repetitive killing/mutilation of more than 1 individual
+                if indicator == 'sex':                                           # Raise ratings for the "Sex" tag to TV-MA if the weight exceeds 400
+                    descriptor_s = 'S'                                           # Apply the "Sexual Situations" descriptor for the "Sex" tag to TV-14 and then TV-MA if the weight exceeds 300 and 400 respectively
+                    if weight >= 300 and c_rating != 'TV-MA': c_rating = 'TV-14' # Weight:300 = Sexual activity that is "on camera", but most of the action is not even indirectly visible
+                    if weight >= 400: c_rating = 'TV-MA'                         # Weight:400 = Sexual activity that is "on camera", but most of the action is indirectly visible (99% TV-MA material)
+                if indicator == 'sexual humour': descriptor_d = 'D'              # Apply the "Suggestive Dialogue" descriptor as a special case for the "Sexual Humour" tag
+        if descriptor_d or descriptor_s or descriptor_v: descriptor = '-' + descriptor_d + descriptor_s + descriptor_v
 
         metadata.genres = tags
         Log('Genres:                        %s' % ', '.join(tags))
@@ -181,18 +181,17 @@ class ShokoRelayAgent:
         # Get Content Rating (assumed from Genres)
         ## A rough approximation of: http://www.tvguidelines.org/resources/TheRatings.pdf
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
-        ## Uses the content indicator tags + weights on AniDB: https://anidb.net/tag/2604/animetb
         if Prefs['contentRatings']:
-            if not content_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
-                if 'Kodomo' in tags:                        content_rating = 'TV-Y'
-                elif 'Mina' in tags:                        content_rating = 'TV-G'
-                elif 'Shoujo' in tags or 'Shounen' in tags: content_rating = 'TV-PG'
-                elif 'Josei' in tags or 'Seinen' in tags:   content_rating = 'TV-14'
-            if 'Borderline Porn' in tags:  content_rating = 'TV-MA' # Override any previous rating for borderline porn content
-            if content_rating: content_rating += content_descriptor # Append the content descriptor using the content indicators above
-            if '18 Restricted' in tags:    content_rating = 'X' # Override any previous rating and remove content indicators for 18 restricted content
+            if not c_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
+                if 'Kodomo' in tags:                        c_rating = 'TV-Y'
+                elif 'Mina' in tags:                        c_rating = 'TV-G'
+                elif 'Shoujo' in tags or 'Shounen' in tags: c_rating = 'TV-PG'
+                elif 'Josei' in tags or 'Seinen' in tags:   c_rating = 'TV-14'
+            if 'Borderline Porn' in tags: c_rating = 'TV-MA'  # Override any previous rating for borderline porn content
+            if c_rating: c_rating += descriptor               # Append the content descriptor using the content indicators above
+            if '18 Restricted' in tags: c_rating = 'X'        # Override any previous rating and remove content indicators for 18 restricted content
 
-            metadata.content_rating = content_rating
+            metadata.content_rating = c_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
 
         # Get Posters & Backgrounds
@@ -357,7 +356,7 @@ class ShokoRelayAgent:
         # Set custom negative season names
         for season_num in metadata.seasons:
             season_title = None
-            if season_num == '-1': season_title = 'Credits'
+            if season_num == '-1'  : season_title = 'Credits'
             elif season_num == '-2': season_title = 'Trailers'
             elif season_num == '-3': season_title = 'Parodies'
             elif season_num == '-4': season_title = 'Other'
@@ -412,11 +411,11 @@ def title_case(text):
     force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv')
     # Special cases where a specific capitalisation style is preferred
     force_special = {'comicfesta': 'ComicFesta', 'd\'etat': 'd\'Etat', 'noitamina': 'noitaminA'}
-    text = re.sub(r'[\'\w\d]+\b', lambda t: t.group(0).capitalize(), text) # Capitalise all words accounting for apostrophes
-    for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I) # Convert words from force_lower to lowercase
-    for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I) # Convert words from force_upper to uppercase
-    text = text[:1].upper() + text[1:] # Force capitalise the first character no matter what
-    if ' ' in text: text = (lambda t: t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1)) # Force capitalise the first character of the last word no matter what
+    text = re.sub(r'[\'\w\d]+\b', lambda t: t.group(0).capitalize(), text)                               # Capitalise all words accounting for apostrophes
+    for key in force_lower: text = re.sub(r'\b' + key + r'\b', key.lower(), text, flags=re.I)            # Convert words from force_lower to lowercase
+    for key in force_upper: text = re.sub(r'\b' + key + r'\b', key.upper(), text, flags=re.I)            # Convert words from force_upper to uppercase
+    text = text[:1].upper() + text[1:]                                                                   # Force capitalise the first character no matter what
+    if ' ' in text: text = (lambda t: t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1))     # Force capitalise the first character of the last word no matter what
     for key, value in force_special.items(): text = re.sub(r'\b' + key + r'\b', value, text, flags=re.I) # Apply special cases as a last step
     return text
 

@@ -344,9 +344,10 @@ If "assumed content ratings" are enabled in the agent settings the [target audie
 | Mina                              | TV-G    |
 | Shoujo, Shounen                   | TV-PG   |
 | Josei, Seinen                     | TV-14   |
+| Sexual Humour                     | TV-\*-D |
 | Nudity, Sex                       | TV-\*-S |
 | **\*\*** Violence                 | TV-14-V |
-| **\*\*** Nudity                   | TV-14-S |
+| **\*\*** Nudity, **\*\+** Sex     | TV-14-S |
 | Borderline Porn (override)        | TV-MA   |
 | **\*\*\+** Nudity, **\*\*** Sex   | TV-MA-S |
 | **\*\*\+** Violence               | TV-MA-V |

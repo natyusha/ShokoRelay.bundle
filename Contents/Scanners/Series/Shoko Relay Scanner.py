@@ -75,7 +75,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files: Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.1.16]' + '=' * 244)
+    Log.info('===========================[Shoko Relay Scanner v1.1.17]' + '=' * 244)
 
     if files:
         # Scan for video files
@@ -117,7 +117,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
                     tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
                     if tvdb_title: tvdb_check, tvdb_title = True, tvdb_title.encode('utf-8')
-                    else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDb ID that returns no data
+                    else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDB ID that returns no data
                     Log.info(' TvDB Check (Title [ID]):  %s [%s]' % (tvdb_title, tvdb_id))
                 else: tvdb_check = False
 
