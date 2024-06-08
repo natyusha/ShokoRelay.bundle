@@ -155,8 +155,8 @@ class ShokoRelayAgent:
                     if indicator == 'violence': descriptor_v = 'V'               # Apply the "Violence" descriptor for the "Violence" tag
                     if weight >= 400 and c_rating != 'TV-MA': c_rating = 'TV-14' # Weight:400 = Full frontal nudity with nipples and/or visible genitals OR Any violence causing death and/or serious physical dismemberment (e.g. a limb is cut off)
                     if weight >= 500: c_rating = 'TV-MA'                         # Weight:500 = Most borderline porn / hentai OR Added gore, repetitive killing/mutilation of more than 1 individual
-                if indicator == 'sex':                                           # Raise ratings for the "Sex" tag to TV-MA if the weight exceeds 400
-                    descriptor_s = 'S'                                           # Apply the "Sexual Situations" descriptor for the "Sex" tag to TV-14 and then TV-MA if the weight exceeds 300 and 400 respectively
+                if indicator == 'sex':                                           # Raise ratings for the "Sex" tag to TV-14 and then TV-MA if the weight exceeds 300 and 400 respectively
+                    descriptor_s = 'S'                                           # Apply the "Sexual Situations" descriptor for the "Sex" tag
                     if weight >= 300 and c_rating != 'TV-MA': c_rating = 'TV-14' # Weight:300 = Sexual activity that is "on camera", but most of the action is not even indirectly visible
                     if weight >= 400: c_rating = 'TV-MA'                         # Weight:400 = Sexual activity that is "on camera", but most of the action is indirectly visible (99% TV-MA material)
                 if indicator == 'sexual humour': descriptor_d = 'D'              # Apply the "Suggestive Dialogue" descriptor as a special case for the "Sexual Humour" tag
