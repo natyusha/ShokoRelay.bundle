@@ -9,7 +9,7 @@ def ValidatePrefs():
 def Start():
     Log('======================[Shoko Relay Agent v1.1.17]======================')
     HTTP.Headers['Accept'] = 'application/json'
-    HTTP.ClearCache() # Clear the cache possibly removing stuck metadata
+    HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
 
@@ -48,11 +48,11 @@ class ShokoRelayAgent:
         name = media.show
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=false&limit=10
         for idx, series_data in enumerate(prelimresults):
-            series_id = series_data['IDs']['ID'] # Get series series id from series data
-            airdate = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None) # Get airdate from series id
-            year = airdate.split('-')[0] if airdate else None # Get year from air date
+            series_id = series_data['IDs']['ID']                                                          # Get series series id from series data
+            airdate = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None)             # Get airdate from series id
+            year = airdate.split('-')[0] if airdate else None                                             # Get year from air date
             score = 100 if series_data['Name'] == name else 99 - idx - int(series_data['Distance'] * 100) # Get score from name vs distance
-            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang)) # Tabulate the results
+            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang))  # Tabulate the results
 
     def Update(self, metadata, media, lang, force):
         aid = metadata.id
@@ -99,7 +99,7 @@ class ShokoRelayAgent:
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
         Log('Alt Title (AddToSort) [LANG]:  %s [%s]' % (alt_title, lang.upper()))
 
-        """ Enable if Plex Fixes Blocking Legacy Agent Issue
+        """ Enable if Plex fixes blocking legacy agent issue
         # Get Original Title
         if alt_title is not None and alt_title != metadata.title: metadata.original_title = alt_title
         else: metadata.original_title = None
@@ -352,7 +352,7 @@ class ShokoRelayAgent:
             # Get Episode Poster (Thumbnail)
             if Prefs['customThumbs']: self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
 
-        """ Enable if Plex Fixes Blocking Legacy Agent Issue
+        """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
         for season_num in metadata.seasons:
             season_title = None
