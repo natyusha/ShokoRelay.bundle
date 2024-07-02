@@ -32,7 +32,7 @@ Behaviour:
   - The "Original Title" for all series will be set using info Shoko Relay added to the "Sort Title" (if available).
   - Negative seasons like "Season -1" which contain Credits, Trailers, Parodies etc. will have their names updated to reflect their contents.
   - The "Sort Title" for all collections will be set to match the current title to avoid Plex's custom sorting rules e.g. ignoring "The" or "A"
-  - All Smart Collection are ignored as they are not managed by Shoko Relay
+  - All Smart Collections are ignored as they are not managed by Shoko Relay
 """
 
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
