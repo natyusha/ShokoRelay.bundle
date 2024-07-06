@@ -96,11 +96,11 @@ for library in cfg.Plex['LibraryNames']:
 
         # fix match for all anime and grab fresh metadata
         print_f(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
+        failed_list = []
         for series in anime.search(title=''):
             print_f(f'│├─Match: {series.title}')
             relay = series.matches(agent='shokorelay', title=series.title, year='')
             try:
-                failed_list = []
                 series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
             except IndexError:
                 print_f(f'│├{error_prefix}Failed: {series.title}') # print titles of things which failed to match
