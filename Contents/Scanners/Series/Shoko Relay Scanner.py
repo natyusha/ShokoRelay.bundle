@@ -6,7 +6,7 @@ Prefs = {
     'Port': 8111,
     'Username': 'Default',
     'Password': '',
-    # SingleSeasonOrdering set to "True" to ignore TvDB season ordering (must be Changed in Agent settings too)
+    # SingleSeasonOrdering set to "True" to ignore TMDB season ordering (must be Changed in Agent settings too)
     'SingleSeasonOrdering': False
 }
 
@@ -75,7 +75,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files: Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.1.18]' + '=' * 244)
+    Log.info('===========================[Shoko Relay Scanner v1.2.00]' + '=' * 244)
 
     if files:
         # Scan for video files
@@ -107,26 +107,32 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     continue
 
                 # Get series data using the series id
-                series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TvDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TvDB
+                series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
 
                 # Get the preferred/overridden title (preferred title follows Shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
                 Log.info(' Title [ShokoID]:          %s [%s]' % (show_title, series_id))
 
-                # If SingleSeasonOrdering isn't enabled and TvDB info is populated add the title as a comparison to the regular one to help spot mismatches
-                if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
-                    tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
-                    if tvdb_title: tvdb_check, tvdb_title = True, tvdb_title.encode('utf-8')
-                    else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDB ID that returns no data
-                    Log.info(' TvDB Check (Title [ID]):  %s [%s]' % (tvdb_title, tvdb_id))
-                else: tvdb_check = False
+                # If SingleSeasonOrdering isn't enabled determine the TMDB type
+                if not Prefs['SingleSeasonOrdering']:
+                    tmdb_type = None
+                    if try_get(series_data['TMDB']['Shows'], 0, None)   : tmdb_type = 'Shows'
+                    elif try_get(series_data['TMDB']['Movies'], 0, None): tmdb_type = 'Movies'
+
+                # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
+                if tmdb_type:
+                    tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
+                    if tmdb_title: tmdb_check, tmdb_title = True, tmdb_title.encode('utf-8')
+                    else: tmdb_check, tmdb_title = False, 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
+                    Log.info(' TMDB Check (Title [ID]):  %s [%s]' % (tmdb_title, tmdb_id))
+                else: tmdb_check = False
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
                 for episode in range(episode_multi):
                     episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
-                    episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
-                    tvdb_ep_data = try_get(episode_data['TvDB'], 0, None) # Enable TvDB fallbacks if there is a TvDB match
+                    episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
+                    tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
                     
                     # Ignore multi episode files of differing types (AniDB episode relations)
                     if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
@@ -142,8 +148,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Trailer'   : season = -2
                     elif episode_type == 'Parody'    : season = -3
                     elif episode_type == 'Other'     : season = -4
-                    if tvdb_check and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
-                        episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
+                    if tmdb_check and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
+                        episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber']
                     else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
                     Log.info(' Season %s           %s' % (episode_source, season))

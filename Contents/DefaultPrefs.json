@@ -87,13 +87,6 @@
     },
 
     {
-        "id": "themeMusic",
-        "label": "Grab theme music the same way Plex theme music would",
-        "type": "bool",
-        "default": true
-    },
-
-    {
         "id": "synposisCleanLinks",
         "label": "Synopsis: Remove links",
         "type": "bool",

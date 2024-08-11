@@ -5,7 +5,7 @@
         <key>CFBundleName</key>
         <string>Shoko Relay</string>
         <key>CFBundleVersion</key>
-        <string>1.1.18</string>
+        <string>1.2.00</string>
         <key>CFBundleIdentifier</key>
         <string>com.plexapp.agents.shokorelay</string>
         <key>PlexClientPlatforms</key>
@@ -17,6 +17,6 @@
         <key>PlexPluginCodePolicy</key>
         <string>Elevated</string>
         <key>PlexAgentAttributionText</key>
-        <string>Shoko Relay is natyusha's fork of Shoko Metadata (created by Cazzar) and its v3 API migration (spearheaded by Harshith Mohan) which utilizes Shoko Server in conjunction with metadata sourced from AniDB, TVDB and TMDB</string>
+        <string>Shoko Relay is natyusha's fork of Shoko Metadata (created by Cazzar) and its v3 API migration (spearheaded by Harshith Mohan) which utilizes Shoko Server in conjunction with metadata sourced from AniDB, and TMDB</string>
     </dict>
 </plist>

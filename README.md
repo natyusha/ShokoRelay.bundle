@@ -25,10 +25,10 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - [x] Local Media Assets (TV)
 
 ## Changes from Shoko Metadata
-- Uses Shoko's v3 API for fetching metadata and matching files
+- Uses Shoko's v3 API for fetching metadata and matching files and replaces any TVDB usage with TMDB
 - Allows:
   - Movies and series to be in the same library at once
-  - Multi "season" shows matched on TheTVDB to be merged into a single entry
+  - Multi "season" shows matched on TMDB to be merged into a single entry
 - Allows the user to configure:
   - The language for the series or episode titles (to use a different language than Shoko's)
   - An "Alt Title" language for the series title (which will be searchable in Plex)
@@ -49,7 +49,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 - Will replace:
   - Ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
   - Inconsistently capitalised genre tags with ones using [AniDB Capitalisation Rules](https://wiki.anidb.net/Capitalisation)
-- Will use TheTVDB episode descriptions and titles if AniDB is missing that information
+- Will use TMDB episode descriptions and titles if AniDB is missing that information
 
 ## Utility Scripts
 Shoko Relay includes several utility / automation scripts which can help to quickly add full length theme songs, automatic collection posters, correct negative season numbers, synced watched states, and more.
@@ -273,7 +273,7 @@ When encountering any issues with the scanner or agent, please note that there a
 - Scanner Logs: `\Plex Media Server\Logs\Shoko Relay Scanner.log`
 
 > [!IMPORTANT]
-> When encountering bad matches/metadata the first thing to check for is if TheTVDB match and episode mapping is correct in Shoko for the series in question.
+> When encountering bad matches/metadata the first thing to check for is if TMDB match and episode mapping is correct in Shoko for the series in question.
 
 > [!WARNING]
 > Under extremely specific circumstances Plex will automatically group files together without user intervention. This occurs when storing all of the files from multiple AniDB entries in a single folder (located in the root directory of the Plex library) with no other subfolders present inside of it. To resolve this simply create an empty subfolder in any directory affected by this or separate the files from each AniDB series into their own folders/subfolders.
@@ -322,9 +322,9 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 > The appended titles will appear after an em dash (**—**) making it easy to search for anything affected by this.
 
 ### Combining Series
-If you have TheTVDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TheTVDB entry then select `Merge`.
+If you have TMDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TMDB entry then select `Merge`.
 
-Using Fairy Tail as an example all of the following series can be safely merged into a single entry in Plex if they are correctly matched to TheTVDB in Shoko:
+Using Fairy Tail as an example all of the following series can be safely merged into a single entry in Plex if they are correctly matched to TMDB in Shoko:
 - Fairy Tail
 - Fairy Tail (2011)
 - Fairy Tail (2014)

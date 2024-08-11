@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.1.18]======================')
+    Log('======================[Shoko Relay Agent v1.2.00]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -59,7 +59,7 @@ class ShokoRelayAgent:
 
         # Get series data
         Log('==================[Shoko Relay for Series ID: %s]==================' % aid.zfill(6))
-        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TvDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
+        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
@@ -78,13 +78,19 @@ class ShokoRelayAgent:
             CommonTitlePrefixes = ('Gekijouban ', 'Eiga ', 'OVA ') # List of prefixes considered common and padded with a space
             if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
-        # If SingleSeasonOrdering isn't enabled and TvDB info is populated add the title as a comparison to the regular one to help spot mismatches
-        if not Prefs['SingleSeasonOrdering'] and try_get(series_data['TvDB'], 0, None):
-            tvdb_title, tvdb_id = try_get(series_data['TvDB'][0], 'Title', None), try_get(series_data['TvDB'][0], 'ID', None)
-            if tvdb_title: tvdb_check = True
-            else: tvdb_check, tvdb_title = False, 'N/A (CRITICAL: Removed from TvDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TvDB ID that returns no data
-            Log('TvDB Check (Title [ID]):       %s [%s]' % (tvdb_title, tvdb_id))
-        else: tvdb_check = False
+        # If SingleSeasonOrdering isn't enabled determine the TMDB type
+        if not Prefs['SingleSeasonOrdering']:
+            tmdb_type = None
+            if try_get(series_data['TMDB']['Shows'], 0, None)   : tmdb_type = 'Shows'
+            elif try_get(series_data['TMDB']['Movies'], 0, None): tmdb_type = 'Movies'
+
+        # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
+        if tmdb_type:
+            tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
+            if tmdb_title: tmdb_check = True
+            else: tmdb_check, tmdb_title = False, 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
+            Log('TMDB Check (Title [ID]):       %s [%s]' % (tmdb_title, tmdb_id))
+        else: tmdb_check = False
 
         metadata.title = title
         Log('Title %s   %s [%s]' % (title_mod, title, lang.upper()))
@@ -250,8 +256,8 @@ class ShokoRelayAgent:
         for episode in episodes['List']:
             # Get episode data
             episode_id   = episode['IDs']['ID']
-            episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TvDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TvDB
-            tvdb_ep_data = try_get(episode_data['TvDB'], 0, None) # Enable TvDB fallbacks if there is a TvDB match
+            episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
+            tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
             episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Get season and episode numbers
@@ -262,8 +268,8 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if tvdb_check and tvdb_ep_data: # Grab TvDB info when SingleSeasonOrdering isn't enabled and there is a populated TvDB match
-                episode_source, season, episode_number = '(TvDB): ', tvdb_ep_data['Season'], tvdb_ep_data['Number']
+            if tmdb_check and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
+                episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber']
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
             Log('Season %s                %s' % (episode_source, season))
@@ -292,14 +298,15 @@ class ShokoRelayAgent:
                     if lang != 'shoko': title = try_get(series_titles, lang, title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                     if title is not original_title: break
                 if title is original_title: title, lang = try_get(series_titles, 'en', title), 'en (fallback)' # If not found, fallback to EN series title
-                if title is original_title and tvdb_ep_data and try_get(tvdb_ep_data, 'Title', None): # Fallback to the TvDB title as a last resort if there is a TvDB match
-                    title_source, title = '(TvDB) [LANG]:          ', tvdb_ep_data['Title']
+                if title is original_title and tmdb_ep_data and try_get(tmdb_ep_data, 'Title', None): # Fallback to the TMDB title as a last resort if there is a TMDB Episodes match
+                    title_source, title = '(TMDB) [LANG]:          ', tmdb_ep_data['Title']
+                
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
-            # TvDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TvDB match
-            if re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', title) and tvdb_ep_data:
-                title_source, title = '(TvDB Override) [LANG]: ', tvdb_ep_data['Title']
+            # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
+            if re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', title) and tmdb_ep_data:
+                title_source, title = '(TMDB Override) [LANG]: ', tmdb_ep_data['Title']
 
             episode_obj.title = title
             Log('Title %s %s [%s]' % (title_source, episode_obj.title, lang.upper()))
@@ -325,8 +332,8 @@ class ShokoRelayAgent:
             # Get Summary
             summary_source, summary = '(AniDB):', try_get(episode_data['AniDB'], 'Description', None)
             if summary: episode_obj.summary = summary_sanitizer(summary)
-            elif tvdb_ep_data and try_get(tvdb_ep_data, 'Description', None): # Fallback to the TvDB summary as a last resort if there is a TvDB match
-                summary_source, summary = '(TvDB): ', tvdb_ep_data['Description']
+            elif tmdb_ep_data and try_get(tmdb_ep_data, 'Overview', None): # Fallback to the TMDB summary as a last resort if there is a TMDB Episodes match
+                summary_source, summary = '(TMDB): ', tmdb_ep_data['Overview']
                 episode_obj.summary = summary_sanitizer(summary)
             else: episode_obj.summary = None
             Log('Summary %s               %s' % (summary_source, episode_obj.summary))
@@ -350,7 +357,7 @@ class ShokoRelayAgent:
             Log('Director:                      %s' % director_log)
 
             # Get Episode Poster (Thumbnail)
-            if Prefs['customThumbs']: self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TvDB'], 0, {}), 'Thumbnail', {})])
+            if Prefs['customThumbs']: self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TMDB']['Episodes'], 0, {}), 'Thumbnail', {})])
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
@@ -364,17 +371,6 @@ class ShokoRelayAgent:
                 Log('Renaming Season:               %s to %s' % (season_num, season_title))
                 metadata.seasons[season_num].title = season_title
         """
-
-        # Adapted from: https://github.com/plexinc-agents/PlexThemeMusic.bundle/blob/master/Contents/Code/__init__.py
-        if Prefs['themeMusic']:
-            THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
-            for tid in try_get(series_data['IDs'],'TvDB', []):
-                if THEME_URL % tid not in metadata.themes:
-                    try:
-                        metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
-                        Log('Theme Music Added:             %s' % THEME_URL % tid)
-                    except:
-                        Log('Error Adding Theme Music:      (Probably Not Found)')
 
     def metadata_add(self, meta, images):
         valid = list()
