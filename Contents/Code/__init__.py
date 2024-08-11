@@ -81,8 +81,8 @@ class ShokoRelayAgent:
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
         if not Prefs['SingleSeasonOrdering']:
             tmdb_type = None
-            if try_get(series_data['TMDB']['Shows'], 0, None)   : tmdb_type = 'Shows'
-            elif try_get(series_data['TMDB']['Movies'], 0, None): tmdb_type = 'Movies'
+            if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
+            elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
 
         # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
         if tmdb_type:
@@ -202,8 +202,8 @@ class ShokoRelayAgent:
 
         # Get Posters & Backgrounds
         images = try_get(series_data, 'Images', {})
-        self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
-        self.metadata_add(metadata.art, try_get(images, 'Backdrops', []))
+        self.image_add(metadata.posters, try_get(images, 'Posters', []))
+        self.image_add(metadata.art, try_get(images, 'Backdrops', []))
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
@@ -299,7 +299,7 @@ class ShokoRelayAgent:
                 if title is original_title: title, lang = try_get(series_titles, 'en', title), 'en (fallback)' # If not found, fallback to EN series title
                 if title is original_title and tmdb_ep_data and try_get(tmdb_ep_data, 'Title', None): # Fallback to the TMDB title as a last resort if there is a TMDB Episodes match
                     title_source, title = '(TMDB) [LANG]:          ', tmdb_ep_data['Title']
-                
+
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
@@ -356,7 +356,7 @@ class ShokoRelayAgent:
             Log('Director:                      %s' % director_log)
 
             # Get Episode Poster (Thumbnail)
-            if Prefs['customThumbs']: self.metadata_add(episode_obj.thumbs, [try_get(try_get(episode_data['TMDB']['Episodes'], 0, {}), 'Thumbnail', {})])
+            if Prefs['shokoThumbs']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []))
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
@@ -371,7 +371,18 @@ class ShokoRelayAgent:
                 metadata.seasons[season_num].title = season_title
         """
 
-    def metadata_add(self, meta, images):
+        # Get Plex theme music using a TvDB ID cross referenced from TMDB
+        if Prefs['themeMusic']:
+            THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
+            for tid in try_get(series_data['IDs'],'TvDB', []):
+                if THEME_URL % tid not in metadata.themes:
+                    try:
+                        metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
+                        Log('Theme Music Added:             %s' % THEME_URL % tid)
+                    except:
+                        Log('Error Adding Theme Music:      (Probably Not Found)')
+
+    def image_add(self, meta, images):
         valid = list()
         art_url = ''
         for art in images:
@@ -379,7 +390,7 @@ class ShokoRelayAgent:
                 art_url = '/api/v3/Image/{source}/{type}/{id}'.format(source=art['Source'], type=art['Type'], id=art['ID'])
                 url = 'http://{host}:{port}{relativeURL}'.format(host=Prefs['Hostname'], port=Prefs['Port'], relativeURL=art_url)
                 idx = try_get(art, 'index', 0)
-                Log('Adding Metadata:               %s (index %d)' % (url, idx))
+                Log('Adding Image:                  %s (index %d)' % (url, idx))
                 meta[url] = Proxy.Media(HTTP.Request(url).content, idx)
                 valid.append(url)
             except Exception as e:

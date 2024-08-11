@@ -116,8 +116,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 # If SingleSeasonOrdering isn't enabled determine the TMDB type
                 if not Prefs['SingleSeasonOrdering']:
                     tmdb_type = None
-                    if try_get(series_data['TMDB']['Shows'], 0, None)   : tmdb_type = 'Shows'
-                    elif try_get(series_data['TMDB']['Movies'], 0, None): tmdb_type = 'Movies'
+                    if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
+                    elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
 
                 # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
                 if tmdb_type:
@@ -133,7 +133,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
                     episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
                     tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
-                    
+
                     # Ignore multi episode files of differing types (AniDB episode relations)
                     if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
 

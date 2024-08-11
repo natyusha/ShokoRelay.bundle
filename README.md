@@ -25,7 +25,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - [x] Local Media Assets (TV)
 
 ## Changes from Shoko Metadata
-- Uses Shoko's v3 API for fetching metadata and matching files and replaces any TVDB usage with TMDB
+- Uses Shoko's v3 API for fetching metadata and matching files while replacing any TVDB usage with TMDB
 - Allows:
   - Movies and series to be in the same library at once
   - Multi "season" shows matched on TMDB to be merged into a single entry

@@ -87,6 +87,13 @@
     },
 
     {
+        "id": "themeMusic",
+        "label": "Grab theme music the same way Plex theme music would",
+        "type": "bool",
+        "default": true
+    },
+
+    {
         "id": "synposisCleanLinks",
         "label": "Synopsis: Remove links",
         "type": "bool",
@@ -115,10 +122,10 @@
     },
 
     {
-        "id": "customThumbs",
+        "id": "shokoThumbs",
         "label": "Use Shoko's episode thumbnails",
         "type": "bool",
-        "default": false
+        "default": true
     },
 
     {
