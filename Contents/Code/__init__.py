@@ -203,7 +203,6 @@ class ShokoRelayAgent:
         # Get Posters & Backgrounds
         images = try_get(series_data, 'Images', {})
         self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
-        self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
         self.metadata_add(metadata.art, try_get(images, 'Backdrops', []))
 
         # Get Cast & Crew
