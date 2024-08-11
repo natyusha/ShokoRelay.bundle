@@ -204,7 +204,7 @@ class ShokoRelayAgent:
         images = try_get(series_data, 'Images', {})
         self.metadata_add(metadata.posters, try_get(images, 'Posters', []))
         self.metadata_add(metadata.banners, try_get(images, 'Banners', []))
-        self.metadata_add(metadata.art, try_get(images, 'Fanarts', []))
+        self.metadata_add(metadata.art, try_get(images, 'Backdrops', []))
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
