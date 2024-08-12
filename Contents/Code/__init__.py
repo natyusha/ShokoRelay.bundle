@@ -79,8 +79,8 @@ class ShokoRelayAgent:
             if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
+        tmdb_type = None
         if not Prefs['SingleSeasonOrdering']:
-            tmdb_type = None
             if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
             elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
 
@@ -378,24 +378,22 @@ class ShokoRelayAgent:
                 if THEME_URL % tid not in metadata.themes:
                     try:
                         metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
-                        Log('Theme Music Added:             %s' % THEME_URL % tid)
+                        Log('Adding Theme Music:            %s' % THEME_URL % tid)
                     except:
-                        Log('Error Adding Theme Music:      (Probably Not Found)')
+                        Log('Error Adding Theme Music:      %s (Not Found)' % THEME_URL % tid)
 
     def image_add(self, meta, images):
-        valid = list()
-        art_url = ''
+        valid, art_url = list(), ''
         for art in images:
             try:
                 art_url = '/api/v3/Image/{source}/{type}/{id}'.format(source=art['Source'], type=art['Type'], id=art['ID'])
                 url = 'http://{host}:{port}{relativeURL}'.format(host=Prefs['Hostname'], port=Prefs['Port'], relativeURL=art_url)
                 idx = try_get(art, 'index', 0)
-                Log('Adding Image:                  %s (index %d)' % (url, idx))
                 meta[url] = Proxy.Media(HTTP.Request(url).content, idx)
                 valid.append(url)
-            except Exception as e:
-                Log('Invalid URL Given:             (%s) - Skipping' % try_get(art, 'url', ''))
-                Log(e)
+                Log('Adding Image:                  %s' % url)
+            except:
+                Log('Error Adding Image:            %s (Not Found)' % url)
 
         meta.validate_keys(valid)
 

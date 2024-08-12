@@ -114,8 +114,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info(' Title [ShokoID]:          %s [%s]' % (show_title, series_id))
 
                 # If SingleSeasonOrdering isn't enabled determine the TMDB type
+                tmdb_type = None
                 if not Prefs['SingleSeasonOrdering']:
-                    tmdb_type = None
                     if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
                     elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
 

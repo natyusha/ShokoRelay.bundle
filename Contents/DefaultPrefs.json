@@ -125,7 +125,7 @@
         "id": "shokoThumbs",
         "label": "Use Shoko's episode thumbnails",
         "type": "bool",
-        "default": true
+        "default": false
     },
 
     {
