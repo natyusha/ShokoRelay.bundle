@@ -114,18 +114,14 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info(' Title [ShokoID]:          %s [%s]' % (show_title, series_id))
 
                 # If SingleSeasonOrdering isn't enabled determine the TMDB type
-                tmdb_type = None
+                tmdb_type, tmdb_title = None, ''
                 if not Prefs['SingleSeasonOrdering']:
                     if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
                     elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
-
-                # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
-                if tmdb_type:
-                    tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
-                    if tmdb_title: tmdb_check, tmdb_title = True, tmdb_title.encode('utf-8')
-                    else: tmdb_check, tmdb_title = False, 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
-                    Log.info(' TMDB Check (Title [ID]):  %s [%s]' % (tmdb_title, tmdb_id))
-                else: tmdb_check = False
+                    if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
+                        tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
+                        if not tmdb_title: tmdb_title = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
+                        Log.info(' TMDB Check (Title [ID]):  %s [%s]' % (tmdb_title, tmdb_id))
 
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
@@ -148,7 +144,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     elif episode_type == 'Trailer'   : season = -2
                     elif episode_type == 'Parody'    : season = -3
                     elif episode_type == 'Other'     : season = -4
-                    if tmdb_check and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
+                    if tmdb_title and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
                         episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber']
                     else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 

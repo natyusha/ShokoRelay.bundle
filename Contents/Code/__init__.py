@@ -79,18 +79,14 @@ class ShokoRelayAgent:
             if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
-        tmdb_type = None
+        tmdb_type, tmdb_title = None, ''
         if not Prefs['SingleSeasonOrdering']:
             if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
             elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
-
-        # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
-        if tmdb_type:
-            tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
-            if tmdb_title: tmdb_check = True
-            else: tmdb_check, tmdb_title = False, 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
-            Log('TMDB Check (Title [ID]):       %s [%s]' % (tmdb_title, tmdb_id))
-        else: tmdb_check = False
+            if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
+                tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
+                if not tmdb_title: tmdb_title = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
+                Log('TMDB Check (Title [ID]):       %s [%s]' % (tmdb_title, tmdb_id))
 
         metadata.title = title
         Log('Title %s   %s [%s]' % (title_mod, title, lang.upper()))
@@ -267,7 +263,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if tmdb_check and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
+            if tmdb_title and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
                 episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber']
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
@@ -362,10 +358,10 @@ class ShokoRelayAgent:
         # Set custom negative season names
         for season_num in metadata.seasons:
             season_title = None
-            if season_num == '-1'  : season_title = 'Credits'
-            elif season_num == '-2': season_title = 'Trailers'
-            elif season_num == '-3': season_title = 'Parodies'
-            elif season_num == '-4': season_title = 'Other'
+            if season_num == '-1'   : season_title = 'Credits'
+            elif season_num == '-2' : season_title = 'Trailers'
+            elif season_num == '-3' : season_title = 'Parodies'
+            elif season_num == '-4' : season_title = 'Other'
             if int(season_num) < 0 and season_title is not None:
                 Log('Renaming Season:               %s to %s' % (season_num, season_title))
                 metadata.seasons[season_num].title = season_title
