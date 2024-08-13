@@ -204,7 +204,7 @@ class ShokoRelayAgent:
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
         Log('-----------------------------------------------------------------------')
-        Log('Character                      Seiyuu (CV)')
+        Log('Character                      Seiyuu (CV)                    Image')
         Log('-----------------------------------------------------------------------')
         metadata.roles.clear()
         cv_check = False
@@ -212,16 +212,15 @@ class ShokoRelayAgent:
             role_type = role['RoleName']
             if role_type != 'Seiyuu': continue # Skip if not Seiyuu
             cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], role['Character']['Name']
-            Log('%-30s %s' % (meta_role.role, meta_role.name))
-            # Grab staff image (if available)
-            image = role['Staff']['Image']
-            if image: meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+            image = role['Staff']['Image'] # Grab staff image (if available)
+            if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
+            Log('%-30s %-30s %s' % (meta_role.role, meta_role.name, try_get(image, 'ID', None)))
         if not cv_check: Log('N/A')
 
         director_name, writer_name, staff_check = [], [], False
         if Prefs['crewListings']:
             Log('-----------------------------------------------------------------------')
-            Log('Role                           Staff Name')
+            Log('Role                           Staff Name                     Image')
             Log('-----------------------------------------------------------------------')
             for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
                 role_type = role['RoleName']
@@ -239,10 +238,9 @@ class ShokoRelayAgent:
                 elif role_type == 'Music'           : meta_role.role = 'Composer'                  # Music (音楽)
                 elif role_type == 'Staff'           : meta_role.role = role['RoleDetails']         # Various Other Main Staff Entries
                 else: meta_role.role = role_type
-                Log('%-30s %s' % (meta_role.role, meta_role.name))
-                # Grab staff image (if available)
-                image = role['Staff']['Image']
-                if image: meta_role.photo = 'http://{host}:{port}/api/v3/Image/{source}/{type}/{id}'.format(host=Prefs['Hostname'], port=Prefs['Port'], source=image['Source'], type=image['Type'], id=image['ID'])
+                image = role['Staff']['Image'] # Grab staff image (if available)
+                if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
+                Log('%-30s %-30s %s' % (meta_role.role, meta_role.name, try_get(image, 'ID', None)))
             if not staff_check: Log('N/A')
 
         # Get episode list using series ID
@@ -380,12 +378,10 @@ class ShokoRelayAgent:
 
     def image_add(self, meta, images):
         valid, art_url = list(), ''
-        for art in images:
+        for image in images:
             try:
-                art_url = '/api/v3/Image/{source}/{type}/{id}'.format(source=art['Source'], type=art['Type'], id=art['ID'])
-                url = 'http://{host}:{port}{relativeURL}'.format(host=Prefs['Hostname'], port=Prefs['Port'], relativeURL=art_url)
-                idx = try_get(art, 'index', 0)
-                meta[url] = Proxy.Media(HTTP.Request(url).content, idx)
+                url = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
+                meta[url] = Proxy.Media(HTTP.Request(url).content, try_get(image, 'index', 0))
                 valid.append(url)
                 Log('Adding Image:                  %s' % url)
             except:
