@@ -1,6 +1,6 @@
 ![Shoko Relay Logo](https://github.com/natyusha/ShokoRelay.bundle/assets/985941/23bfd7c2-eb89-46d5-a7cb-558c374393d6 "Shoko Relay")
 =======================
-This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
+This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.32+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
 - Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
@@ -21,8 +21,22 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - The Shoko Server Port
   - Collections: `Hide items which are in collections`
   - Seasons: `Hide for single-season series`
-- In Plex Settings: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
+- In Plex: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
   - [x] Local Media Assets (TV)
+
+### Recommended Shoko Server Configuration
+Enable the following options in Shoko to ensure that Plex has at least one source of metadata for everything:
+- `Settings > AniDB > Download Options`
+  - [x] Character Images
+  - [x] Creator Images
+- `Settings > Metadata Sites > TMDB Options`
+  - [x] Auto Link
+  - [x] Auto Link Restricted
+  - [x] Download External IDs
+  - [x] Download Backdrops
+- `Settings > Collection > Relation Options`
+  - [x] Auto Group Series
+  - [x] Determine Main Series Using Relation Weighing
 
 ## Changes from Shoko Metadata
 - Uses Shoko's v3 API for fetching metadata and matching files while replacing any TVDB usage with TMDB
