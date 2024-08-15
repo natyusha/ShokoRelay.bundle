@@ -17,9 +17,9 @@ def GetApiKey():
     global API_KEY
     if not API_KEY:
         data = json.dumps({
-            'user': Prefs['Username'],
-            'pass': Prefs['Password'] if Prefs['Password'] != None else '',
-            'device': 'Shoko Relay for Plex'
+            'user'   : Prefs['Username'],
+            'pass'   : Prefs['Password'] if Prefs['Password'] != None else '',
+            'device' : 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
         # Log.debug('Got API KEY:                   %s' % resp) # Not needed
@@ -81,7 +81,7 @@ class ShokoRelayAgent:
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
         tmdb_type, tmdb_title = None, ''
         if not Prefs['SingleSeasonOrdering']:
-            if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
+            if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type = 'Shows'
             elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
             if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
                 tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
@@ -185,10 +185,10 @@ class ShokoRelayAgent:
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
         if Prefs['contentRatings']:
             if not c_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
-                if 'Kodomo' in tags:                        c_rating = 'TV-Y'
-                elif 'Mina' in tags:                        c_rating = 'TV-G'
-                elif 'Shoujo' in tags or 'Shounen' in tags: c_rating = 'TV-PG'
-                elif 'Josei' in tags or 'Seinen' in tags:   c_rating = 'TV-14'
+                if   'Kodomo' in tags                      : c_rating = 'TV-Y'
+                elif 'Mina'   in tags                      : c_rating = 'TV-G'
+                elif 'Shoujo' in tags or 'Shounen' in tags : c_rating = 'TV-PG'
+                elif 'Josei'  in tags or 'Seinen'  in tags : c_rating = 'TV-14'
             if 'Borderline Porn' in tags: c_rating = 'TV-MA'  # Override any previous rating for borderline porn content
             if c_rating: c_rating += descriptor               # Append the content descriptor using the content indicators above
             if '18 Restricted' in tags: c_rating = 'X'        # Override any previous rating and remove content indicators for 18 restricted content
@@ -356,7 +356,7 @@ class ShokoRelayAgent:
         # Set custom negative season names
         for season_num in metadata.seasons:
             season_title = None
-            if season_num == '-1'   : season_title = 'Credits'
+            if   season_num == '-1' : season_title = 'Credits'
             elif season_num == '-2' : season_title = 'Trailers'
             elif season_num == '-3' : season_title = 'Parodies'
             elif season_num == '-4' : season_title = 'Other'
@@ -368,7 +368,7 @@ class ShokoRelayAgent:
         # Get Plex theme music using a TvDB ID cross referenced from TMDB
         if Prefs['themeMusic']:
             THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
-            for tid in try_get(series_data['IDs'],'TvDB', []):
+            for tid in try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', []):
                 if THEME_URL % tid not in metadata.themes:
                     try:
                         metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
@@ -394,10 +394,10 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    if Prefs['synposisCleanLinks']:           summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
-    if Prefs['synposisCleanMiscLines']:       summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)                     # Remove the line if it starts with ('* ' / '-- ' / '~ ')
-    if Prefs['synposisRemoveSummary']:        summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)        # Remove all lines after this is seen
-    if Prefs['synposisCleanMultiEmptyLines']: summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense multiple empty lines
+    if Prefs['synposisCleanLinks']           : summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
+    if Prefs['synposisCleanMiscLines']       : summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)                     # Remove the line if it starts with ('* ' / '-- ' / '~ ')
+    if Prefs['synposisRemoveSummary']        : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)        # Remove all lines after this is seen
+    if Prefs['synposisCleanMultiEmptyLines'] : summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense multiple empty lines
     return summary.strip(' \n')
 
 def title_case(text):

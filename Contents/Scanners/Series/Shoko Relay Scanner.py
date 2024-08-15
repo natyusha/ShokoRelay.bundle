@@ -20,18 +20,18 @@ Log.setLevel(logging.DEBUG)
 LOG_ROOT = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..', '..', 'Logs'))
 if not os.path.isdir(LOG_ROOT):
     path_location = {
-        'Windows': '%LOCALAPPDATA%\\Plex Media Server',
-        'MacOSX':  '$HOME/Library/Application Support/Plex Media Server',
-        'Linux':   '$PLEX_HOME/Library/Application Support/Plex Media Server',
-        'Android': '/storage/emulated/0/Plex Media Server'
+        'Windows' : '%LOCALAPPDATA%\\Plex Media Server',
+        'MacOSX'  : '$HOME/Library/Application Support/Plex Media Server',
+        'Linux'   : '$PLEX_HOME/Library/Application Support/Plex Media Server',
+        'Android' : '/storage/emulated/0/Plex Media Server'
     }
     LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
 
 # Define logger parameters with a max size of 12MiB and five backups for file rotation
 def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '')
-    filename = 'Shoko Relay Scanner.log'
-    format = '%(asctime)s : %(levelname)s - %(message)s'
+    filename   = 'Shoko Relay Scanner.log'
+    format     = '%(asctime)s : %(levelname)s - %(message)s'
     handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=12*1024*1024, backupCount=5)
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
@@ -43,9 +43,9 @@ def GetApiKey():
     global API_KEY
     if not API_KEY:
         data = json.dumps({
-            'user': Prefs['Username'],
-            'pass': Prefs['Password'] if Prefs['Password'] != None else '',
-            'device': 'Shoko Relay for Plex'
+            'user'   : Prefs['Username'],
+            'pass'   : Prefs['Password'] if Prefs['Password'] != None else '',
+            'device' : 'Shoko Relay for Plex'
         })
         resp = HttpPost('api/auth', data)['apikey']
         # Log.debug('Got API Key:              %s' % resp) # Not needed
@@ -71,8 +71,8 @@ def HttpReq(url, retry=True):
         return HttpReq(url, False)
 
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
-    if path:  Log.debug('[Path]                    %s' % path)
-    if files: Log.debug('[Files]                   %s' % ', '.join(files))
+    if path  : Log.debug('[Path]                    %s' % path)
+    if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
     Log.info('===========================[Shoko Relay Scanner v1.2.00]' + '=' * 244)
@@ -116,7 +116,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 # If SingleSeasonOrdering isn't enabled determine the TMDB type
                 tmdb_type, tmdb_title = None, ''
                 if not Prefs['SingleSeasonOrdering']:
-                    if try_get(series_data['TMDB']['Shows'], 0, None)    : tmdb_type = 'Shows'
+                    if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type = 'Shows'
                     elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
                     if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
                         tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
@@ -126,7 +126,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 # Get episode data
                 episode_multi = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
                 for episode in range(episode_multi):
-                    episode_id = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
+                    episode_id   = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
                     episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
                     tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
 
@@ -138,7 +138,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                     # Get season and episode numbers
                     episode_source, season = '(AniDB):', 0
-                    if episode_type   == 'Normal'    : season =  1
+                    if   episode_type == 'Normal'    : season =  1
                     elif episode_type == 'Special'   : season =  0
                     elif episode_type == 'ThemeSong' : season = -1
                     elif episode_type == 'Trailer'   : season = -2
