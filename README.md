@@ -32,7 +32,6 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 - `Settings > Metadata Sites > TMDB Options`
   - [x] Auto Link
   - [x] Auto Link Restricted
-  - [x] Download External IDs
   - [x] Download Backdrops
 - `Settings > Collection > Relation Options`
   - [x] Auto Group Series
@@ -351,7 +350,7 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.
 
 ### Assumed Content Ratings
-If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidlines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
+If "assumed content ratings" are enabled in the agent settings the [target audience](https://anidb.net/tag/2606/animetb) and [content indicator](https://anidb.net/tag/2604/animetb) tags from AniDB will be used to roughly match the [TV Parental Guidelines](http://www.tvguidelines.org/resources/TheRatings.pdf) system. The target audience tags will conservatively set the initial rating anywhere from TV-Y to TV-14, then the content indicators will be appended. If the tag weights for the content indicators are high enough (> 400 or **\*\***) the rating will be raised to compensate. A general overview is listed in the table below:
 | Tag                               | Rating  |
 | :-------------------------------- | :------ |
 | Kodomo                            | TV-Y    |
