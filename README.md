@@ -63,7 +63,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 - Will replace:
   - Ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
   - Inconsistently capitalised genre tags with ones using [AniDB Capitalisation Rules](https://wiki.anidb.net/Capitalisation)
-- Will use TMDB episode descriptions and titles if AniDB is missing that information
+- Will use TMDB episode descriptions and titles if configured in Shoko or AniDB is missing that information
 
 ## Utility Scripts
 Shoko Relay includes several utility / automation scripts which can help to quickly add full length theme songs, automatic collection posters, correct negative season numbers, synced watched states, and more.

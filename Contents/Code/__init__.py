@@ -68,7 +68,7 @@ class ShokoRelayAgent:
         series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
         # Get Title according to the language preference
-        for lang in (l.strip().lower() for l in Prefs['SeriesTitleLanguagePreference'].split(',')):
+        for lang in (l.strip().lower() for l in Prefs['SeriesTitleLanguage'].split(',')):
             title = try_get(series_titles, lang, None)
             if title: break
         if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
@@ -92,7 +92,7 @@ class ShokoRelayAgent:
         Log('Title %s   %s [%s]' % (title_mod, title, lang.upper()))
 
         # Get Alternate Title according to the language preference
-        for lang in (l.strip().lower() for l in Prefs['SeriesAltTitleLanguagePreference'].split(',')):
+        for lang in (l.strip().lower() for l in Prefs['SeriesAltTitleLanguage'].split(',')):
             alt_title = try_get(series_titles, lang, None)
             if alt_title: break
 
@@ -135,10 +135,10 @@ class ShokoRelayAgent:
         # metadata.tagline =
 
         # Get Summary
-        summary = try_get(series_data['AniDB'], 'Description', None)
+        summary = series_data['Description']
         if summary: metadata.summary = summary_sanitizer(summary)
         else: metadata.summary = None
-        Log('Summary:                       %s' % metadata.summary)
+        Log('Summary (Preferred):           %s' % metadata.summary)
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -276,8 +276,8 @@ class ShokoRelayAgent:
             episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
 
             # Get episode Title according to the language preference
-            title_source = '(AniDB) [LANG]:         '
-            for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
+            title_mod = '[LANG]:                 '
+            for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')):
                 title = try_get(episode_titles, lang, None)
                 if title: break
             if not title: title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
@@ -286,23 +286,23 @@ class ShokoRelayAgent:
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the language preference
-                title_source, original_title = '(FromSeries) [LANG]:    ', title
-                for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguagePreference'].split(',')):
+                title_mod, original_title = '(FromSeries) [LANG]:    ', title
+                for lang in (l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')):
                     if lang != 'shoko': title = try_get(series_titles, lang, title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                     if title is not original_title: break
                 if title is original_title: title, lang = try_get(series_titles, 'en', title), 'en (fallback)' # If not found, fallback to EN series title
                 if title is original_title and tmdb_ep_data and try_get(tmdb_ep_data, 'Title', None): # Fallback to the TMDB title as a last resort if there is a TMDB Episodes match
-                    title_source, title = '(TMDB) [LANG]:          ', tmdb_ep_data['Title']
+                    title_mod, title = '(TMDB) [LANG]:          ', tmdb_ep_data['Title']
 
                 # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
                 if original_title != title and original_title not in title: title += ' — ' + original_title
 
             # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
             if re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', title) and tmdb_ep_data:
-                title_source, title = '(TMDB Override) [LANG]: ', tmdb_ep_data['Title']
+                title_mod, title = '(TMDB Override) [LANG]: ', tmdb_ep_data['Title']
 
             episode_obj.title = title
-            Log('Title %s %s [%s]' % (title_source, episode_obj.title, lang.upper()))
+            Log('Title %s %s [%s]' % (title_mod, episode_obj.title, lang.upper()))
 
             # Get Originally Available
             airdate_log, airdate = None, try_get(episode_data['AniDB'], 'AirDate', None)
@@ -323,13 +323,10 @@ class ShokoRelayAgent:
             Log('Rating:                        %s' % float(episode_obj.rating))
 
             # Get Summary
-            summary_source, summary = '(AniDB):', try_get(episode_data['AniDB'], 'Description', None)
+            summary = episode_data['Description']
             if summary: episode_obj.summary = summary_sanitizer(summary)
-            elif tmdb_ep_data and try_get(tmdb_ep_data, 'Overview', None): # Fallback to the TMDB summary as a last resort if there is a TMDB Episodes match
-                summary_source, summary = '(TMDB): ', tmdb_ep_data['Overview']
-                episode_obj.summary = summary_sanitizer(summary)
             else: episode_obj.summary = None
-            Log('Summary %s               %s' % (summary_source, episode_obj.summary))
+            Log('Summary (Preferred):           %s' % episode_obj.summary)
 
             # Get Writer as Original Work (原作) [if there is only one]
             episode_obj.writers.clear()
@@ -367,14 +364,14 @@ class ShokoRelayAgent:
 
         # Get Plex theme music using a TvDB ID cross referenced from TMDB
         if Prefs['themeMusic']:
-            THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3'
-            for tid in try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', []):
-                if THEME_URL % tid not in metadata.themes:
+            if try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', None):
+                THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3' % series_data['TMDB'][tmdb_type][0]['TvdbID']
+                if THEME_URL not in metadata.themes:
                     try:
-                        metadata.themes[THEME_URL % tid] = Proxy.Media(HTTP.Request(THEME_URL % tid))
+                        metadata.themes[THEME_URL] = Proxy.Media(HTTP.Request(THEME_URL))
                         Log('Adding Theme Music:            %s' % THEME_URL % tid)
                     except:
-                        Log('Error Adding Theme Music:      %s (Not Found)' % THEME_URL % tid)
+                        Log('Error Adding Theme Music:      %s (Not Found)' % THEME_URL)
 
     def image_add(self, meta, images):
         valid, art_url = list(), ''
