@@ -32,7 +32,6 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 - `Settings > Metadata Sites > TMDB Options`
   - [x] Auto Link
   - [x] Auto Link Restricted
-  - [x] Download External IDs
   - [x] Download Backdrops
 - `Settings > Collection > Relation Options`
   - [x] Auto Group Series
