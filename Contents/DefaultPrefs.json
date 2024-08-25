@@ -94,38 +94,18 @@
     },
 
     {
-        "id": "synposisCleanLinks",
-        "label": "Synopsis: Remove links",
-        "type": "bool",
-        "default": true
-    },
-
-    {
-        "id": "synposisCleanMiscLines",
-        "label": "Synopsis: Remove the line if it starts with ('* ' / '-- ' / '~ ')",
-        "type": "bool",
-        "default": true
-    },
-
-    {
-        "id": "synposisRemoveSummary",
-        "label": "Synopsis: Remove anything after Source, Note or Summary",
-        "type": "bool",
-        "default": true
-    },
-
-    {
-        "id": "synposisCleanMultiEmptyLines",
-        "label": "Synopsis: Collapse excessive empty lines",
-        "type": "bool",
-        "default": true
-    },
-
-    {
         "id": "shokoThumbs",
         "label": "Use Shoko's episode thumbnails",
         "type": "bool",
         "default": false
+    },
+
+    {
+        "id": "sanitizeSummary",
+        "label": "The degree to which the summary is cleaned of extraneous info. This includes info lines (\"Source: \", \"Note: \", \"Summary: \"), and miscellaneous lines (\"* \", \"-- \", \"~ \").",
+        "type": "enum",
+        "values" : ["Fully Clean", "Allow Info Lines", "Allow Misc. Lines", "Allow Info & Misc. Lines"],
+        "default": "Fully Clean"
     },
 
     {

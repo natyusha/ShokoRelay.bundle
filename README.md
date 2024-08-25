@@ -167,7 +167,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 <summary><b>Additional Information</b></summary><br>
 
 **Requirements:**
-  - Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, ShokoRelay, Shoko Server
+  - Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, Shoko Relay, Shoko Server
 
 **Preferences:**
 - Before doing anything with this script you must enter your Plex and Shoko Server credentials into `config.py`.
@@ -195,7 +195,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 <summary><b>Additional Information</b></summary><br>
 
 **Requirements:**
-- Python 3.7+, Python-PlexAPI (pip install plexapi), Plex, ShokoRelay, Shoko Server
+- Python 3.7+, Python-PlexAPI (pip install plexapi), Plex, Shoko Relay, Shoko Server
 
 **Preferences:**
 - Before doing anything with this script you must enter your Plex credentials into `config.py`.
@@ -255,7 +255,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 <summary><b>Additional Information</b></summary><br>
 
 **Requirements:**
-- Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, ShokoRelay, Shoko Server
+- Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, Shoko Relay, Shoko Server
 
 **Preferences:**
 - Before doing anything with this script you must enter your Plex and Shoko Server credentials into `config.py`.

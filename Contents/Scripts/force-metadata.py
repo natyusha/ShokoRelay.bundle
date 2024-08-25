@@ -12,7 +12,7 @@ Description:
 Author:
   - natyusha
 Requirements:
-  - Python 3.7+, Python-PlexAPI (pip install plexapi), Plex, ShokoRelay, Shoko Server
+  - Python 3.7+, Python-PlexAPI (pip install plexapi), Plex, Shoko Relay, Shoko Server
 Preferences:
   - Before doing anything with this script you must enter your Plex credentials into config.py.
   - If your anime is split across multiple libraries they can all be added in a python list under Plex "LibraryNames".

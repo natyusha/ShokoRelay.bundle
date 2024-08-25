@@ -364,7 +364,7 @@ class ShokoRelayAgent:
 
         # Get Plex theme music using a TvDB ID cross referenced from TMDB
         if Prefs['themeMusic']:
-            if try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', None):
+            if tmdb_type and try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', None):
                 THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3' % series_data['TMDB'][tmdb_type][0]['TvdbID']
                 if THEME_URL not in metadata.themes:
                     try:
@@ -391,10 +391,11 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    if Prefs['synposisCleanLinks']           : summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
-    if Prefs['synposisCleanMiscLines']       : summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)                     # Remove the line if it starts with ('* ' / '-- ' / '~ ')
-    if Prefs['synposisRemoveSummary']        : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)        # Remove all lines after this is seen
-    if Prefs['synposisCleanMultiEmptyLines'] : summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense multiple empty lines
+    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
+    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense stacked empty lines
+    if Prefs['sanitizeSummary'] != 'Allow Info & Misc. Lines':
+        if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+        if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)              # Remove the line if it starts with ("* ", "-- ", "~ ")
     return summary.strip(' \n')
 
 def title_case(text):
