@@ -75,7 +75,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.2.2]' + '=' * 245)
+    Log.info('===========================[Shoko Relay Scanner v1.2.3]' + '=' * 245)
 
     if files:
         # Scan for video files

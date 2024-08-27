@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.2]=======================')
+    Log('======================[Shoko Relay Agent v1.2.3]=======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -393,7 +393,7 @@ class ShokoRelayAgent:
 def summary_sanitizer(summary):
     summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
     summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense stacked empty lines
-    if Prefs['sanitizeSummary'] != 'Allow Info & Misc. Lines':
+    if Prefs['sanitizeSummary'] != 'Allow Both Types':
         if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
         if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)              # Remove the line if it starts with ("* ", "-- ", "~ ")
     return summary.strip(' \n')
