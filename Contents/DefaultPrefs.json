@@ -101,6 +101,13 @@
     },
 
     {
+        "id": "addEveryImage",
+        "label": "Add all posters and backdrops from Shoko instead of just the preferred one",
+        "type": "bool",
+        "default": false
+    },
+
+    {
         "id": "sanitizeSummary",
         "label": "The degree to which the summary is cleaned of extraneous info ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ This includes lines starting with general info (\"Source: \", \"Note: \", \"Summary: \"), as well as other miscellaneous lines (\"* \", \"-- \", \"~ \").",
         "type": "enum",
@@ -112,7 +119,7 @@
         "id": "disableNegativeSeasonAirdates",
         "label": "Leave the \"Originally Available\" field blank for \"Credits\", \"Trailers\", \"Parodies\", and \"Other\" episode types. This is a workaround to prevent Plex from playing them before regular episodes and specials.",
         "type": "enum",
-        "values" : ["All", "Exclude Other", "None"],
+        "values" : ["Enabled", "Exclude Other", "Disabled"],
         "default": "Exclude Other"
     }
 ]

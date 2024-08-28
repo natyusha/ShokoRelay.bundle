@@ -46,7 +46,7 @@ class ShokoRelayAgent:
     def Search(self, results, media, lang, manual):
         # Search for the series using the name from the scanner
         name = media.show
-        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Clannad&fuzzy=false&limit=10
+        prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Kowarekake%20no%20Orgel&fuzzy=false&limit=10
         for idx, series_data in enumerate(prelimresults):
             series_id = series_data['IDs']['ID']                                                          # Get series series id from series data
             airdate = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None)             # Get airdate from series id
@@ -59,7 +59,7 @@ class ShokoRelayAgent:
 
         # Get series data
         Log('==================[Shoko Relay for Series ID: %s]==================' % aid.zfill(6))
-        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB
+        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
@@ -168,7 +168,7 @@ class ShokoRelayAgent:
         Log('Genres:                        %s' % ', '.join(tags))
 
         # Get Collections
-        groupinfo = HttpReq('api/v3/Series/%s/Group' % aid)
+        groupinfo = HttpReq('api/v3/Series/%s/Group' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Group
         metadata.collections.clear()
         if groupinfo['Size'] > 1: metadata.collections = [groupinfo['Name']]
         Log('Collection:                    %s' % metadata.collections[0])
@@ -197,9 +197,19 @@ class ShokoRelayAgent:
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
 
         # Get Posters & Backgrounds
-        images = try_get(series_data, 'Images', {})
-        self.image_add(metadata.posters, try_get(images, 'Posters', []))
-        self.image_add(metadata.art, try_get(images, 'Backdrops', []))
+        if Prefs['addEveryImage']:
+            images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
+            posters, backdrops = try_get(images, 'Posters', []), try_get(images, 'Backdrops', [])
+            for poster in posters: # Move preferred poster to the top of the list
+                if poster['Preferred']: posters.insert(0, posters.pop(posters.index(poster)))
+            self.image_add(metadata.posters, posters)
+            for backdrop in backdrops: # Move preferred backdrop to the top of the list
+                if backdrop['Preferred']: backdrops.insert(0, backdrops.pop(backdrops.index(backdrop)))
+            self.image_add(metadata.art, backdrops)
+        else:
+            preferred_image = try_get(series_data, 'Images', {}) # Series data only contains the preferred image for each type
+            self.image_add(metadata.posters, try_get(preferred_image, 'Posters', []))
+            self.image_add(metadata.art, try_get(preferred_image, 'Backdrops', []))
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
@@ -244,7 +254,7 @@ class ShokoRelayAgent:
             if not staff_check: Log('N/A')
 
         # Get episode list using series ID
-        episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/212/Episode?pageSize=0
+        episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Episode?pageSize=0
 
         for episode in episodes['List']:
             # Get episode data
@@ -310,7 +320,7 @@ class ShokoRelayAgent:
             else: episode_obj.originally_available_at = None
             # Remove the air dates for negative seasons according to the language preference
             if season == -4 and Prefs['disableNegativeSeasonAirdates'] == 'Exclude Other': pass
-            elif season < 0 and Prefs['disableNegativeSeasonAirdates'] != 'None':
+            elif season < 0 and Prefs['disableNegativeSeasonAirdates'] != 'Disabled':
                 airdate_log, episode_obj.originally_available_at = 'Disabled in Agent Settings - Skipping!', None
             Log('Originally Available:          %s' % airdate_log)
 
@@ -374,7 +384,7 @@ class ShokoRelayAgent:
                         Log('Error Adding Theme Music:      %s (Not Found)' % THEME_URL)
 
     def image_add(self, meta, images):
-        valid, art_url = list(), ''
+        valid, url = list(), ''
         for image in images:
             try:
                 url = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])

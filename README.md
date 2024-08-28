@@ -21,7 +21,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
   - The Shoko Server Port
   - Collections: `Hide items which are in collections`
   - Seasons: `Hide for single-season series`
-- In Plex: `Settings > Agents > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
+- In Plex: `Settings > Agents (Legacy) > Shows > ShokoRelay` move the following entry to the top of the list and enable it:
   - [x] Local Media Assets (TV)
 
 ### Recommended Shoko Server Configuration
