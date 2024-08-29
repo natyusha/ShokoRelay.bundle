@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.3]=======================')
+    Log('======================[Shoko Relay Agent v1.2.4]=======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -135,7 +135,7 @@ class ShokoRelayAgent:
         # metadata.tagline =
 
         # Get Summary
-        summary = series_data['Description']
+        summary = try_get(series_data, 'Description', None)
         if summary: metadata.summary = summary_sanitizer(summary)
         else: metadata.summary = None
         Log('Summary (Preferred):           %s' % metadata.summary)
@@ -333,7 +333,7 @@ class ShokoRelayAgent:
             Log('Rating:                        %s' % float(episode_obj.rating))
 
             # Get Summary
-            summary = episode_data['Description']
+            summary = try_get(episode_data, 'Description', None)
             if summary: episode_obj.summary = summary_sanitizer(summary)
             else: episode_obj.summary = None
             Log('Summary (Preferred):           %s' % episode_obj.summary)
