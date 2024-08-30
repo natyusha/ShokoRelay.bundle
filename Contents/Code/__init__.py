@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.4]=======================')
+    Log('======================[Shoko Relay Agent v1.2.5]=======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -366,7 +366,6 @@ class ShokoRelayAgent:
                     for season in seasons:
                         if int(season_num) == season['SeasonNumber']:
                             self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
-                            self.image_add(metadata.seasons[season_num].posters, try_get(series_data['Images'], 'Posters', [])) # Add the preferred main series poster as a fallback in case of bad season posters
                             break
 
         """ Enable if Plex fixes blocking legacy agent issue
@@ -411,11 +410,13 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links with text
     if Prefs['sanitizeSummary'] != 'Allow Both Types':
         if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
         if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|\u2014|--|~) .*', '', summary, flags=re.M | re.U) # Remove the line if it starts with ("* ", "— ", "-- ", "~ ")
-    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S) # Condense stacked empty lines
+    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links with text
+    summary = re.sub(r'\[i\].*\[\/i\]', '', summary, flags=re.S)                    # Remove leftover BBCode [i] tags
+    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense stacked empty lines
+    summary = re.sub(r' +', ' ', summary)                                           # Remove double spaces
     return summary.strip(' \n')
 
 def title_case(text):
