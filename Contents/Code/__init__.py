@@ -198,18 +198,17 @@ class ShokoRelayAgent:
 
         # Get Posters & Backgrounds
         if Prefs['addEveryImage']:
-            images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
-            posters, backdrops = try_get(images, 'Posters', []), try_get(images, 'Backdrops', [])
+            series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
+            posters, backdrops = try_get(series_images, 'Posters', []), try_get(series_images, 'Backdrops', [])
             for poster in posters: # Move preferred poster to the top of the list
                 if poster['Preferred']: posters.insert(0, posters.pop(posters.index(poster)))
             self.image_add(metadata.posters, posters)
             for backdrop in backdrops: # Move preferred backdrop to the top of the list
                 if backdrop['Preferred']: backdrops.insert(0, backdrops.pop(backdrops.index(backdrop)))
             self.image_add(metadata.art, backdrops)
-        else:
-            preferred_image = try_get(series_data, 'Images', {}) # Series data only contains the preferred image for each type
-            self.image_add(metadata.posters, try_get(preferred_image, 'Posters', []))
-            self.image_add(metadata.art, try_get(preferred_image, 'Backdrops', []))
+        else: # Series data only contains the preferred image for each type
+            self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []))
+            self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []))
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
@@ -359,6 +358,17 @@ class ShokoRelayAgent:
             # Get Episode Poster (Thumbnail)
             if Prefs['shokoThumbs']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []))
 
+        # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
+        if tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
+            seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % aid) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
+            for season_num in metadata.seasons:
+                if season_num >= 0: # Skip negative seasons as they will never have TMDB posters
+                    for season in seasons:
+                        if int(season_num) == season['SeasonNumber']:
+                            self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
+                            self.image_add(metadata.seasons[season_num].posters, try_get(series_data['Images'], 'Posters', [])) # Add the preferred main series poster as a fallback in case of bad season posters
+                            break
+
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
         for season_num in metadata.seasons:
@@ -401,11 +411,11 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links
-    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense stacked empty lines
+    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links with text
     if Prefs['sanitizeSummary'] != 'Allow Both Types':
-        if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
-        if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(r'^(\*|--|~) .*', '', summary, flags=re.M)              # Remove the line if it starts with ("* ", "-- ", "~ ")
+        if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+        if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|\u2014|--|~) .*', '', summary, flags=re.M | re.U) # Remove the line if it starts with ("* ", "— ", "-- ", "~ ")
+    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S) # Condense stacked empty lines
     return summary.strip(' \n')
 
 def title_case(text):
