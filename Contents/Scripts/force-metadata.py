@@ -66,7 +66,7 @@ except Exception:
 print_f('\n┌Shoko Relay: Force Plex Metadata')
 for library in cfg.Plex['LibraryNames']:
     try:
-        anime = plex.library.section(library)
+        section = plex.library.section(library)
     except Exception as error:
         print(f'├{error_prefix}Failed', error)
         continue
@@ -76,7 +76,7 @@ for library in cfg.Plex['LibraryNames']:
         """ not fully compatible with files that were added through Shoko Relay scanner's subfolder scanner queue
         # split apart any merged series to allow each part to receive updated metadata
         print_f(f'├┬Queueing Splits @ {cfg.Plex["ServerName"]}/{library}')
-        for series in anime.search(title=''):
+        for series in section.search(title=''):
             print_f(f'│├─Splitting: {series.title}')
             series.split()
         input('│└─Splitting Queued: Press Enter to continue once Plex is finished...')
@@ -84,7 +84,7 @@ for library in cfg.Plex['LibraryNames']:
 
         # unmatch all anime to clear out bad metadata
         print_f(f'├┬Queueing Unmatches @ {cfg.Plex["ServerName"]}/{library}')
-        for series in anime.search(title=''):
+        for series in section.search(title=''):
             print_f(f'│├─Unmatch: {series.title}')
             series.unmatch()
         input('│└─Unmatching Queued: Press Enter to continue once Plex is finished...')
@@ -97,7 +97,7 @@ for library in cfg.Plex['LibraryNames']:
         # fix match for all anime and grab fresh metadata
         print_f(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
         failed_list = []
-        for series in anime.search(title=''):
+        for series in section.search(title=''):
             print_f(f'│├─Match: {series.title}')
             relay = series.matches(agent='shokorelay', title=series.title, year='')
             try:
@@ -109,7 +109,7 @@ for library in cfg.Plex['LibraryNames']:
 
     # rename negative seasons to their correct names
     print_f(f'├┬Renaming Negative Seasons @ {cfg.Plex["ServerName"]}/{library}')
-    for season in anime.searchSeasons(title=''):
+    for season in section.searchSeasons(title=''):
         if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
         elif season.title == 'Season -2': season.editTitle('Trailers')
         elif season.title == 'Season -3': season.editTitle('Parodies')
@@ -118,14 +118,14 @@ for library in cfg.Plex['LibraryNames']:
 
     # add original titles if there are sort title additions from Shoko Relay
     print_f(f'├┬Adding Original Titles @ {cfg.Plex["ServerName"]}/{library}')
-    for series in anime.search(title=''):
+    for series in section.search(title=''):
         if series.title != series.titleSort:
             series.editOriginalTitle(series.titleSort.replace(series.title + ' [', '')[:-1], locked=False)
     print_f('│└─Finished Adding Original Titles!')
 
     # clear any empty collections that are left over and set the sort title to match the title
     print_f(f'├┬Checking Collections @ {cfg.Plex["ServerName"]}/{library}')
-    for collection in anime.collections():
+    for collection in section.collections():
         if not collection.smart: # ignore any smart collections as they are not managed by Shoko Relay
             if collection.childCount != 0:
                 if collection.title != collection.titleSort:

@@ -135,10 +135,9 @@ class ShokoRelayAgent:
         # metadata.tagline =
 
         # Get Summary
-        summary = try_get(series_data, 'Description', None)
-        if summary: metadata.summary = summary_sanitizer(summary)
-        else: metadata.summary = None
-        Log('Summary (Preferred):           %s' % metadata.summary)
+        summary_source, metadata.summary = '(Preferred):    ', summary_sanitizer(try_get(series_data, 'Description', None))
+        if not metadata.summary and tmdb_type: summary_source, metadata.summary = '(TMDB Fallback):', summary_sanitizer(try_get(series_data['TMDB'][tmdb_type][0], 'Overview', None)) # Fallback to the TMDB series summary if the default one is empty after being sanitized
+        Log('Summary %s       %s' % (summary_source, metadata.summary))
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
@@ -332,9 +331,7 @@ class ShokoRelayAgent:
             Log('Rating:                        %s' % float(episode_obj.rating))
 
             # Get Summary
-            summary = try_get(episode_data, 'Description', None)
-            if summary: episode_obj.summary = summary_sanitizer(summary)
-            else: episode_obj.summary = None
+            episode_obj.summary = summary_sanitizer(try_get(episode_data, 'Description', None))
             Log('Summary (Preferred):           %s' % episode_obj.summary)
 
             # Get Writer as Original Work (原作) [if there is only one]
@@ -410,14 +407,16 @@ class ShokoRelayAgent:
                 del meta[key]
 
 def summary_sanitizer(summary):
-    if Prefs['sanitizeSummary'] != 'Allow Both Types':
-        if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\n(Source|Note|Summary):.*', '', summary, flags=re.S)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
-        if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|\u2014|--|~) .*', '', summary, flags=re.M | re.U) # Remove the line if it starts with ("* ", "— ", "-- ", "~ ")
-    summary = re.sub(r'https?:\/\/\w+.\w+(?:\/?\w+)? \[([^\]]+)\]', r'\1', summary) # Replace links with text
-    summary = re.sub(r'\[i\](.*?)\[\/i\]', '', summary, flags=re.S)                 # Remove leftover BBCode [i] tags
-    summary = re.sub(r'\n\n+', r'\n\n', summary, flags=re.S)                        # Condense stacked empty lines
-    summary = re.sub(r' +', ' ', summary)                                           # Remove double spaces
-    return summary.strip(' \n')
+    if summary:
+        if Prefs['sanitizeSummary'] != 'Allow Both Types':
+            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\b(Sour?ce|Note|Summ?ary):([^\r\n]+|$)', '', summary, flags=re.M|re.S)    # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+            if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|\u2014|- translated|~) ([^\r\n]+|$)', '', summary, flags=re.M|re.U) # Remove the line if it starts with ("* ", "— ", "- ", "~ ")
+        summary = re.sub(r'(?:http:\/\/anidb\.net\/(?:ch|cr|[feat]|(?:character|creator|file|episode|anime|tag)\/)(?:\d+)) \[([^\]]+)]', r'\1', summary)      # Replace anidb links with text
+        summary = re.sub(r'\[i\](.*?)\[\/i\]', '', summary, flags=re.S) # Remove leftover BBCode [i] tags (AniDB API Bug)
+        summary = re.sub(r'\n\n+', r'\n\n', summary)                    # Condense stacked empty lines
+        summary = re.sub(r' +', ' ', summary).strip(' \n')              # Remove double spaces and strip spaces and newlines
+    if not summary: summary = None # For logging purposes
+    return summary
 
 def title_case(text):
     # Words to force lowercase in tags to follow AniDB capitalisation rules: https://wiki.anidb.net/Capitalisation (some romaji tag endings and separator words are also included)

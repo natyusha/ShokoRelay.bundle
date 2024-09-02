@@ -116,14 +116,14 @@ for account in accounts:
     for library in cfg.Plex['LibraryNames']:
         print_f(f'├┬Querying: {account} @ {cfg.Plex["ServerName"]}/{library}')
         try:
-            anime = plex.library.section(library)
+            section = plex.library.section(library)
         except Exception as error:
             print(f'│{error_prefix}─Failed', error)
             continue
 
         # if importing loop through all the unwatched episodes in the Plex library
         if shoko_import == True:
-            for episode in anime.searchEpisodes(unwatched=True):
+            for episode in section.searchEpisodes(unwatched=True):
                 for episode_path in episode.iterParts():
                     filepath = os.path.basename(episode_path.file)
                     if filepath in watched_episodes: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played
@@ -131,7 +131,7 @@ for account in accounts:
                         print_f(f'│├─Importing: {filepath}')
         else:
             # loop through all the watched episodes in the Plex library within the time frame of the relative date
-            for episode in anime.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
+            for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
                 for episode_path in episode.iterParts():
                     filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
                     path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()

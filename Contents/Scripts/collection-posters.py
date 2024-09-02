@@ -65,7 +65,7 @@ except Exception:
 print_f('\n┌Shoko Relay: Collection Posters')
 for library in cfg.Plex['LibraryNames']:
     try:
-        anime = plex.library.section(library)
+        section = plex.library.section(library)
     except Exception as error:
         print(f'├{error_prefix}Failed', error)
         continue
@@ -74,7 +74,7 @@ for library in cfg.Plex['LibraryNames']:
     if clean_posters:
         print_f(f'├┬Removing Posters @ {cfg.Plex["ServerName"]}/{library}')
         try:
-            for collection in anime.collections():
+            for collection in section.collections():
                 # check for multiple custom posters and delete the oldest ones
                 if len(collection.posters()) > 2:
                     posters_path = os.path.join(cfg.Plex['DataFolder'], collection.metadataDirectory, 'Uploads', 'posters')
@@ -107,7 +107,7 @@ for library in cfg.Plex['LibraryNames']:
 
         print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
         # loop through Plex collections grabbing their names to compare to Shoko's group names and user defined poster names
-        for collection in anime.collections():
+        for collection in section.collections():
             # check for user defined posters first
             fallback = True
             if cfg.Plex['PostersFolder']:
