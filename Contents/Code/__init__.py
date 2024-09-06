@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.7]=======================')
+    Log('======================[Shoko Relay Agent v1.2.8]=======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -220,7 +220,7 @@ class ShokoRelayAgent:
         for role in cast_crew:
             role_type = role['RoleName']
             if role_type != 'Seiyuu': continue # Skip if not Seiyuu
-            cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], role['Character']['Name']
+            cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], try_get(role.get('Character', None), 'Name', 'Unnamed (AniDB)')
             image = role['Staff']['Image'] # Grab staff image (if available)
             if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
             Log('%-30s %-30s %s' % (meta_role.role, meta_role.name, try_get(image, 'ID', None)))
