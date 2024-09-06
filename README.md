@@ -1,6 +1,6 @@
 ![Shoko Relay Logo](https://github.com/natyusha/ShokoRelay.bundle/assets/985941/23bfd7c2-eb89-46d5-a7cb-558c374393d6 "Shoko Relay")
 =======================
-This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2.104+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
+This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2.122+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
 - Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
@@ -345,6 +345,9 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 
 > [!IMPORTANT]
 > Only do this when you are happy with the metadata for the series to be merged as you will be unable to correctly refresh it without splitting the series apart first.
+
+### Combining Episodes
+Sometimes you may encounter a single episode which is split across multiple files. In order to ensure that all of the files are treated as a single entity you can follow Plex's [Naming Conventions](https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/#toc-6). For an ideal playback experience, it is recommended to merge these types of files together.
 
 ### Minimum Tag Weight
 Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.

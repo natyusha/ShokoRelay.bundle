@@ -71,7 +71,7 @@ else:
 
     # loop through recently added series and add the series ids to a list
     recently_added_ids = []
-    for series in recently_added: recently_added_ids.append(series['IDs']['ID'])
+    for series in recently_added['List']: recently_added_ids.append(series['IDs']['ID'])
 
     # loop through the series ids and grab filepaths for each
     for ids in recently_added_ids:

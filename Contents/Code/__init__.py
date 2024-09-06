@@ -7,7 +7,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.6]=======================')
+    Log('======================[Shoko Relay Agent v1.2.7]=======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -48,18 +48,18 @@ class ShokoRelayAgent:
         name = media.show
         prelimresults = HttpReq('api/v3/Series/Search?query=%s&fuzzy=false&limit=10' % (urllib.quote_plus(name.encode('utf8')))) # http://127.0.0.1:8111/api/v3/Series/Search?query=Kowarekake%20no%20Orgel&fuzzy=false&limit=10
         for idx, series_data in enumerate(prelimresults):
-            series_id = series_data['IDs']['ID']                                                          # Get series series id from series data
-            airdate = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None)             # Get airdate from series id
-            year = airdate.split('-')[0] if airdate else None                                             # Get year from air date
-            score = 100 if series_data['Name'] == name else 99 - idx - int(series_data['Distance'] * 100) # Get score from name vs distance
-            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang))  # Tabulate the results
+            series_id = series_data['IDs']['ID']                                                              # Get series series id from series data
+            airdate   = try_get(HttpReq('api/v3/Series/%s/AniDB' % series_id), 'AirDate', None)               # Get airdate from series id
+            year      = airdate.split('-')[0] if airdate else None                                            # Get year from air date
+            score     = 100 if series_data['Name'] == name else 99 - idx - int(series_data['Distance'] * 100) # Get score from name vs distance
+            results.Append(MetadataSearchResult(str(series_id), series_data['Name'], year, score, lang))      # Tabulate the results
 
     def Update(self, metadata, media, lang, force):
-        aid = metadata.id
+        series_id = metadata.id
 
         # Get series data
-        Log('==================[Shoko Relay for Series ID: %s]==================' % aid.zfill(6))
-        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % aid) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
+        Log('==================[Shoko Relay for Series ID: %s]==================' % series_id.zfill(6))
+        series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
@@ -79,12 +79,13 @@ class ShokoRelayAgent:
             if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
-        tmdb_type, tmdb_title = None, ''
+        tmdb_type, tmdb_title, tmdb_group_size = None, '', 0
         if not Prefs['SingleSeasonOrdering']:
             if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type = 'Shows'
             elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
             if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
                 tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
+                tmdb_episode_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0&page=1' % (series_id, tmdb_id)) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0&page=1
                 if not tmdb_title: tmdb_title = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
                 Log('TMDB Check (Title [ID]):       %s [%s]' % (tmdb_title, tmdb_id))
 
@@ -122,10 +123,10 @@ class ShokoRelayAgent:
         Log('Rating (Critic):               %s' % metadata.rating)
 
         # Get Studio as Animation Work (アニメーション制作)
-        studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
+        studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
         studio_source, studio = '(Animation Work):', try_get(studio, 0, None)
         if not studio: # If no Studio fallback and override with Work (制作) listing
-            studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
+            studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
             studio_source, studio = '(Work):          ', try_get(studio, 0, None)
         if studio: metadata.studio = studio['Staff']['Name']
         else: metadata.studio = None
@@ -141,7 +142,7 @@ class ShokoRelayAgent:
 
         # Get Genres
         ## filter=1 removes TagBlacklistAniDBHelpers as defined here: https://github.com/ShokoAnime/ShokoServer/blob/d7c7f6ecdd883c714b15dbef385e19428c8d29cf/Shoko.Server/Utilities/TagFilter.cs#L37C44-L37C68
-        series_tags = HttpReq('api/v3/Series/%s/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true
+        series_tags = HttpReq('api/v3/Series/%s/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Tags?filter=1&excludeDescriptions=true&orderByName=false&onlyVerified=true
         metadata.genres.clear()
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted (high priority) tags
@@ -167,7 +168,7 @@ class ShokoRelayAgent:
         Log('Genres:                        %s' % ', '.join(tags))
 
         # Get Collections
-        groupinfo = HttpReq('api/v3/Series/%s/Group' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Group
+        groupinfo = HttpReq('api/v3/Series/%s/Group' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Group
         metadata.collections.clear()
         if groupinfo['Size'] > 1: metadata.collections = [groupinfo['Name']]
         Log('Collection:                    %s' % metadata.collections[0])
@@ -197,7 +198,7 @@ class ShokoRelayAgent:
 
         # Get Posters & Backgrounds
         if Prefs['addEveryImage']:
-            series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
+            series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
             posters, backdrops = try_get(series_images, 'Posters', []), try_get(series_images, 'Backdrops', [])
             for poster in posters: # Move preferred poster to the top of the list
                 if poster['Preferred']: posters.insert(0, posters.pop(posters.index(poster)))
@@ -210,7 +211,7 @@ class ShokoRelayAgent:
             self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []))
 
         # Get Cast & Crew
-        cast_crew = HttpReq('api/v3/Series/%s/Cast' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Cast
+        cast_crew = HttpReq('api/v3/Series/%s/Cast' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast
         Log('-----------------------------------------------------------------------')
         Log('Character                      Seiyuu (CV)                    Image')
         Log('-----------------------------------------------------------------------')
@@ -252,7 +253,7 @@ class ShokoRelayAgent:
             if not staff_check: Log('N/A')
 
         # Get episode list using series ID
-        episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % aid) # http://127.0.0.1:8111/api/v3/Series/24/Episode?pageSize=0
+        episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Episode?pageSize=0
 
         for episode in episodes['List']:
             # Get episode data
@@ -260,6 +261,13 @@ class ShokoRelayAgent:
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
             tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
             episode_type = episode_data['AniDB']['Type'] # Get episode type
+
+            # Ignore TMDB numbering for episodes split across multiple files (prevent file stacking in Plex)
+            if tmdb_ep_data:
+                for group in [g for g in tmdb_episode_groups['List'] if len(g) > 1]:
+                    for xref in group:
+                        if tmdb_group_size > 0: continue
+                        if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group_size = len(group)
 
             # Get season and episode numbers
             episode_source, season = '(AniDB):', 0
@@ -269,8 +277,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if tmdb_title and tmdb_ep_data: # Grab TMDB info when SingleSeasonOrdering isn't enabled and there is a populated TMDB Episodes match
-                episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber']
+            if not tmdb_group_size and tmdb_ep_data: episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and enabled
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
             Log('Season %s                %s' % (episode_source, season))
@@ -357,7 +364,7 @@ class ShokoRelayAgent:
 
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
         if tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
-            seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % aid) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
+            seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
             for season_num in metadata.seasons:
                 if season_num >= 0: # Skip negative seasons as they will never have TMDB posters
                     for season in seasons:
