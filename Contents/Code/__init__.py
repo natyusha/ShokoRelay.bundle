@@ -79,15 +79,15 @@ class ShokoRelayAgent:
             if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # If SingleSeasonOrdering isn't enabled determine the TMDB type
-        tmdb_type, tmdb_title, tmdb_group_size = None, '', 0
+        tmdb_type, tmdb_type_log, tmdb_title, tmdb_group = None, '', '', False
         if not Prefs['SingleSeasonOrdering']:
-            if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type = 'Shows'
-            elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type = 'Movies'
+            if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type, tmdb_type_log = 'Shows'  , 'tv/'
+            elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type, tmdb_type_log = 'Movies' , 'movie/'
             if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
                 tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
-                tmdb_episode_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0&page=1' % (series_id, tmdb_id)) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0&page=1
-                if not tmdb_title: tmdb_title = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' # Account for rare cases where Shoko has a TMDB ID that returns no data
-                Log('TMDB Check (Title [ID]):       %s [%s]' % (tmdb_title, tmdb_id))
+                tmdb_title_log = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' if not tmdb_title else tmdb_title # Account for rare cases where Shoko has a TMDB ID that returns no data
+                Log('TMDB Check (Title [ID]):       %s [%s%s]' % (tmdb_title_log, tmdb_type_log, tmdb_id))
+            tmdb_ep_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0' % (series_id, tmdb_id)) if tmdb_type == 'Shows' else None # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0
 
         metadata.title = title
         Log('Title %s   %s [%s]' % (title_mod, title, lang.upper()))
@@ -259,15 +259,14 @@ class ShokoRelayAgent:
             # Get episode data
             episode_id   = episode['IDs']['ID']
             episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
-            tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None)
+            tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None) if tmdb_title else None
             episode_type = episode_data['AniDB']['Type'] # Get episode type
 
             # Ignore TMDB numbering for episodes split across multiple files (prevent file stacking in Plex)
-            if tmdb_ep_data:
-                for group in [g for g in tmdb_episode_groups['List'] if len(g) > 1]:
-                    for xref in group:
-                        if tmdb_group_size > 0: continue
-                        if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group_size = len(group)
+            if tmdb_ep_data and tmdb_ep_groups:
+                for xref in [group for groups in [grp for grp in tmdb_ep_groups['List'] if len(grp) > 1] for group in groups]:
+                    if tmdb_group: continue
+                    if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group = True
 
             # Get season and episode numbers
             episode_source, season = '(AniDB):', 0
@@ -277,7 +276,7 @@ class ShokoRelayAgent:
             elif episode_type == 'Trailer'   : season = -2
             elif episode_type == 'Parody'    : season = -3
             elif episode_type == 'Other'     : season = -4
-            if not tmdb_group_size and tmdb_ep_data: episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and enabled
+            if tmdb_ep_data and not tmdb_group: episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and enabled
             else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
             Log('Season %s                %s' % (episode_source, season))
