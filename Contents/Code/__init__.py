@@ -419,9 +419,9 @@ def summary_sanitizer(summary):
             if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|[\u2014~-] (adapted|source|description|summary|translated|written):?) ([^\r\n]+|$)', '', summary, flags=re.I|re.M|re.U) # Remove the line if it starts with ("* ", "— ", "- ", "~ ")
         summary = re.sub(r'(?:http:\/\/anidb\.net\/(?:ch|co|cr|[feast]|(?:character|creator|file|episode|anime|tag)\/)(?:\d+)) \[([^\]]+)]', r'\1', summary) # Replace AniDB links with text
         summary = re.sub(r'\[i\](?!"The Sasami|"Stellar|In the distant| occurred in)(.*?)\[\/i\]', '', summary, flags=re.I|re.S) # Remove BBCode [i][/i] tags and their contents (AniDB API Bug)
-        summary = re.sub(r'(\[i\]|\[\/i\])', '', summary, flags=re.I) # Remove solitary leftover BBCode [i] or [/i] tags (AniDB API Bug)
-        summary = re.sub(r'\n\n+', r'\n\n', summary)                  # Condense stacked empty lines
-        summary = re.sub(r' +', ' ', summary).strip(' \n')            # Remove double spaces and strip spaces and newlines
+        summary = re.sub(r'\[\/?i\]', '', summary)             # Remove solitary leftover BBCode [i] or [/i] tags (AniDB API Bug)
+        summary = re.sub(r'\n{2,}', r'\n', summary)            # Condense stacked empty lines
+        summary = re.sub(r'\s{2,}', ' ', summary).strip(' \n') # Remove double spaces and strip spaces and newlines
     if not summary: summary = None # For logging purposes
     return summary
 

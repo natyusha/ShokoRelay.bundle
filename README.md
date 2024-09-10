@@ -28,7 +28,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 Enable the following options in Shoko to ensure that Plex has at least one source of metadata for everything:
 - `Settings > AniDB > Download Options`
   - [x] Character Images
-  - [x] Creator Images (Currently Nonfunctional in Shoko)
+  - [x] Creator Images (Only Works for Seiyuu)
 - `Settings > Metadata Sites > TMDB Options`
   - [x] Auto Link
   - [x] Auto Link Restricted
