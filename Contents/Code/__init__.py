@@ -359,12 +359,8 @@ class ShokoRelayAgent:
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
         if tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
             seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
-            for season_num in metadata.seasons:
-                if season_num >= 0: # Skip negative seasons as they will never have TMDB posters
-                    for season in seasons:
-                        if int(season_num) == season['SeasonNumber']:
-                            self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
-                            break
+            for season_num in [s for s in metadata.seasons if s >= 0]: # Skip negative seasons as they will never have TMDB posters
+                for season in [s for s in seasons if int(season_num) == s['SeasonNumber']]: self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
