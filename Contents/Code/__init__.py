@@ -1,5 +1,4 @@
-import os, re, json, urllib
-from datetime import datetime
+import os, re, json, urllib, datetime
 
 API_KEY = ''
 
@@ -33,7 +32,7 @@ def HttpPost(url, postdata):
 
 def HttpReq(url, retry=True):
     global API_KEY
-    # Log('Requesting:                    %s' % url) # Not needed since debug logging shows these requests anyways
+    # Log('Requesting:                    %s' % url) # Not needed since debug logging shows these requests anyway
     myheaders = {'apikey': GetApiKey()}
     try:
         return JSON.ObjectFromString(HTTP.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders).content)
@@ -110,9 +109,7 @@ class ShokoRelayAgent:
         """
 
         # Get Originally Available
-        airdate = try_get(series_data['AniDB'], 'AirDate', None)
-        if airdate: metadata.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-        else: metadata.originally_available_at = None
+        metadata.originally_available_at = datetime.datetime.strptime(series_data['AniDB']['AirDate'], '%Y-%m-%d').date() if try_get(series_data['AniDB'], 'AirDate', None) else None
         Log('Originally Available:          %s' % metadata.originally_available_at)
 
         # Get Content Rating (missing metadata source)
@@ -319,10 +316,8 @@ class ShokoRelayAgent:
             Log('Title %s %s [%s]' % (title_mod, episode_obj.title, lang.upper()))
 
             # Get Originally Available
-            airdate_log, airdate = None, try_get(episode_data['AniDB'], 'AirDate', None)
-            if airdate: airdate_log = episode_obj.originally_available_at = datetime.strptime(airdate, '%Y-%m-%d').date()
-            else: episode_obj.originally_available_at = None
-            # Remove the air dates for negative seasons according to the language preference
+            airdate_log = episode_obj.originally_available_at = datetime.datetime.strptime(episode_data['AniDB']['AirDate'], '%Y-%m-%d').date() if try_get(episode_data['AniDB'], 'AirDate', None) else None
+            # Remove the air dates for negative seasons according to the preference
             if season == -4 and Prefs['disableNegativeSeasonAirdates'] == 'Exclude Other': pass
             elif season < 0 and Prefs['disableNegativeSeasonAirdates'] != 'Disabled':
                 airdate_log, episode_obj.originally_available_at = 'Disabled in Agent Settings - Skipping!', None
