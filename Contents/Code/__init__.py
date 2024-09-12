@@ -125,8 +125,7 @@ class ShokoRelayAgent:
         if not studio: # If no Studio fallback and override with Work (制作) listing
             studio = HttpReq('api/v3/Series/%s/Cast?roleType=Staff&roleDetails=Work' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Staff&roleDetails=Work
             studio_source, studio = '(Work):          ', try_get(studio, 0, None)
-        if studio: metadata.studio = studio['Staff']['Name']
-        else: metadata.studio = None
+        metadata.studio = studio['Staff']['Name'] if studio else None
         Log('Studio %s       %s' % (studio_source, metadata.studio))
 
         # Get Tagline (missing metadata source)
@@ -186,9 +185,9 @@ class ShokoRelayAgent:
                 elif 'Mina'   in tags                      : c_rating = 'TV-G'
                 elif 'Shoujo' in tags or 'Shounen' in tags : c_rating = 'TV-PG'
                 elif 'Josei'  in tags or 'Seinen'  in tags : c_rating = 'TV-14'
-            if 'Borderline Porn' in tags: c_rating = 'TV-MA'  # Override any previous rating for borderline porn content
-            if c_rating: c_rating += descriptor               # Append the content descriptor using the content indicators above
-            if '18 Restricted' in tags: c_rating = 'X'        # Override any previous rating and remove content indicators for 18 restricted content
+            if 'Borderline Porn' in tags: c_rating = 'TV-MA' # Override any previous rating for borderline porn content
+            if c_rating: c_rating += descriptor              # Append the content descriptor using the content indicators above
+            if '18 Restricted' in tags: c_rating = 'X'       # Override any previous rating and remove content indicators for 18 restricted content
 
             metadata.content_rating = c_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
@@ -359,8 +358,8 @@ class ShokoRelayAgent:
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
         if tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
             seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
-            for season_num in [s for s in metadata.seasons if s >= 0]: # Skip negative seasons as they will never have TMDB posters
-                for season in [s for s in seasons if int(season_num) == s['SeasonNumber']]: self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
+            for season_num in (s for s in metadata.seasons if s >= 0): # Skip negative seasons as they will never have TMDB posters
+                for season in (s for s in seasons if int(season_num) == s['SeasonNumber']): self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
