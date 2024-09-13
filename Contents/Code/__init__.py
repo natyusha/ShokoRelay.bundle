@@ -70,7 +70,7 @@ class ShokoRelayAgent:
         for lang in (l.strip().lower() for l in Prefs['SeriesTitleLanguage'].split(',')):
             title = try_get(series_titles, lang, None)
             if title: break
-        if title is None: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
+        if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
         # Move common title prefixes to the end of the title
         if Prefs['moveCommonTitlePrefixes']:
@@ -97,13 +97,13 @@ class ShokoRelayAgent:
             if alt_title: break
 
         # Append the Alternate title to the Sort Title to make it searchable
-        if alt_title is not None and alt_title != metadata.title: metadata.title_sort = title + ' [' + alt_title + ']'
+        if alt_title and alt_title != metadata.title: metadata.title_sort = title + ' [' + alt_title + ']'
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
         Log('Alt Title (AddToSort) [LANG]:  %s [%s]' % (alt_title, lang.upper()))
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Get Original Title
-        if alt_title is not None and alt_title != metadata.title: metadata.original_title = alt_title
+        if alt_title and alt_title != metadata.title: metadata.original_title = alt_title
         else: metadata.original_title = None
         Log('Original Title:                %s' % metadata.original_title)
         """
@@ -260,7 +260,7 @@ class ShokoRelayAgent:
 
             # Ignore TMDB numbering for episodes split across multiple files (prevent file stacking in Plex)
             if tmdb_ep_data and tmdb_ep_groups:
-                for xref in [group for groups in [grp for grp in tmdb_ep_groups['List'] if len(grp) > 1] for group in groups]:
+                for xref in [group for groups in [g for g in tmdb_ep_groups['List'] if len(g) > 1] for group in groups]:
                     if tmdb_group: continue
                     if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group = True
 
@@ -337,19 +337,15 @@ class ShokoRelayAgent:
             # Get Writer as Original Work (原作) [if there is only one]
             episode_obj.writers.clear()
             writer_log = None
-            if len(writer_name) == 1:
-                writer = episode_obj.writers.new()
-                writer_log = writer.name = writer_name[0]
-            elif len(writer_name) > 1: writer_log = 'Multiple Writers Detected - Skipping!'
+            if   len(writer_name) == 1 : writer_log = episode_obj.writers.new().name = writer_name[0]
+            elif len(writer_name)  > 1 : writer_log = 'Multiple Writers Detected - Skipping!'
             Log('Writer (Original Work):        %s' % writer_log)
 
             # Get Director as Direction (監督) [if there is only one]
             episode_obj.directors.clear()
             director_log = None
-            if len(director_name) == 1:
-                director = episode_obj.directors.new()
-                director_log = director.name = director_name[0]
-            elif len(director_name) > 1: director_log = 'Multiple Directors Detected - Skipping!'
+            if   len(director_name) == 1 : director_log = episode_obj.directors.new().name = director_name[0]
+            elif len(director_name)  > 1 : director_log = 'Multiple Directors Detected - Skipping!'
             Log('Director:                      %s' % director_log)
 
             # Get Episode Poster (Thumbnail)
@@ -369,7 +365,7 @@ class ShokoRelayAgent:
             elif season_num == '-2' : season_title = 'Trailers'
             elif season_num == '-3' : season_title = 'Parodies'
             elif season_num == '-4' : season_title = 'Other'
-            if int(season_num) < 0 and season_title is not None:
+            if int(season_num) < 0 and season_title:
                 Log('Renaming Season:               %s to %s' % (season_num, season_title))
                 metadata.seasons[season_num].title = season_title
         """
