@@ -249,8 +249,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to Shoko or Shoko to Plex.
 - If something is marked as watched in Plex it will also be marked as watched in Shoko and AniDB.
 - This was created due to various issues with Plex and Shoko's built in watched status syncing.
-  1. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
-  2. Shoko's "Sync Plex Watch Status" command [doesn't work](https://github.com/ShokoAnime/ShokoServer/issues/1086) with cross platform setups.
+  - Primarily, the webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
 <details>
 <summary><b>Additional Information</b></summary><br>
 

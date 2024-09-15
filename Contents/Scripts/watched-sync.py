@@ -9,8 +9,7 @@ Description:
   - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to Shoko or Shoko to Plex.
   - If something is marked as watched in Plex it will also be marked as watched in Shoko and AniDB.
   - This was created due to various issues with Plex and Shoko's built in watched status syncing.
-      i. The webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
-     ii. Shoko's "Sync Plex Watch Status" command doesn't work with cross platform setups.
+      - Primarily, the webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
 Author:
   - natyusha
 Requirements:
@@ -101,7 +100,7 @@ for account in accounts:
         try:
             while True:
                 import_confirmation = input(f'├──Would you like to import Shoko watched states to: {account} (Y/N) ')
-                if import_confirmation.lower() ==   'y': break
+                if   import_confirmation.lower() == 'y': break
                 elif import_confirmation.lower() == 'n': raise SkipUser()
                 else: print(f'{error_prefix}───Please enter "Y" or "N"')
         except SkipUser: continue

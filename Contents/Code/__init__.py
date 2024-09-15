@@ -20,10 +20,8 @@ def GetApiKey():
             'pass'   : Prefs['Password'] if Prefs['Password'] != None else '',
             'device' : 'Shoko Relay for Plex'
         })
-        resp = HttpPost('api/auth', data)['apikey']
-        # Log.debug('Got API KEY:                   %s' % resp) # Not needed
-        API_KEY = resp
-        return resp
+        API_KEY = HttpPost('api/auth', data)['apikey']
+        # Log.debug('Got API KEY:                   %s' % API_KEY) # Not needed
     return API_KEY
 
 def HttpPost(url, postdata):
