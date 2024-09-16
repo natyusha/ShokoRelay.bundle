@@ -52,7 +52,7 @@
 
     {
         "id": "EpisodeTitleLanguage",
-        "label": "The preferred languages for episode titles, separated by a comma ⠀⠀⠀⠀⠀⠀⠀⠀ Set to \"SHOKO\" to use Shoko's preferred title. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ Note: \"SHOKO\" does not apply to Ambiguous Titles which will use the first regular language tag in this list for the series title replacement.",
+        "label": "The preferred languages for episode titles, separated by a comma ⠀⠀⠀⠀⠀⠀⠀⠀⠀ Set to \"SHOKO\" to use Shoko's preferred title. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ Note: \"SHOKO\" does not apply to Ambiguous Titles which will use the first regular language tag in this list for the series title replacement.",
         "type": "text",
         "default": "SHOKO, EN, X-JAT"
     },
