@@ -399,7 +399,7 @@ class ShokoRelayAgent:
 def summary_sanitizer(summary):
     if summary:
         if Prefs['sanitizeSummary'] != 'Allow Both Types':
-            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\b((Modified )?Sour?ce|Note( [1-9])?|Summ?ary):(?!$)([^\r\n]+|$)', '', summary, flags=re.I|re.M) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\(?\b((Modified )?Sour?ce|Note( [1-9])?|Summ?ary|From|See Also):(?!$| a daikon)([^\r\n]+|$)', '', summary, flags=re.I|re.M) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
             if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|[\u2014~-] (adapted|source|description|summary|translated|written):?) ([^\r\n]+|$)', '', summary, flags=re.I|re.M|re.U) # Remove the line if it starts with ("* ", "— ", "- ", "~ ")
         summary = re.sub(r'(?:http:\/\/anidb\.net\/(?:ch|co|cr|[feast]|(?:character|creator|file|episode|anime|tag)\/)(?:\d+)) \[([^\]]+)]', r'\1', summary) # Replace AniDB links with text
         summary = re.sub(r'\[i\](?!"The Sasami|"Stellar|In the distant| occurred in)(.*?)\[\/i\]', '', summary, flags=re.I|re.S) # Remove BBCode [i][/i] tags and their contents (AniDB API Bug)
