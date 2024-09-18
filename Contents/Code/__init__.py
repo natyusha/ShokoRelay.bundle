@@ -212,8 +212,7 @@ class ShokoRelayAgent:
         Log('Character                      Seiyuu (CV)                    Image')
         Log('-----------------------------------------------------------------------')
         for role in (r for r in cast_crew if r['RoleName'] == 'Seiyuu'): # Filter cast to Seiyuu Only
-            cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], try_get(role.get('Character', None), 'Name', 'Unnamed (AniDB)')
-            image = role['Staff']['Image'] # Grab staff image (if available)
+            cv_check, meta_role, image, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Image'], role['Staff']['Name'], try_get(role.get('Character', None), 'Name', 'Unnamed (AniDB)')
             if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
             Log('%-30s %-30s %s' % (meta_role.role, meta_role.name, try_get(image, 'ID', None)))
         if not cv_check: Log('N/A')
@@ -224,7 +223,7 @@ class ShokoRelayAgent:
             Log('Role                           Staff Name                     Image')
             Log('-----------------------------------------------------------------------')
             for role in (r for r in cast_crew if r['RoleName'] != 'Seiyuu'): # Second loop filtered for staff only so that Seiyuu appear first in the list
-                staff_check, meta_role, meta_role.name, role_type = True, metadata.roles.new(), role['Staff']['Name'], role['RoleName']
+                staff_check, meta_role, image, meta_role.name, role_type = True, metadata.roles.new(), role['Staff']['Image'], role['Staff']['Name'], role['RoleName']
                 if role_type == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Director' # Direction (監督)
                     director_name.append(meta_role.name)
@@ -237,7 +236,6 @@ class ShokoRelayAgent:
                 elif role_type == 'Music'           : meta_role.role = 'Composer'                  # Music (音楽)
                 elif role_type == 'Staff'           : meta_role.role = role['RoleDetails']         # Various Other Main Staff Entries
                 else: meta_role.role = role_type
-                image = role['Staff']['Image'] # Grab staff image (if available)
                 if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
                 Log('%-30s %-30s %s' % (meta_role.role, meta_role.name, try_get(image, 'ID', None)))
             if not staff_check: Log('N/A')
@@ -387,15 +385,12 @@ class ShokoRelayAgent:
                 Log('Error Adding Image:            %s (Not Found)' % url)
 
         meta.validate_keys(valid)
-
-        for key in meta.keys():
-            if (key not in valid):
-                del meta[key]
+        for key in (k for k in meta.keys() if k not in valid): del meta[key]
 
 def summary_sanitizer(summary):
     if summary:
         if Prefs['sanitizeSummary'] != 'Allow Both Types':
-            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\(?\b((Modified )?Sour?ce|Note( [1-9])?|Summ?ary|From|See Also):(?!$| a daikon)([^\r\n]+|$)', '', summary, flags=re.I|re.M) # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\(?\b((Modified )?Sour?ce|Note( [1-9])?|Summ?ary|From|See Also):(?!$| a daikon)([^\r\n]+|$)', '', summary, flags=re.I|re.M)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
             if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|[\u2014~-] (adapted|source|description|summary|translated|written):?) ([^\r\n]+|$)', '', summary, flags=re.I|re.M|re.U) # Remove the line if it starts with ("* ", "— ", "- ", "~ ")
         summary = re.sub(r'(?:http:\/\/anidb\.net\/(?:ch|co|cr|[feast]|(?:character|creator|file|episode|anime|tag)\/)(?:\d+)) \[([^\]]+)]', r'\1', summary) # Replace AniDB links with text
         summary = re.sub(r'\[i\](?!"The Sasami|"Stellar|In the distant| occurred in)(.*?)\[\/i\]', '', summary, flags=re.I|re.S) # Remove BBCode [i][/i] tags and their contents (AniDB API Bug)
