@@ -206,14 +206,12 @@ class ShokoRelayAgent:
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast
+        metadata.roles.clear()
+        cv_check = False
         Log('-----------------------------------------------------------------------')
         Log('Character                      Seiyuu (CV)                    Image')
         Log('-----------------------------------------------------------------------')
-        metadata.roles.clear()
-        cv_check = False
-        for role in cast_crew:
-            role_type = role['RoleName']
-            if role_type != 'Seiyuu': continue # Skip if not Seiyuu
+        for role in (r for r in cast_crew if r['RoleName'] == 'Seiyuu'): # Filter cast to Seiyuu Only
             cv_check, meta_role, meta_role.name, meta_role.role = True, metadata.roles.new(), role['Staff']['Name'], try_get(role.get('Character', None), 'Name', 'Unnamed (AniDB)')
             image = role['Staff']['Image'] # Grab staff image (if available)
             if image: meta_role.photo = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
@@ -225,10 +223,8 @@ class ShokoRelayAgent:
             Log('-----------------------------------------------------------------------')
             Log('Role                           Staff Name                     Image')
             Log('-----------------------------------------------------------------------')
-            for role in cast_crew: # Second loop for cast so that seiyuu appear first in the list
-                role_type = role['RoleName']
-                if role_type == 'Seiyuu': continue # Skip if Seiyuu
-                staff_check, meta_role, meta_role.name = True, metadata.roles.new(), role['Staff']['Name']
+            for role in (r for r in cast_crew if r['RoleName'] != 'Seiyuu'): # Second loop filtered for staff only so that Seiyuu appear first in the list
+                staff_check, meta_role, meta_role.name, role_type = True, metadata.roles.new(), role['Staff']['Name'], role['RoleName']
                 if role_type == 'Director': # Initialize Director outside of the episodes loop to avoid repeated requests per episode
                     meta_role.role = 'Director' # Direction (監督)
                     director_name.append(meta_role.name)
