@@ -1,6 +1,6 @@
 ![Shoko Relay Logo](https://github.com/natyusha/ShokoRelay.bundle/assets/985941/23bfd7c2-eb89-46d5-a7cb-558c374393d6 "Shoko Relay")
 =======================
-This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2.124+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
+This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2.161+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
 - Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
@@ -32,7 +32,9 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 - `Settings > Metadata Sites > TMDB Options`
   - [x] Auto Link
   - [x] Auto Link Restricted
+- `Settings > Metadata Sites > TMDB Download Options`
   - [x] Download Backdrops
+  - [x] Download Posters
 - `Settings > Collection > Relation Options`
   - [x] Auto Group Series
   - [x] Determine Main Series Using Relation Weighing
