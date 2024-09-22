@@ -133,9 +133,10 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     episode_type = episode_data['AniDB']['Type'] # Get episode type
 
                     # Ignore TMDB numbering for episodes split across multiple files (prevent file stacking in Plex)
-                    for xref in [group for groups in [grp for grp in tmdb_ep_groups['List'] if len(grp) > 1] for group in groups if tmdb_ep_data and tmdb_ep_groups]:
-                        if tmdb_group: continue
-                        if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group, tmdb_group_log = True, ' (TMDB Episode Grouping Detected!)'
+                    if tmdb_ep_data and tmdb_ep_groups:
+                        for xref in [group for groups in [grp for grp in tmdb_ep_groups['List'] if len(grp) > 1] for group in groups]:
+                            if tmdb_group: continue
+                            if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group, tmdb_group_log = True, ' (TMDB Episode Grouping Detected!)'
 
                     # Get season and episode numbers
                     episode_source, season = '(AniDB):', 0
