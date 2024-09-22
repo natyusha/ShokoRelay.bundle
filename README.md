@@ -33,6 +33,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
   - [x] Auto Link
   - [x] Auto Link Restricted
 - `Settings > Metadata Sites > TMDB Download Options`
+  - [x] Download Alternate Ordering
   - [x] Download Backdrops
   - [x] Download Posters
 - `Settings > Collection > Relation Options`
@@ -61,6 +62,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
   - Files which contain more than one episode or episodes which span multiple files
   - Credits / Parodies / Trailers and Other types of special files
   - Individual episode ratings (from AniDB)
+  - Automatic season posters
 - Will replace:
   - Ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
   - Inconsistently capitalised genre tags with ones using [AniDB Capitalisation Rules](https://wiki.anidb.net/Capitalisation)
@@ -335,8 +337,18 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 > [!NOTE]
 > The appended titles will appear after an em dash (**—**) making it easy to search for anything affected by this.
 
-### Combining Series
-If you have TMDB matching enabled in Shoko and `SingleSeasonOrdering` disabled the agent will prioritise episode numbering from it by default. This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TMDB entry then select `Merge`.
+### TMDB Matching
+If you have TMDB auto links enabled in Shoko you will have access to several features not available otherwise:
+- Plex's default theme song support (using the TvDB ID)
+- Season support for long running anime (including posters)
+- Fallback for series/episode descriptions and titles (if AniDB is missing that information)
+
+With `SingleSeasonOrdering` disabled in the Scanner and Agent the following will also be supported:
+- Combining multiple Shoko series into a single Plex entry
+- Alternate episode ordering for seasons
+
+**Combining Series**  
+This allows shows which are separated on AniDB to be combined into a single entry inside Plex. To Achieve this simply multi-select (with the primary series as the first selection) the series in your Plex library which you know are part of a single TMDB entry then select `Merge`.
 
 Using Fairy Tail as an example all of the following series can be safely merged into a single entry in Plex if they are correctly matched to TMDB in Shoko:
 - Fairy Tail
@@ -347,8 +359,16 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 > [!IMPORTANT]
 > Only do this when you are happy with the metadata for the series to be merged as you will be unable to correctly refresh it without splitting the series apart first.
 
+**Alternate Episode Ordering**  
+It is quite common for anime to have multiple ways of grouping the episodes into seasons. This includes: DVD/BD ordering, stream site listings or even manga story arcs. If you used Shoko while it still had TvDB support you may find that series in your Plex library are grouping differently than they used to be. Using Bleach as an example you can see that [TMDB](https://www.themoviedb.org/tv/30984-bleach/seasons) doesn't split the original run into seasons while [TvDB](https://thetvdb.com/series/bleach#seasons) does. Fortunately, TMDB's "[Episode Groups](https://www.themoviedb.org/tv/30984-bleach/episode_groups)" page provides alternate ordering options (including TvDB's) in case you would like to use one of them instead.
+
+If you have "Download Alternate Ordering" enabled under Shoko's "TMDB Download Options" this can be achieved used Shoko's v3 API (WebUI support forthcoming).
+
+> [!NOTE]
+> If you select an alternate order for a series TMDB season posters will no longer be automatically added to Plex as those are only for the default seasons.
+
 ### Combining Episodes
-Sometimes you may encounter a single episode which is split across multiple files. In order to ensure that all of the files are treated as a single entity you can follow Plex's [Naming Conventions](https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/#toc-6). For an ideal playback experience, it is recommended to merge these types of files together.
+Sometimes you may encounter a single episode which is split across multiple files. In order to ensure that all of the files are treated as a single entity you can follow Plex's [Naming Conventions](https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/#toc-6). For an ideal playback experience however, it is recommended to merge these types of files together.
 
 ### Minimum Tag Weight
 Many tags on AniDB use a [3 Star Weight System](https://wiki.anidb.net/Tags#Star-rating_-_the_Weight_system) which represents a value from 0 (no stars) to 600 (3 stars) and determines how relevant the tag is to the series it is applied to. By setting this value you can filter out tags below a certain star threshold if desired.
