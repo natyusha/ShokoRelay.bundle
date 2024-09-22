@@ -338,10 +338,10 @@ class ShokoRelayAgent:
             Log('Director:                      %s' % director_log)
 
             # Get Episode Poster (Thumbnail)
-            if Prefs['shokoThumbs']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []))
+            if Prefs['tmdbThumbnails']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []))
 
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
-        if tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
+        if Prefs['tmdbSeasonPosters'] and tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
             seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
             for season_num in [s for s in metadata.seasons if s >= 0]: # Skip negative seasons as they will never have TMDB posters
                 for season in [s for s in seasons if int(season_num) == s['SeasonNumber']]: self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
