@@ -77,12 +77,12 @@ For ease of use, adding the Scripts folder to the **[PATH](https://en.wikipedia.
 
 ### Prerequisites
 Before using any of the scripts you must have the requisite dependencies installed. For more information on using Python scripts in general check out the Python 3 docs for [linux](https://docs.python.org/3/using/unix.html#on-linux) or [windows](https://docs.python.org/3/using/windows.html).
-| Dependency                                          | AnimeThemes  | Collection-Posters | Force-Metadata | Rescan-Recent | Watched-Sync |
-| :-------------------------------------------------- | :----------: | :----------------: | :------------: | :-----------: | :----------: |
-| [Python 3](https://www.python.org/downloads/)       | ✔️           | ✔️                 | ✔️             | ✔️           | ✔️           |
-| [Python-PlexAPI](https://pypi.org/project/PlexAPI/) | ❌           | ✔️                 | ✔️             | ❌           | ✔️           |
-| [Requests](https://pypi.org/project/requests/)      | ✔️           | ✔️                 | ❌             | ✔️           | ✔️           |
-| [FFmpeg](https://ffmpeg.org/download.html)          | ✔️           | ❌                 | ❌             | ❌           | ❌           |
+| Dependency                                      | AnimeThemes  | Collection-Posters | Force-Metadata | Rescan-Recent | Watched-Sync |
+| :---------------------------------------------- | :----------: | :----------------: | :------------: | :-----------: | :----------: |
+| [Python 3](https://www.python.org/downloads/)   | ✔️           | ✔️                 | ✔️             | ✔️            | ✔️           |
+| [PlexAPI](https://pypi.org/project/PlexAPI/)    | ❌           | ✔️                 | ✔️             | ❌            | ✔️           |
+| [Requests](https://pypi.org/project/requests/)  | ✔️           | ✔️                 | ❌             | ✔️            | ✔️           |
+| [FFmpeg](https://ffmpeg.org/download.html)      | ✔️           | ❌                 | ❌             | ❌            | ❌           |
 
 > [!IMPORTANT]
 > When installing FFmpeg on Windows make sure to add it to the **PATH** by editing [Windows environment variables](https://phoenixnap.com/kb/ffmpeg-windows#ftoc-heading-4) or using the following command: `setx /m PATH "PATHTOFFMPEG"`.
