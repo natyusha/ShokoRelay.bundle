@@ -274,14 +274,14 @@ class ShokoRelayAgent:
             for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
             episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
 
-            # Get episode Title according to the language preference
+            # Get episode title according to the language preference
             title_mod = '[LANG]:                 '
             for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
                 title = try_get(episode_titles, lang, None)
                 if title: break
             if not title: title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
 
-            # Replace Ambiguous Title with series Title
+            # Replace ambiguous title with series title
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if title in SingleEntryTitles:
                 # Get series title according to the language preference
@@ -293,8 +293,10 @@ class ShokoRelayAgent:
                 if title is original_title and tmdb_ep_data and try_get(tmdb_ep_data, 'Title', None): # Fallback to the TMDB title as a last resort if there is a TMDB Episodes match
                     title_mod, title = '(TMDB) [LANG]:          ', tmdb_ep_data['Title']
 
-                # Append Ambiguous Title to series Title if a replacement title was found and it doesn't contain it
-                if original_title != title and original_title not in title: title += ' — ' + original_title
+                # Append ambiguous title to series title if a replacement title was found and it doesn't contain it
+                if original_title != title and original_title not in title:
+                    if original_title == 'Complete Movie': title = re.sub(r'(:? The)?( Movie| Motion Picture)', '', title) # Reduce redundant movie descriptors
+                    title += ' — ' + original_title
 
             # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
             if re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', title) and tmdb_ep_data:
