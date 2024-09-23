@@ -275,7 +275,7 @@ class ShokoRelayAgent:
             episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
 
             # Get episode title according to the language preference
-            ep_title_mod = '[LANG]:                 '
+            ep_title_mod, tmdb_ep_title = '[LANG]:                 ', try_get(tmdb_ep_data, 'Title', None)
             for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
                 episode_title = try_get(episode_titles, lang, None)
                 if title: break
@@ -285,7 +285,7 @@ class ShokoRelayAgent:
             SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
             if episode_title in SingleEntryTitles:
                 # Get series title according to the language preference
-                ep_title_mod, original_title, tmdb_ep_title = '(FromSeries) [LANG]:    ', episode_title, try_get(tmdb_ep_data, 'Title', None)
+                ep_title_mod, original_title = '(FromSeries) [LANG]:    ', episode_title
                 for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
                     if lang != 'shoko': episode_title = try_get(series_titles, lang, episode_title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                     if episode_title != original_title: break
