@@ -362,7 +362,7 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 **Alternate Episode Ordering**  
 It is quite common for anime to have multiple ways of grouping the episodes into seasons. This includes: DVD/BD ordering, stream site listings or even manga story arcs. If you used Shoko while it still had TvDB support you may find that series in your Plex library are grouping differently than they used to be. Using Bleach as an example you can see that [TMDB](https://www.themoviedb.org/tv/30984-bleach/seasons) doesn't split the original run into seasons while [TvDB](https://thetvdb.com/series/bleach#seasons) does. Fortunately, TMDB's "[Episode Groups](https://www.themoviedb.org/tv/30984-bleach/episode_groups)" page provides alternate ordering options (including TvDB's) in case you would like to use one of them instead.
 
-If you have "Download Alternate Ordering" enabled under Shoko's "TMDB Download Options" this can be achieved used Shoko's v3 API (WebUI support forthcoming).
+If you have "Download Alternate Ordering" enabled under Shoko's "TMDB Download Options" this can be achieved using Shoko's `/Tmdb/Show/{showID}/Ordering/SetPreferred` v3 API endpoint (WebUI support forthcoming).
 
 > [!NOTE]
 > If you select an alternate order for a series TMDB season posters will no longer be automatically added to Plex as those are only for the default seasons.
