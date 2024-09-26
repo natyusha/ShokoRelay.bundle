@@ -192,14 +192,14 @@ class ShokoRelayAgent:
         # Get Posters & Backgrounds
         if Prefs['addEveryImage']:
             series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
-            posters, backdrops = try_get(series_images, 'Posters', []), try_get(series_images, 'Backdrops', [])
+            posters, backgrounds = try_get(series_images, 'Posters', []), try_get(series_images, 'Backdrops', [])
             for poster in [p for p in posters if poster['Preferred']]: posters.insert(0, posters.pop(posters.index(poster))) # Move preferred poster to the top of the list
-            self.image_add(metadata.posters, posters)
-            for backdrop in [b for b in backdrops if backdrop['Preferred']]: backdrops.insert(0, backdrops.pop(backdrops.index(backdrop))) # Move preferred backdrop to the top of the list
-            self.image_add(metadata.art, backdrops)
+            self.image_add(metadata.posters, posters, '(Poster):       ')
+            for background in [b for b in backgrounds if backdrop['Preferred']]: backgrounds.insert(0, backgrounds.pop(backgrounds.index(background))) # Move preferred backdrop to the top of the list
+            self.image_add(metadata.art, backgrounds, '(Background):   ')
         else: # Series data only contains the preferred image for each type
-            self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []))
-            self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []))
+            self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []), '(Poster):       ')
+            self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []), '(Background):   ')
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast
@@ -335,14 +335,14 @@ class ShokoRelayAgent:
             elif len(director_name)  > 1 : director_log = 'Multiple Directors Detected - Skipping!'
             Log('Director:                      %s' % director_log)
 
-            # Get Episode Poster (Thumbnail)
-            if Prefs['tmdbThumbnails']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []))
+            # Get Episode Poster (Grabs all episode thumbnails by default since there is no way to set a preferred one in Shoko's UI)
+            if Prefs['tmdbThumbnails']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []), '(Thumbnail):    ')
 
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
         if Prefs['tmdbSeasonPosters'] and tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
             seasons = HttpReq('api/v3/Series/%s/TMDB/Season?include=Images' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Season?include=Images
             for season_num in [s for s in metadata.seasons if s >= 0]: # Skip negative seasons as they will never have TMDB posters
-                for season in [s for s in seasons if int(season_num) == s['SeasonNumber']]: self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []))
+                for season in [s for s in seasons if int(season_num) == s['SeasonNumber']]: self.image_add(metadata.seasons[season_num].posters, try_get(season['Images'], 'Posters', []), '(Season Poster):')
 
         """ Enable if Plex fixes blocking legacy agent issue
         # Set custom negative season names
@@ -360,24 +360,24 @@ class ShokoRelayAgent:
         # Get Plex theme music using a TvDB ID cross referenced from TMDB
         if Prefs['themeMusic']:
             if tmdb_type and try_get(series_data['TMDB'][tmdb_type][0], 'TvdbID', None):
-                THEME_URL = 'http://tvthemes.plexapp.com/%s.mp3' % series_data['TMDB'][tmdb_type][0]['TvdbID']
-                if THEME_URL not in metadata.themes:
+                theme_url = 'http://tvthemes.plexapp.com/%s.mp3' % series_data['TMDB'][tmdb_type][0]['TvdbID']
+                if theme_url not in metadata.themes:
                     try:
-                        metadata.themes[THEME_URL] = Proxy.Media(HTTP.Request(THEME_URL))
-                        Log('Adding Theme Music:            %s' % THEME_URL % tid)
+                        metadata.themes[theme_url] = Proxy.Media(HTTP.Request(theme_url))
+                        Log('Adding Theme Music:            %s' % theme_url % tid)
                     except:
-                        Log('Error Adding Theme Music:      %s (Not Found)' % THEME_URL)
+                        Log('Error Adding Theme Music:      %s (Not Found)' % theme_url)
 
-    def image_add(self, meta, images):
+    def image_add(self, meta, images, log):
         valid, url = list(), ''
         for image in images:
             try:
                 url = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
                 meta[url] = Proxy.Media(HTTP.Request(url).content, try_get(image, 'index', 0))
                 valid.append(url)
-                Log('Adding Image:                  %s' % url)
+                Log('Image Add %s     %s' % (log, url))
             except:
-                Log('Error Adding Image:            %s (Not Found)' % url)
+                Log('Image Add Err %s %s (Not Found)' % (log, url))
 
         meta.validate_keys(valid)
         for key in [k for k in meta.keys() if k not in valid]: del meta[key]
