@@ -116,7 +116,7 @@
 
     {
         "id": "sanitizeSummary",
-        "label": "The degree to which the summary is cleansed of extraneous info ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ This includes lines starting with general info (\"Source: \", \"Note: \", \"Summary: \"), as well as other miscellaneous lines (\"* \", \"— \", \"- \", \"~ \").",
+        "label": "The degree to which the summary is cleansed of extraneous info ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ This includes lines starting with general info (\"Source: \", \"Note: \", \"Summary: \"), as well as other miscellaneous lines (\"* \", \"— \", \"- \", \"~ \").",
         "type": "enum",
         "values" : ["Fully Sanitize", "Allow Info Lines", "Allow Misc. Lines", "Allow Both Types"],
         "default": "Fully Sanitize"
