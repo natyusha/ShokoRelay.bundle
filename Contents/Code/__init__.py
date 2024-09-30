@@ -6,7 +6,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.11]======================')
+    Log('======================[Shoko Relay Agent v1.2.12]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -192,8 +192,8 @@ class ShokoRelayAgent:
         # Get Posters & Backgrounds
         if Prefs['addEveryImage']:
             series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
-            self.image_add(metadata.posters, try_get(series_images, 'Posters', []), '(Poster):       ')
-            self.image_add(metadata.art, try_get(series_images, 'Backdrops', []), '(Background):   ')
+            self.image_add(metadata.posters, sorted(try_get(series_images, 'Posters', []), key=lambda p: not p['Preferred']), '(Poster):       ') # Move preferred poster to the top of the list
+            self.image_add(metadata.art, sorted(try_get(series_images, 'Backdrops', []), key=lambda b: not b['Preferred']), '(Background):   ')   # Move preferred backdrop to the top of the list
         else: # Series data only contains the preferred image for each type
             self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []), '(Poster):       ')
             self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []), '(Background):   ')

@@ -1,6 +1,6 @@
 ![Shoko Relay Logo](https://github.com/natyusha/ShokoRelay.bundle/assets/985941/23bfd7c2-eb89-46d5-a7cb-558c374393d6 "Shoko Relay")
 =======================
-This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) (v4.2.2.176+) and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
+This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) v4.2.2.177 or newer and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
 - Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
@@ -56,7 +56,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
   - Will apply content ratings like "TV-14", "TV-Y" etc. (if the corresponding AniDB tags are present)
   - Will move common series title prefixes like "Gekijouban", "Eiga" etc. to the end of the title
 - Removes the original tag hiding options and replaces them with a tag weight system similar to what [HAMA](https://github.com/ZeroQI/Hama.bundle) uses
-  - Note: Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/9c0ae9208479420dea3b766156435d364794e809/Shoko.Server/Utilities/TagFilter.cs#L37) list
+  - **Note:** Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/9c0ae9208479420dea3b766156435d364794e809/Shoko.Server/Utilities/TagFilter.cs#L37) list
 - Series and movies will list the Studio as Animation Work (アニメーション制作) or Work (制作)
 - Support for:
   - Files which contain more than one episode or episodes which span multiple files
