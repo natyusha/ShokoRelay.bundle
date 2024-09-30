@@ -6,7 +6,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.12]======================')
+    Log('======================[Shoko Relay Agent v1.2.13]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -60,8 +60,7 @@ class ShokoRelayAgent:
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
-        for item in sorted(series_data['AniDB']['Titles'], key=lambda item: item['Type'], reverse=True): # Sort by reversed Type (Synonym -> Short -> Official -> Main) so that the dict prioritises official titles over synonyms
-            if item['Type'] != 'Short': series_titles[item['Language']] = item['Name'] # Exclude all short titles
+        for item in [i for i in sorted(series_data['AniDB']['Titles'], key=lambda i: i['Type'], reverse=True) if i['Type'] != 'Short']: series_titles[item['Language']] = item['Name'] # Sort by reversed Type (Synonym -> Short (Excluded) -> Official -> Main) so that the dict prioritises official titles over synonyms
         series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
         # Get Title according to the language preference
@@ -275,12 +274,12 @@ class ShokoRelayAgent:
             ep_title_mod, tmdb_ep_title = '[LANG]:                 ', try_get(tmdb_ep_data, 'Title', None)
             for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
                 episode_title = try_get(episode_titles, lang, None)
-                if title: break
+                if episode_title: break
             if not episode_title: episode_title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
 
             # Replace ambiguous title with series title
-            SingleEntryTitles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
-            if episode_title in SingleEntryTitles:
+            ambiguous_titles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
+            if episode_title in ambiguous_titles:
                 # Get series title according to the language preference
                 ep_title_mod, original_title = '(FromSeries) [LANG]:    ', episode_title
                 for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
@@ -293,7 +292,8 @@ class ShokoRelayAgent:
                     episode_title += ' — ' + original_title
 
             # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
-            if tmdb_ep_title and re.match(r'^(?:Episode|Volume)(?: | S)[1-9][0-9]*$', episode_title): ep_title_mod, episode_title = '(TMDB Override) [LANG]: ', tmdb_title
+            default_titles = r'^(Episode|Volume) S?[1-9][0-9]*$' # Regex pattern for default episode titles
+            if tmdb_ep_title and re.match(default_titles, episode_title) and not re.match(default_titles, tmdb_ep_title): ep_title_mod, episode_title, lang = '(TMDB Override) [LANG]: ', tmdb_ep_title, 'shoko'
 
             episode_obj.title = episode_title
             Log('Title %s %s [%s]' % (ep_title_mod, episode_obj.title, lang.upper()))
