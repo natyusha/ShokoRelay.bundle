@@ -6,7 +6,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.13]======================')
+    Log('======================[Shoko Relay Agent v1.2.14]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -69,10 +69,9 @@ class ShokoRelayAgent:
             if title: break
         if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
-        # Move common title prefixes to the end of the title
+        # Move common title prefixes to the end of the title (pad with a space)
         if Prefs['moveCommonTitlePrefixes']:
-            CommonTitlePrefixes = ('Gekijouban ', 'Eiga ', 'OVA ') # List of prefixes considered common and padded with a space
-            if title.startswith(CommonTitlePrefixes): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
+            if title.startswith(('Gekijouban ', 'Eiga ', 'OVA ')): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # Determine the TMDB type
         tmdb_type, tmdb_type_log, tmdb_title, tmdb_group, tmdb_group_log = None, '', '', False, ''
@@ -183,7 +182,7 @@ class ShokoRelayAgent:
                 elif 'Josei'  in tags or 'Seinen'  in tags : c_rating = 'TV-14'
             if 'Borderline Porn' in tags: c_rating = 'TV-MA' # Override any previous rating for borderline porn content
             if c_rating: c_rating += descriptor              # Append the content descriptor using the content indicators above
-            if '18 Restricted' in tags: c_rating = 'X'       # Override any previous rating and remove content indicators for 18 restricted content
+            if '18 Restricted'   in tags: c_rating = 'X'     # Override any previous rating and remove content indicators for 18 restricted content
 
             metadata.content_rating = c_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
@@ -191,11 +190,11 @@ class ShokoRelayAgent:
         # Get Posters & Backgrounds
         if Prefs['addEveryImage']:
             series_images = HttpReq('api/v3/Series/%s/Images?includeDisabled=false' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Images?includeDisabled=false
-            self.image_add(metadata.posters, sorted(try_get(series_images, 'Posters', []), key=lambda p: not p['Preferred']), '(Poster):       ') # Move preferred poster to the top of the list
-            self.image_add(metadata.art, sorted(try_get(series_images, 'Backdrops', []), key=lambda b: not b['Preferred']), '(Background):   ')   # Move preferred backdrop to the top of the list
+            self.image_add(metadata.posters, sorted(try_get(series_images, 'Posters', []),   key=lambda p: not p['Preferred']), '(Poster):       ') # Move preferred poster to the top of the list
+            self.image_add(metadata.art,     sorted(try_get(series_images, 'Backdrops', []), key=lambda b: not b['Preferred']), '(Background):   ') # Move preferred backdrop to the top of the list
         else: # Series data only contains the preferred image for each type
-            self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []), '(Poster):       ')
-            self.image_add(metadata.art, try_get(series_data['Images'], 'Backdrops', []), '(Background):   ')
+            self.image_add(metadata.posters, try_get(series_data['Images'], 'Posters', []),   '(Poster):       ')
+            self.image_add(metadata.art,     try_get(series_data['Images'], 'Backdrops', []), '(Background):   ')
 
         # Get Cast & Crew
         cast_crew = HttpReq('api/v3/Series/%s/Cast' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast
@@ -278,8 +277,7 @@ class ShokoRelayAgent:
             if not episode_title: episode_title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
 
             # Replace ambiguous title with series title
-            ambiguous_titles = ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') # AniDB titles used for single entries which are ambiguous
-            if episode_title in ambiguous_titles:
+            if episode_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web'):
                 # Get series title according to the language preference
                 ep_title_mod, original_title = '(FromSeries) [LANG]:    ', episode_title
                 for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
