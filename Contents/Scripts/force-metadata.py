@@ -63,7 +63,7 @@ except Exception:
     exit(1)
 
 # loop through the configured libraries
-print_f('\n┌Shoko Relay: Force Plex Metadata')
+print_f('\n╭Shoko Relay: Force Plex Metadata')
 for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
@@ -79,7 +79,7 @@ for library in cfg.Plex['LibraryNames']:
         for series in section.search(title=''):
             print_f(f'│├─Splitting: {series.title}')
             series.split()
-        input('│└─Splitting Queued: Press Enter to continue once Plex is finished...')
+        input('│╰─Splitting Queued: Press Enter to continue once Plex is finished...')
         """
 
         # unmatch all anime to clear out bad metadata
@@ -87,12 +87,12 @@ for library in cfg.Plex['LibraryNames']:
         for series in section.search(title=''):
             print_f(f'│├─Unmatch: {series.title}')
             series.unmatch()
-        input('│└─Unmatching Queued: Press Enter to continue once Plex is finished...')
+        input('│╰─Unmatching Queued: Press Enter to continue once Plex is finished...')
 
         # clean bundles of things unmatched
         print_f('├┬Cleaning Bundles...')
         plex.library.cleanBundles()
-        input('│└─Clean Bundles Queued: Press Enter to continue once Plex is finished...')
+        input('│╰─Clean Bundles Queued: Press Enter to continue once Plex is finished...')
 
         # fix match for all anime and grab fresh metadata
         print_f(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
@@ -105,7 +105,7 @@ for library in cfg.Plex['LibraryNames']:
             except IndexError:
                 print_f(f'│├{error_prefix}Failed: {series.title}') # print titles of things which failed to match
                 failed_list.append(series.title)
-        input('│└─Matching Queued: Press Enter to continue once Plex is finished...')
+        input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
 
     # rename negative seasons to their correct names
     print_f(f'├┬Renaming Negative Seasons @ {cfg.Plex["ServerName"]}/{library}')
@@ -114,14 +114,14 @@ for library in cfg.Plex['LibraryNames']:
         elif season.title == 'Season -2': season.editTitle('Trailers')
         elif season.title == 'Season -3': season.editTitle('Parodies')
         elif season.title == 'Season -4': season.editTitle('Other')
-    print_f('│└─Finished Renaming Seasons!')
+    print_f('│╰─Finished Renaming Seasons!')
 
     # add original titles if there are sort title additions from Shoko Relay
     print_f(f'├┬Adding Original Titles @ {cfg.Plex["ServerName"]}/{library}')
     for series in section.search(title=''):
         if series.title != series.titleSort:
             series.editOriginalTitle(series.titleSort.replace(series.title + ' [', '')[:-1], locked=False)
-    print_f('│└─Finished Adding Original Titles!')
+    print_f('│╰─Finished Adding Original Titles!')
 
     # clear any empty collections that are left over and set the sort title to match the title
     print_f(f'├┬Checking Collections @ {cfg.Plex["ServerName"]}/{library}')
@@ -135,8 +135,8 @@ for library in cfg.Plex['LibraryNames']:
             else:
                 collection.delete()
                 print_f(f'│├─Deleting Empty Entry: {collection.title}')
-    print_f('│└─Finished!')
-print_f('└Force Metadata Task Complete')
+    print_f('│╰─Finished!')
+print_f('╰Force Metadata Task Complete')
 
 # if there were failed matches list them so the user doesn't have to scroll up
 if full_clean and failed_list:

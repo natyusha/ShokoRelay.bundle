@@ -116,7 +116,7 @@ def arg_parse_2(arg2): # use a combination of the single argument logic for the 
     elif re.match(slug_regex, arg1) and arg2 == 'play':
         theme_slug, play = arg1.upper(), True
     else:
-        raise argparse.ArgumentTypeError('invalid (slug + offset), (slug + play) or (offset + play')
+        raise argparse.ArgumentTypeError('invalid (slug + offset), (slug + play) or (offset + play)')
     return arg2
 def arg_parse_3(arg3): # there is only a single possible format if there are three arguments at once
     arg1, arg2, arg3 = sys.argv[1], sys.argv[2], arg3.lower()
@@ -153,7 +153,7 @@ if 'status' in auth and auth['status'] in (400, 401):
     exit(1)
 
 ## grab the anidb id using Shoko API and a video file path
-print_f('┌Plex Theme.mp3 Generator')
+print_f('╭Plex Theme.mp3 Generator')
 folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
 files = []
 for file in os.listdir('.'):
@@ -173,9 +173,9 @@ path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"
 try:
     anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
 except Exception as error:
-    print(f'{error_prefix}└─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
+    print(f'{error_prefix}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
     exit(1)
-print_f(f'│└─URL: https://anidb.net/anime/{str(anidbID)}')
+print_f(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
 
 ## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
 ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
@@ -191,10 +191,10 @@ if anidbID is not None:
         anime_name = anime['anime'][offset]['name']
         anime_slug = anime['anime'][offset]['slug']
     except Exception as error:
-        print(f'{error_prefix}└─Failed: The current anime isn\'t present on AnimeThemes\n', error)
+        print(f'{error_prefix}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
         exit(1)
     print_f(f'│├─Title: {anime_name}')
-    print_f(f'│└─URL: https://animethemes.moe/anime/{anime_slug}')
+    print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
     try:
         animethemeID = anime['anime'][offset]['animethemes'][0]['id']
         slug = anime['anime'][offset]['animethemes'][0]['slug']
@@ -239,7 +239,7 @@ print_f(f'│├─{slug}: {artist_display}{song_title}')
 # download .ogg file from animethemes
 def progress(count, block_size, total_size): # track the progress with a simple reporthook
     percent = int(count*block_size*100/total_size)
-    print(f'│└─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
+    print(f'│╰─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
 try:
     urllib.request.urlretrieve(audioURL, 'temp', reporthook=progress)
 except Exception as error:
@@ -280,15 +280,15 @@ try:
     ## if not just playing convert the temp .ogg file to .mp3 with ffmpeg and add title + artist metadata
     if not play:
         try:
-            print_f('└┬Converting...')
+            print_f('╰┬Converting...')
             subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
-            status = ' └─Finished! '
+            status = ' ╰─Finished! '
         except Exception as error:
             print(f' {error_prefix}─FFmpeg Failed\n  ', error)
             status = ' Failed! '
     else:
-        print_f('└┬Playing...')
-        status = ' └─'
+        print_f('╰┬Playing...')
+        status = ' ╰─'
 
     ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
     if FFplay:

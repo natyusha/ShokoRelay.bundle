@@ -84,7 +84,7 @@ if 'status' in auth and auth['status'] in (400, 401):
     exit(1)
 
 # loop through all of the accounts listed and sync watched states
-print_f('\n┌Shoko Relay Watched Sync')
+print_f('\n╭Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
 if shoko_import == True:
     print_f(f'├─Generating: Shoko Watched Episode List...')
@@ -108,7 +108,7 @@ for account in accounts:
     try:
         plex = account.resource(cfg.Plex['ServerName']).connect()
     except Exception:
-        print(f'└{error_prefix}Failed: Server Name Not Found')
+        print(f'╰{error_prefix}Failed: Server Name Not Found')
         exit(1)
 
     # loop through the configured libraries
@@ -141,5 +141,5 @@ for account in accounts:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={auth["apikey"]}')
                     except Exception:
                         print(f'│├{error_prefix}─Failed: Make sure that "{filepath}" is matched by Shoko')
-        print_f('│└─Finished!')
-print('└Watched Sync Complete')
+        print_f('│╰─Finished!')
+print('╰Watched Sync Complete')

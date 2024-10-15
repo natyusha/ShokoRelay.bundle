@@ -52,7 +52,7 @@ if 'status' in auth and auth['status'] in (400, 401):
     print(f'{error_prefix}Failed: Shoko Credentials Invalid')
     exit(1)
 
-print_f('\n┌Shoko Relay Rescan Recent')
+print_f('\n╭Shoko Relay Rescan Recent')
 if shoko_import:
     # If importing run an api command to get the drop folder ids then another one to scan them
     print_f(f'├┬Scanning Shoko\'s Import Folders...')
@@ -86,5 +86,5 @@ else:
             print_f(f'│├─Rescanning: {path}')
         except Exception as error:
             print(f'│{error_prefix}─Failed:', error)
-print_f('│└─Finished!')
-print_f('└Rescan Task Complete')
+print_f('│╰─Finished!')
+print_f('╰Rescan Task Complete')

@@ -62,7 +62,7 @@ except Exception:
     exit(1)
 
 # loop through the configured libraries
-print_f('\n┌Shoko Relay: Collection Posters')
+print_f('\n╭Shoko Relay: Collection Posters')
 for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
@@ -81,7 +81,7 @@ for library in cfg.Plex['LibraryNames']:
                     for poster in sorted(os.listdir(posters_path), key=lambda poster: os.path.getctime(os.path.join(posters_path, poster)))[:-1]: # list all but the newest poster
                         print_f(f'│├─Removing: {collection.title} → {poster}')
                         os.remove(os.path.join(posters_path, poster))
-            print_f('│└─Finished!')
+            print_f('│╰─Finished!')
         except Exception as error:
             print(f'│├{error_prefix}Failed', error)
     else:
@@ -89,10 +89,10 @@ for library in cfg.Plex['LibraryNames']:
         try:
             auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
         except Exception:
-            print(f'└{error_prefix}Failed: Unable to Connect to Shoko Server')
+            print(f'╰{error_prefix}Failed: Unable to Connect to Shoko Server')
             exit(1)
         if 'status' in auth and auth['status'] in (400, 401):
-            print(f'└{error_prefix}Failed: Shoko Credentials Invalid')
+            print(f'╰{error_prefix}Failed: Shoko Credentials Invalid')
             exit(1)
 
         # make a list of all the user defined collection posters (if any)
@@ -102,7 +102,7 @@ for library in cfg.Plex['LibraryNames']:
                 for file in os.listdir(cfg.Plex['PostersFolder']):
                     if file.lower().endswith(file_formats): user_posters.append(file) # check image files regardless of case
             except Exception as error:
-                print(f'└{error_prefix}Failed', error)
+                print(f'╰{error_prefix}Failed', error)
                 exit(1)
 
         print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
@@ -134,5 +134,5 @@ for library in cfg.Plex['LibraryNames']:
                     collection.uploadPoster(url=poster_url)
                 except:
                     print(f'│├{error_prefix}──Failed: No Shoko Group → {collection.title}')
-        print_f('│└─Finished!')
-print_f('└Posters Task Complete')
+        print_f('│╰─Finished!')
+print_f('╰Posters Task Complete')
