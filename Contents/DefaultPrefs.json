@@ -31,28 +31,28 @@
 
     {
         "id": "SingleSeasonOrdering",
-        "label": "Use single season ordering ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ IMPORTANT: The same setting in 'Shoko Relay Scanner.py' must match!",
+        "label": "Use single season ordering. IMPORTANT: The same setting in \"Shoko Relay Scanner.py\" must match!",
         "type": "bool",
         "default": false
     },
 
     {
         "id": "SeriesTitleLanguage",
-        "label": "The preferred languages for the series title, separated by a comma ⠀⠀⠀⠀⠀⠀⠀⠀ Set to \"SHOKO\" to use Shoko's preferred title.",
+        "label": "The preferred languages for the series title, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title.",
         "type": "text",
         "default": "SHOKO, X-JAT, EN"
     },
 
     {
         "id": "SeriesAltTitleLanguage",
-        "label": "The preferred languages for the series alt title, separated by a comma ⠀⠀⠀⠀⠀⠀ Set to \"SHOKO\" to use Shoko's preferred title.",
+        "label": "The preferred languages for the series alt title, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title.",
         "type": "text",
         "default": "EN, X-JAT, SHOKO"
     },
 
     {
         "id": "EpisodeTitleLanguage",
-        "label": "The preferred languages for episode titles, separated by a comma ⠀⠀⠀⠀⠀⠀⠀⠀⠀ Set to \"SHOKO\" to use Shoko's preferred title. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ Note: \"SHOKO\" does not apply to Ambiguous Titles which will use the first regular language tag in this list for the series title replacement.",
+        "label": "The preferred languages for episode titles, separated by a comma. Set to \"SHOKO\" to use Shoko's preferred title. Note: \"SHOKO\" does not apply to Ambiguous Titles which will use the first regular language tag in this list for the series title replacement.",
         "type": "text",
         "default": "SHOKO, EN, X-JAT"
     },
@@ -116,7 +116,7 @@
 
     {
         "id": "sanitizeSummary",
-        "label": "The degree to which the summary is cleansed of extraneous info ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ This includes lines starting with general info (\"Source: \", \"Note: \", \"Summary: \"), as well as other miscellaneous lines (\"* \", \"— \", \"- \", \"~ \").",
+        "label": "The degree to which the summary is cleansed of extraneous info. This includes lines starting with general info (\"Source: \", \"Note: \", \"Summary: \"), as well as other miscellaneous lines (\"* \", \"— \", \"- \", \"~ \").",
         "type": "enum",
         "values" : ["Fully Sanitize", "Allow Info Lines", "Allow Misc. Lines", "Allow Both Types"],
         "default": "Fully Sanitize"
