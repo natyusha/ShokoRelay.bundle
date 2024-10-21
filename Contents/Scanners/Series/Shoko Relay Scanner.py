@@ -73,11 +73,12 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.2.14]' + '=' * 244)
+    Log.info('===========================[Shoko Relay Scanner v1.2.15]' + '=' * 244)
 
     if files:
         # Scan for video files
         VideoFiles.Scan(path, files, mediaList, subdirs, root)
+        prev_series_id = prev_tmdb_id = series_data = tmdb_ep_groups = None
 
         for idx, file in enumerate(files):
             try:
@@ -105,8 +106,9 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     Log.error('Missing ID:               Unrecognized or Ignored File Detected - Skipping!')
                     continue
 
-                # Get series data using the series id
-                series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
+                # Get series data using the series id if it wasn't already retrieved in the previous loop
+                if prev_series_id != series_id: series_data = HttpReq('api/v3/Series/%s?includeDataFrom=AniDB,TMDB' % series_id) # http://127.0.0.1:8111/api/v3/Series/24?includeDataFrom=AniDB,TMDB
+                prev_series_id = series_id
 
                 # Get the preferred/overridden title (preferred title follows Shoko's language settings)
                 show_title = series_data['Name'].encode('utf-8') # Requires utf-8
@@ -120,7 +122,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
                     tmdb_title_log = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' if not tmdb_title else tmdb_title # Account for rare cases where Shoko has a TMDB ID that returns no data
                     Log.info(' TMDB Check (Title [ID]):  %s [%s%s]' % (tmdb_title_log, tmdb_type_log, tmdb_id))
-                tmdb_ep_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0' % (series_id, tmdb_id)) if not Prefs['SingleSeasonOrdering'] and tmdb_type == 'Shows' else None # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0
+                if not Prefs['SingleSeasonOrdering'] and tmdb_type == 'Shows' and prev_tmdb_id != tmdb_id: tmdb_ep_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0' % (series_id, tmdb_id)) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0                
+                prev_tmdb_id = tmdb_id
 
                 for episode in range(episode_multi):
                     # Get episode data
