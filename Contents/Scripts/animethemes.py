@@ -214,7 +214,7 @@ if animethemeID is not None:
         videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
     except Exception as error:
         print(f'{error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
-        exit(1)    
+        exit(1)
     if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
         artist_display = f'{artist_name} - '
     else:

@@ -81,6 +81,8 @@ class ShokoRelayAgent:
             tmdb_title, tmdb_id = try_get(series_data['TMDB'][tmdb_type][0], 'Title', None), try_get(series_data['TMDB'][tmdb_type][0], 'ID', None)
             tmdb_title_log = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' if not tmdb_title else tmdb_title # Account for rare cases where Shoko has a TMDB ID that returns no data
             Log('TMDB Check (Title [ID]):       %s [%s%s]' % (tmdb_title_log, tmdb_type_log, tmdb_id))
+
+        # Get TMDB group information if SingleSeasonOrdering isn't enabled
         tmdb_ep_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0' % (series_id, tmdb_id)) if not Prefs['SingleSeasonOrdering'] and tmdb_type == 'Shows' else None # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0
 
         metadata.title = title
