@@ -148,15 +148,14 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         elif episode_type == 'Parody'    : season = -3
                         elif episode_type == 'Other'     : season = -4
                         if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: episode_source, season, episode_number = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
-                        else: tmdb_multi, episode_number = 1, episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
+                        else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
                         Log.info(' Season  %s %s%s' % (episode_source, season        , episode_multi_log))
                         Log.info(' Episode %s %s%s' % (episode_source, episode_number, episode_multi_log))
 
                         vid = Media.Episode(show_title, season, episode_number)
-                        if episode_multi > 1 or tmdb_ep_group > 1: # Required for multi episode files
-                            vid.display_offset = (ep_part * 100) / (episode_multi * tmdb_ep_group) # Divide episode part by the total parts
-                            ep_part+=1
+                        # Required for multi episode files and/or TMDB episode groups the display offset is equal to the part count's percentage of the total parts
+                        if episode_multi > 1 or tmdb_ep_group > 1: vid.display_offset, ep_part = (ep_part * 100) / (episode_multi * tmdb_ep_group), ep_part + 1
                         Log.info(' Mapping:                  %s' % vid)
                         Log.info('-' * 300)
                         vid.parts.append(file)

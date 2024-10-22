@@ -311,7 +311,7 @@ class ShokoRelayAgent:
 
                 # Get Summary
                 ep_summary_mod, tmdb_ep_summary = '(Preferred):          ', try_get(tmdb_ep_data, 'Overview', None)
-                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_summary: ep_summary_mod, episode_summary = '(TMDB Ep Group):      ', tmdb_ep_summary
+                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_summary: ep_summary_mod, episode_summary = '(TMDB Ep Group):      ', tmdb_ep_summary # If TMDB episode group names are enabled and a group is present override the summary
                 else: episode_summary = try_get(episode_data, 'Description', None)
                 episode_obj.summary = summary_sanitizer(episode_summary)
                 Log('Summary %s %s' % (ep_summary_mod, episode_obj.summary))
