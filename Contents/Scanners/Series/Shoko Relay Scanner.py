@@ -78,7 +78,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files:
         # Scan for video files
         VideoFiles.Scan(path, files, mediaList, subdirs, root)
-        prev_series_id = series_data = prev_tmdb_id = tmdb_ep_groups = None
+        prev_series_id = series_data = None
 
         for idx, file in enumerate(files):
             try:
@@ -115,7 +115,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info(' Title [ShokoID]:          %s [%s]' % (show_title, series_id))
 
                 # Determine the TMDB type
-                tmdb_type, tmdb_type_log, tmdb_title, tmdb_group, tmdb_group_log = None, '', '', False, ''
+                ep_part, tmdb_type, tmdb_type_log, tmdb_title = 0, None, '', ''
                 if   try_get(series_data['TMDB']['Shows'], 0, None)  : tmdb_type, tmdb_type_log = 'Shows'  , 'tv/'
                 elif try_get(series_data['TMDB']['Movies'], 0, None) : tmdb_type, tmdb_type_log = 'Movies' , 'movie/'
                 if tmdb_type: # If TMDB type is populated add the title as a comparison to the regular one to help spot mismatches
@@ -123,46 +123,44 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     tmdb_title_log = 'N/A (CRITICAL: Removed from TMDB or Missing Data) - Falling Back to AniDB Ordering!' if not tmdb_title else tmdb_title # Account for rare cases where Shoko has a TMDB ID that returns no data
                     Log.info(' TMDB Check (Title [ID]):  %s [%s%s]' % (tmdb_title_log, tmdb_type_log, tmdb_id))
 
-                # Get TMDB group information if SingleSeasonOrdering isn't enabled and it wasn't already retrieved in the previous loop
-                if not Prefs['SingleSeasonOrdering'] and tmdb_type == 'Shows' and prev_tmdb_id != tmdb_id: tmdb_ep_groups = HttpReq('api/v3/Series/%s/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=%s&pageSize=0' % (series_id, tmdb_id)) # http://127.0.0.1:8111/api/v3/Series/24/TMDB/Show/CrossReferences/EpisodeGroups?tmdbShowID=1873&pageSize=0
-                prev_tmdb_id = tmdb_id
-
                 for episode in range(episode_multi):
                     # Get episode data
-                    episode_id   = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
-                    episode_data = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
-                    tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], 0, None) if tmdb_title else None
+                    episode_id    = file_data['SeriesIDs'][0]['EpisodeIDs'][episode]['ID']
+                    episode_data  = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
+                    tmdb_ep_group = len(episode_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
-                    # Ignore multi episode files of differing types (AniDB episode relations)
-                    if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
-                    episode_type = episode_data['AniDB']['Type'] # Get episode type
+                    for group in range(tmdb_ep_group):
+                        tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], group, None) if tmdb_title else None
 
-                    # Ignore TMDB numbering for episodes split across multiple files (prevent file stacking in Plex)
-                    if tmdb_ep_data and tmdb_ep_groups:
-                        for xref in [group for groups in [grp for grp in tmdb_ep_groups['List'] if len(grp) > 1] for group in groups]:
-                            if tmdb_group: continue
-                            if xref['AnidbEpisodeID'] == episode_data['AniDB']['ID']: tmdb_group, tmdb_group_log = True, ' (TMDB Episode Grouping Detected!)'
+                        # Ignore multi episode files of differing types (AniDB episode relations)
+                        if episode > 0 and episode_type != episode_data['AniDB']['Type']: continue
+                        episode_type = episode_data['AniDB']['Type'] # Get episode type
 
-                    # Get season and episode numbers
-                    episode_source, season = '(AniDB):', 0
-                    if   episode_type == 'Normal'    : season =  1
-                    elif episode_type == 'Special'   : season =  0
-                    elif episode_type == 'ThemeSong' : season = -1
-                    elif episode_type == 'Trailer'   : season = -2
-                    elif episode_type == 'Parody'    : season = -3
-                    elif episode_type == 'Other'     : season = -4
-                    if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data and not tmdb_group: episode_source, season, episode_number = '(TMDB): ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
-                    else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
+                        # Log if a Multi Episode File is detected
+                        episode_multi_log = ' (Multi Episode File Detected!)' if episode_multi > 1 else ''
 
-                    Log.info(' Season %s           %s%s' % (episode_source, season, tmdb_group_log))
-                    Log.info(' Episode %s          %s%s' % (episode_source, episode_number, tmdb_group_log))
+                        # Get season and episode numbers
+                        episode_source, season = '(AniDB):         ', 0
+                        if   episode_type == 'Normal'    : season =  1
+                        elif episode_type == 'Special'   : season =  0
+                        elif episode_type == 'ThemeSong' : season = -1
+                        elif episode_type == 'Trailer'   : season = -2
+                        elif episode_type == 'Parody'    : season = -3
+                        elif episode_type == 'Other'     : season = -4
+                        if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: episode_source, season, episode_number = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
+                        else: tmdb_multi, episode_number = 1, episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
 
-                    vid = Media.Episode(show_title, season, episode_number)
-                    if episode_multi > 1: vid.display_offset = (episode * 100) / episode_multi # Required for multi episode files
-                    Log.info(' Mapping:                  %s' % vid)
-                    Log.info('-' * 300)
-                    vid.parts.append(file)
-                    mediaList.append(vid)
+                        Log.info(' Season  %s %s%s' % (episode_source, season        , episode_multi_log))
+                        Log.info(' Episode %s %s%s' % (episode_source, episode_number, episode_multi_log))
+
+                        vid = Media.Episode(show_title, season, episode_number)
+                        if episode_multi > 1 or tmdb_ep_group > 1: # Required for multi episode files
+                            vid.display_offset = (ep_part * 100) / (episode_multi * tmdb_ep_group) # Divide episode part by the total parts
+                            ep_part+=1
+                        Log.info(' Mapping:                  %s' % vid)
+                        Log.info('-' * 300)
+                        vid.parts.append(file)
+                        mediaList.append(vid)
             except Exception as e:
                 Log.error('Error in Scan:            "%s"' % e)
                 continue

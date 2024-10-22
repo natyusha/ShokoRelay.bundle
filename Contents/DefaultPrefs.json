@@ -94,6 +94,13 @@
     },
 
     {
+        "id": "tmdbEpGroupNames",
+        "label": "Prefer TMDB episode titles and descriptions for grouped episodes",
+        "type": "bool",
+        "default": true
+    },
+
+    {
         "id": "tmdbSeasonPosters",
         "label": "Use TMDB season posters for multi-season series",
         "type": "bool",
