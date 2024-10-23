@@ -6,7 +6,7 @@ def ValidatePrefs():
     pass
 
 def Start():
-    Log('======================[Shoko Relay Agent v1.2.15]======================')
+    Log('======================[Shoko Relay Agent v1.2.16]======================')
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.ClearCache()    # Clear the cache possibly removing stuck metadata
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
@@ -70,8 +70,7 @@ class ShokoRelayAgent:
         if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
         # Move common title prefixes to the end of the title (pad with a space)
-        if Prefs['moveCommonTitlePrefixes']:
-            if title.startswith(('Gekijouban ', 'Eiga ', 'OVA ')): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
+        if Prefs['moveCommonTitlePrefixes'] and title.startswith(('Gekijouban ', 'Eiga ', 'OVA ')): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
 
         # Determine the TMDB type
         tmdb_type, tmdb_type_log, tmdb_title = None, '', ''
@@ -234,104 +233,103 @@ class ShokoRelayAgent:
         # Get episode list using series ID
         episodes = HttpReq('api/v3/Series/%s/Episode?pageSize=0' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Episode?pageSize=0
 
-        for episode in episodes['List']:
+        for ep in episodes['List']:
             # Get episode data
-            episode_id    = episode['IDs']['ID']
-            episode_data  = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % episode_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
-            tmdb_ep_group = len(episode_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
+            ep_id         = ep['IDs']['ID']
+            ep_data       = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
+            tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
             for group in range(tmdb_ep_group):
-                tmdb_ep_data = try_get(episode_data['TMDB']['Episodes'], group, None) if tmdb_title else None
-                episode_type = episode_data['AniDB']['Type'] # Get episode type
+                tmdb_ep_data = try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
+                ep_type = ep_data['AniDB']['Type'] # Get episode type
 
                 # Get season and episode numbers
-                episode_source, season = '(AniDB):         ', 0
-                if   episode_type == 'Normal'    : season =  1
-                elif episode_type == 'Special'   : season =  0
-                elif episode_type == 'ThemeSong' : season = -1
-                elif episode_type == 'Trailer'   : season = -2
-                elif episode_type == 'Parody'    : season = -3
-                elif episode_type == 'Other'     : season = -4
-                if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: episode_source, season, episode_number = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
-                else: episode_number = episode_data['AniDB']['EpisodeNumber'] # Fallback to AniDB info
+                ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
+                if   ep_type == 'Normal'    : season =  1
+                elif ep_type == 'Special'   : season =  0
+                elif ep_type == 'ThemeSong' : season = -1
+                elif ep_type == 'Trailer'   : season = -2
+                elif ep_type == 'Parody'    : season = -3
+                elif ep_type == 'Other'     : season = -4
+                if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
 
-                Log('Season  %s      %s' % (episode_source, season))
-                Log('Episode %s      %s' % (episode_source, episode_number))
+                Log('Season %s       %s' % (ep_source, season))
+                Log('Episode %s      %s' % (ep_source, episode))
 
-                episode_obj = metadata.seasons[season].episodes[episode_number]
+                ep_object = metadata.seasons[season].episodes[episode]
 
                 # Make a dict of language -> title for all episode titles in the AniDB episode data
-                episode_titles = {}
-                for item in episode_data['AniDB']['Titles']: episode_titles[item['Language']] = item['Name']
-                episode_titles['shoko'] = episode_data['Name'] # Add Shoko's preferred episode title to the dict
+                ep_titles = {}
+                for item in ep_data['AniDB']['Titles']: ep_titles[item['Language']] = item['Name']
+                ep_titles['shoko'] = ep_data['Name'] # Add Shoko's preferred episode title to the dict
 
                 # Get episode title according to the language preference
                 ep_title_mod, tmdb_ep_title = '[LANG]:                 ', try_get(tmdb_ep_data, 'Title', None)
                 for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
-                    episode_title = try_get(episode_titles, lang, None)
-                    if episode_title: break
-                if not episode_title: episode_title, lang = episode_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
-                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_title: episode_title, lang = tmdb_ep_title, 'shoko (TMDB Ep Group)' # If TMDB episode group names are enabled and a group is present override the title
+                    ep_title = try_get(ep_titles, lang, None)
+                    if ep_title: break
+                if not ep_title: ep_title, lang = ep_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
+                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_title: ep_title, lang = tmdb_ep_title, 'shoko (TMDB Ep Group)' # If TMDB episode group names are enabled and a group is present override the title
 
                 # Replace ambiguous title with series title
-                if episode_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web'):
+                if ep_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web'):
                     # Get series title according to the language preference
-                    ep_title_mod, original_title = '(FromSeries) [LANG]:    ', episode_title
+                    ep_title_mod, original_title = '(FromSeries) [LANG]:    ', ep_title
                     for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
-                        if lang != 'shoko': episode_title = try_get(series_titles, lang, episode_title) # Exclude "shoko" as it will return the preferred language for series and not episodes
-                        if episode_title != original_title: break
-                    if episode_title == original_title and tmdb_ep_title: ep_title_mod, episode_title = '(TMDB) [LANG]:          ', tmdb_ep_title # Fallback to the TMDB title if there is a TMDB Episodes match
-                    if episode_title == original_title: episode_title, lang = try_get(series_titles, 'en', episode_title), 'en (fallback)'        # If not found, fallback to EN series title as a last resort
-                    if original_title != episode_title and original_title not in episode_title: # Append ambiguous title to series title if a replacement title was found and it doesn't contain it
-                        if original_title == 'Complete Movie': episode_title = re.sub(r'(:? The)?( Movie| Motion Picture)', '', episode_title) # Reduce redundant movie descriptors
-                        episode_title += ' — ' + original_title
+                        if lang != 'shoko': ep_title = try_get(series_titles, lang, ep_title) # Exclude "shoko" as it will return the preferred language for series and not episodes
+                        if ep_title != original_title: break
+                    if ep_title == original_title and tmdb_ep_title: ep_title_mod, ep_title = '(TMDB) [LANG]:          ', tmdb_ep_title # Fallback to the TMDB title if there is a TMDB Episodes match
+                    if ep_title == original_title: ep_title, lang = try_get(series_titles, 'en', ep_title), 'en (fallback)'        # If not found, fallback to EN series title as a last resort
+                    if original_title != ep_title and original_title not in ep_title: # Append ambiguous title to series title if a replacement title was found and it doesn't contain it
+                        if original_title == 'Complete Movie': ep_title = re.sub(r'(:? The)?( Movie| Motion Picture)', '', ep_title) # Reduce redundant movie descriptors
+                        ep_title += ' — ' + original_title
 
                 # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
                 default_titles = r'^(Episode|Volume) S?[1-9][0-9]*$' # Regex pattern for default episode titles
-                if tmdb_ep_title and re.match(default_titles, episode_title) and not re.match(default_titles, tmdb_ep_title): ep_title_mod, episode_title, lang = '(TMDB Override) [LANG]: ', tmdb_ep_title, 'shoko'
+                if tmdb_ep_title and re.match(default_titles, ep_title) and not re.match(default_titles, tmdb_ep_title): ep_title_mod, ep_title, lang = '(TMDB Override) [LANG]: ', tmdb_ep_title, 'shoko'
 
-                episode_obj.title = episode_title
-                Log('Title %s %s [%s]' % (ep_title_mod, episode_obj.title, lang.upper()))
+                ep_object.title = ep_title
+                Log('Title %s %s [%s]' % (ep_title_mod, ep_object.title, lang.upper()))
 
                 # Get Originally Available
-                airdate_log = episode_obj.originally_available_at = datetime.datetime.strptime(episode_data['AniDB']['AirDate'], '%Y-%m-%d').date() if try_get(episode_data['AniDB'], 'AirDate', None) else None
+                airdate_log = ep_object.originally_available_at = datetime.datetime.strptime(ep_data['AniDB']['AirDate'], '%Y-%m-%d').date() if try_get(ep_data['AniDB'], 'AirDate', None) else None
                 # Remove the air dates for negative seasons according to the preference
                 if season == -4 and Prefs['disableNegativeSeasonAirdates'] == 'Exclude Other': pass
                 elif season < 0 and Prefs['disableNegativeSeasonAirdates'] != 'Disabled':
-                    airdate_log, episode_obj.originally_available_at = 'Disabled in Agent Settings - Skipping!', None
+                    airdate_log, ep_object.originally_available_at = 'Disabled in Agent Settings - Skipping!', None
                 Log('Originally Available:          %s' % airdate_log)
 
                 # Get Content Ratings (from series)
-                episode_obj.content_rating = metadata.content_rating
-                Log('Content Rating (Assumed):      %s' % episode_obj.content_rating)
+                ep_object.content_rating = metadata.content_rating
+                Log('Content Rating (Assumed):      %s' % ep_object.content_rating)
 
                 # Get Rating
-                episode_obj.rating = episode_data['AniDB']['Rating']['Value']
-                Log('Rating:                        %s' % float(episode_obj.rating))
+                ep_object.rating = ep_data['AniDB']['Rating']['Value']
+                Log('Rating:                        %s' % float(ep_object.rating))
 
                 # Get Summary
                 ep_summary_mod, tmdb_ep_summary = '(Preferred):          ', try_get(tmdb_ep_data, 'Overview', None)
-                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_summary: ep_summary_mod, episode_summary = '(TMDB Ep Group):      ', tmdb_ep_summary # If TMDB episode group names are enabled and a group is present override the summary
-                else: episode_summary = try_get(episode_data, 'Description', None)
-                episode_obj.summary = summary_sanitizer(episode_summary)
-                Log('Summary %s %s' % (ep_summary_mod, episode_obj.summary))
+                if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_summary: ep_summary_mod, ep_summary = '(TMDB Ep Group):      ', tmdb_ep_summary # If TMDB episode group names are enabled and a group is present override the summary
+                else: ep_summary = try_get(ep_data, 'Description', None)
+                ep_object.summary = summary_sanitizer(ep_summary)
+                Log('Summary %s %s' % (ep_summary_mod, ep_object.summary))
 
                 # Get Writer as Original Work (原作) [if there is only one]
-                episode_obj.writers.clear()
+                ep_object.writers.clear()
                 writer_log = None
-                if   len(writer_name) == 1 : writer_log = episode_obj.writers.new().name = writer_name[0]
+                if   len(writer_name) == 1 : writer_log = ep_object.writers.new().name = writer_name[0]
                 elif len(writer_name)  > 1 : writer_log = 'Multiple Writers Detected - Skipping!'
                 Log('Writer (Original Work):        %s' % writer_log)
 
                 # Get Director as Direction (監督) [if there is only one]
-                episode_obj.directors.clear()
+                ep_object.directors.clear()
                 director_log = None
-                if   len(director_name) == 1 : director_log = episode_obj.directors.new().name = director_name[0]
+                if   len(director_name) == 1 : director_log = ep_object.directors.new().name = director_name[0]
                 elif len(director_name)  > 1 : director_log = 'Multiple Directors Detected - Skipping!'
                 Log('Director:                      %s' % director_log)
 
                 # Get Episode Poster (Grabs all episode thumbnails by default since there is no way to set a preferred one in Shoko's UI)
-                if Prefs['tmdbThumbnails']: self.image_add(episode_obj.thumbs, try_get(try_get(episode_data, 'Images', {}), 'Thumbnails', []), '(Thumbnail):    ')
+                if Prefs['tmdbThumbnails']: self.image_add(ep_object.thumbs, try_get(try_get(ep_data, 'Images', {}), 'Thumbnails', []), '(Thumbnail):    ')
 
         # Get Season Posters (Grabs all season posters by default since there is no way to set a preferred one in Shoko's UI)
         if Prefs['tmdbSeasonPosters'] and tmdb_type == 'Shows' and len(metadata.seasons) > 1: # Skip if there is only a single season in Plex since those should be set to hidden
@@ -380,7 +378,7 @@ class ShokoRelayAgent:
 def summary_sanitizer(summary):
     if summary:
         if Prefs['sanitizeSummary'] != 'Allow Both Types':
-            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\(?\b((Modified )?Sour?ce|Note( [1-9])?|Summ?ary|From|See Also):(?!$| a daikon)([^\r\n]+|$)', '', summary, flags=re.I|re.M)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
+            if Prefs['sanitizeSummary'] != 'Allow Info Lines'  : summary = re.sub(r'\(?\b((Modified )?Sour?ces?|Note( [1-9])?|Summ?ary|From|See Also):(?!$| a daikon)([^\r\n]+|$)', '', summary, flags=re.I|re.M)   # Remove the line if it starts with ("Source: ", "Note: ", "Summary: ")
             if Prefs['sanitizeSummary'] != 'Allow Misc. Lines' : summary = re.sub(ur'^(\*|[\u2014~-] (adapted|source|description|summary|translated|written):?) ([^\r\n]+|$)', '', summary, flags=re.I|re.M|re.U) # Remove the line if it starts with ("* ", "— ", "- ", "~ ")
         summary = re.sub(r'(?:http:\/\/anidb\.net\/(?:ch|co|cr|[feast]|(?:character|creator|file|episode|anime|tag)\/)(?:\d+)) \[([^\]]+)]', r'\1', summary) # Replace AniDB links with text
         summary = re.sub(r'\[i\](?!"The Sasami|"Stellar|In the distant| occurred in)(.*?)\[\/i\]', '', summary, flags=re.I|re.S) # Remove BBCode [i][/i] tags and their contents (AniDB API Bug)
