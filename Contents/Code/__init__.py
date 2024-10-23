@@ -241,7 +241,7 @@ class ShokoRelayAgent:
 
             for group in range(tmdb_ep_group):
                 tmdb_ep_data = try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
-                ep_type = ep_data['AniDB']['Type'] # Get episode type
+                ep_type      = ep_data['AniDB']['Type'] # Get episode type
 
                 # Get season and episode numbers
                 ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
@@ -253,7 +253,7 @@ class ShokoRelayAgent:
                 elif ep_type == 'Other'     : season = -4
                 if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
 
-                Log('Season %s       %s' % (ep_source, season))
+                Log('Season  %s      %s' % (ep_source, season))
                 Log('Episode %s      %s' % (ep_source, episode))
 
                 ep_object = metadata.seasons[season].episodes[episode]
@@ -279,9 +279,9 @@ class ShokoRelayAgent:
                         if lang != 'shoko': ep_title = try_get(series_titles, lang, ep_title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                         if ep_title != original_title: break
                     if ep_title == original_title and tmdb_ep_title: ep_title_mod, ep_title = '(TMDB) [LANG]:          ', tmdb_ep_title # Fallback to the TMDB title if there is a TMDB Episodes match
-                    if ep_title == original_title: ep_title, lang = try_get(series_titles, 'en', ep_title), 'en (fallback)'        # If not found, fallback to EN series title as a last resort
-                    if original_title != ep_title and original_title not in ep_title: # Append ambiguous title to series title if a replacement title was found and it doesn't contain it
-                        if original_title == 'Complete Movie': ep_title = re.sub(r'(:? The)?( Movie| Motion Picture)', '', ep_title) # Reduce redundant movie descriptors
+                    if ep_title == original_title: ep_title, lang = try_get(series_titles, 'en', ep_title), 'en (fallback)'             # If not found, fallback to EN series title as a last resort
+                    if original_title != ep_title and original_title not in ep_title:                                                   # Append ambiguous title to series title if a replacement title was found and it doesn't contain it
+                        if original_title == 'Complete Movie': ep_title = re.sub(r'(:? The)?( Movie| Motion Picture)', '', ep_title)    # Reduce redundant movie descriptors
                         ep_title += ' — ' + original_title
 
                 # TMDB episode title override (if the episode title is Episode/Volume [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
