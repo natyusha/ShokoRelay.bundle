@@ -48,9 +48,10 @@ def arg_parse(arg):
     return arg
 
 # check the arguments if the user is looking to use a relative date or not
-parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: In "import" mode the script will ask for (Y/N) confirmation for each Plex user that has been configured.', formatter_class=RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: By default "import" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=RawTextHelpFormatter)
 parser.add_argument('relative_date', metavar='range | import', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"')
-relative_date, shoko_import = parser.parse_args().relative_date, False
+parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing')
+relative_date, shoko_import, force_import = parser.parse_args().relative_date, False, parser.parse_args().force
 if relative_date == 'import': relative_date, shoko_import = '999y', True
 
 # authenticate and connect to the Plex server/library specified
@@ -95,7 +96,7 @@ if shoko_import == True:
 
 for account in accounts:
     # if importing ask the user to confirm syncing for each username
-    if shoko_import == True:
+    if shoko_import == True and force_import == False:
         class SkipUser(Exception): pass # label for skipping users via input
         try:
             while True:
