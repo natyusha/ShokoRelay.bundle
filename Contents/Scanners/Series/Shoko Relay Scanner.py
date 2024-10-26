@@ -73,7 +73,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.2.16]' + '=' * 244)
+    Log.info('===========================[Shoko Relay Scanner v1.2.17]' + '=' * 244)
 
     if files:
         # Scan for video files
@@ -111,8 +111,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 prev_series_id = series_id
 
                 # Get the preferred/overridden title (preferred title follows Shoko's language settings)
-                show_title = series_data['Name'].encode('utf-8') # Requires utf-8
-                Log.info(' Title [ShokoID]:          %s [%s]' % (show_title, series_id))
+                title = series_data['Name'].encode('utf-8') # Requires utf-8
+                Log.info(' Title [ShokoID]:          %s [%s]' % (title, series_id))
 
                 # Determine the TMDB type
                 tmdb_type, tmdb_type_log, tmdb_title = None, '', ''
@@ -159,7 +159,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         Log.info(' Season  %s %s%s' % (ep_source, season , ep_multi_log))
                         Log.info(' Episode %s %s%s' % (ep_source, episode, ep_multi_log))
 
-                        ep_parts_total, ep_final = ep_multi * tmdb_ep_group, Media.Episode(show_title, season, episode)
+                        ep_parts_total, ep_final = ep_multi * tmdb_ep_group, Media.Episode(title, season, episode)
                         # The display offset is equal to the part count's percentage of the total parts (required for multi episode files and/or TMDB episode groups)
                         if ep_parts_total > 1: ep_final.display_offset, ep_part = (ep_part * 100) / ep_parts_total, ep_part + 1
                         Log.info(' Mapping:                  %s' % ep_final)

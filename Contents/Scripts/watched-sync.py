@@ -29,7 +29,8 @@ Usage:
       - (watched-sync.py 3d) would return results from the last 3 days
   - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
   - Append the argument "import" (watched-sync.py import) if you want to sync watched states from Shoko to Plex instead.
-      - The script will ask for (Y/N) confirmation for each Plex user that has been configured.
+      - By default the script will ask for (Y/N) confirmation for each configured Plex user.
+      - This can be bypassed by adding the "force" flag (-f or --force).
 Behaviour:
   - Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
 """
