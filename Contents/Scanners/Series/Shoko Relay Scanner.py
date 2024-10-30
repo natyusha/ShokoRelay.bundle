@@ -73,7 +73,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    Log.info('===========================[Shoko Relay Scanner v1.2.17]' + '=' * 244)
+    ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
+    Log.info('===========================[Shoko Relay Scanner v1.2.18%s]%s' % (ordering, '=' * 230))
 
     if files:
         # Scan for video files
@@ -132,13 +133,13 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                     for group in range(tmdb_ep_group):
                         tmdb_ep_data = try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
-
-                        # Ignore multi episode files of differing types (AniDB episode relations)
-                        if ep > 0 and ep_type != ep_data['AniDB']['Type']:
-                            Log.info(' Skipping Multi Ep File:   An AniDB episode relation of a differing type was detected!')
-                            continue
-                        ep_multi_log = ' (Multi Episode File Detected!)' if ep_multi > 1 else '' # Log if a multi episode file or relation is detected
                         ep_type      = ep_data['AniDB']['Type'] # Get episode type
+
+                        # Ignore multi episode files of differing types (AniDB episode relations) if they are not ThemeSongs
+                        if ep > 0 and ep_type != prev_ep_type and ep_type != 'ThemeSong' != prev_ep_type:
+                            Log.info(' Skipping Multi Ep File:   An AniDB episode relation of a differing type was detected! [%s -> %s]' % (prev_ep_type, ep_type))
+                            continue
+                        ep_multi_log, prev_ep_type = ' (Multi Episode File Detected!)' if ep_multi > 1 else '', ep_data['AniDB']['Type']
 
                         # Get season and episode numbers
                         ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
@@ -152,7 +153,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                         # Ignore the current file if it has already been added with the same season and episode number
                         if prev_season == season and prev_episode == episode:
-                            Log.info(' Skipping Multi Ep File:   A duplicate season and episode number was detected!')
+                            Log.info(' Skipping Multi Ep File:   A duplicate season and episode number was detected! [S%sE%s]' % (season, episode))
                             continue
                         prev_season, prev_episode = season, episode
 
