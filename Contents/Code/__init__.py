@@ -364,10 +364,10 @@ class ShokoRelayAgent:
 
     def image_add(self, meta, images, log):
         valid, url = list(), ''
-        for image in images:
+        for idx, image in enumerate(images):
             try:
                 url = 'http://%s:%s/api/v3/Image/%s/%s/%s' % (Prefs['Hostname'], Prefs['Port'], image['Source'], image['Type'], image['ID'])
-                meta[url] = Proxy.Media(HTTP.Request(url).content, try_get(image, 'index', 0))
+                meta[url] = Proxy.Media(HTTP.Request(url).content, idx + 1) # Proxy.Media(file, sort_order) where sort_order starts at 1
                 valid.append(url)
                 Log('Image Add %s     %s' % (log, url))
             except:
