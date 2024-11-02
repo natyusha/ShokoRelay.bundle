@@ -11,7 +11,7 @@ def Start():
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log('===============[Shoko Relay Agent v1.2.18%s]===============' % ordering)
+    Log('===============[Shoko Relay Agent v1.2.19%s]===============' % ordering)
 
 def GetApiKey():
     global API_KEY
@@ -241,8 +241,7 @@ class ShokoRelayAgent:
             tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
             for group in range(tmdb_ep_group):
-                tmdb_ep_data = try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
-                ep_type      = ep_data['AniDB']['Type'] # Get episode type
+                ep_type, tmdb_ep_data = ep_data['AniDB']['Type'], try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
 
                 # Get season and episode numbers
                 ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']

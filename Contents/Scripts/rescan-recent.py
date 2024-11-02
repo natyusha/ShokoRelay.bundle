@@ -60,7 +60,7 @@ if shoko_import:
         import_folders = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder?apikey={auth["apikey"]}').json()
         for folder in import_folders:
             if folder['DropFolderType'] == 1:
-                requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder/{folder['ID']}/Scan?apikey={auth["apikey"]}')
+                requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder/{folder["ID"]}/Scan?apikey={auth["apikey"]}')
                 print_f(f'│├─Scanning: {folder['Name']}')
     except Exception as error:
         print(f'│{error_prefix}─Failed:', error)

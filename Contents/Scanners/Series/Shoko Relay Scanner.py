@@ -132,14 +132,13 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
                     for group in range(tmdb_ep_group):
-                        tmdb_ep_data = try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
-                        ep_type      = ep_data['AniDB']['Type'] # Get episode type
+                        ep_type, tmdb_ep_data = ep_data['AniDB']['Type'], try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
 
                         # Ignore multi episode files of differing types (AniDB episode relations) if they are not ThemeSongs
                         if ep > 0 and ep_type != prev_ep_type and ep_type != 'ThemeSong' != prev_ep_type:
                             Log.info(' Skipping Multi Ep File:   An AniDB episode relation of a differing type was detected! [%s -> %s]' % (prev_ep_type, ep_type))
                             continue
-                        ep_multi_log, prev_ep_type = ' (Multi Episode File Detected!)' if ep_multi > 1 else '', ep_data['AniDB']['Type']
+                        prev_ep_type, ep_multi_log = ep_type, ' (Multi Episode File Detected!)' if ep_multi > 1 else ''
 
                         # Get season and episode numbers
                         ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
