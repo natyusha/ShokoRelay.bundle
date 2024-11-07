@@ -285,7 +285,7 @@ class ShokoRelayAgent:
                         ep_title += ' — ' + original_title
 
                 # TMDB episode title override (if the episode title is Episode/Volume/Special [S]# on AniDB excluding Episode/Volume 0) and there is a TMDB match
-                default_titles = r'^(Episode|Volume|Special) S?[1-9][0-9]*$' # Regex pattern for default episode titles
+                default_titles = r'^(Episode|Volume|Special|Movie) S?[1-9][0-9]*$' # Regex pattern for default episode titles
                 if tmdb_ep_title and re.match(default_titles, ep_title) and not re.match(default_titles, tmdb_ep_title): ep_title_mod, ep_title, lang = '(TMDB Override) [LANG]: ', tmdb_ep_title, 'shoko'
 
                 ep_object.title = ep_title
