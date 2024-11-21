@@ -88,7 +88,7 @@ if 'status' in auth and auth['status'] in (400, 401):
 # loop through all of the accounts listed and sync watched states
 print_f('\n╭Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
-if shoko_import == True:
+if shoko_import:
     print_f(f'├─Generating: Shoko Watched Episode List...')
     watched_episodes = []
     shoko_watched = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=only&includeFiles=true&apikey={auth["apikey"]}').json()
@@ -97,7 +97,7 @@ if shoko_import == True:
 
 for account in accounts:
     # if importing ask the user to confirm syncing for each username
-    if shoko_import == True and force_import == False:
+    if shoko_import and force_import == False:
         class SkipUser(Exception): pass # label for skipping users via input
         try:
             while True:
@@ -123,7 +123,7 @@ for account in accounts:
             continue
 
         # if importing loop through all the unwatched episodes in the Plex library
-        if shoko_import == True:
+        if shoko_import:
             for episode in section.searchEpisodes(unwatched=True):
                 for episode_path in episode.iterParts():
                     filepath = os.path.basename(episode_path.file)

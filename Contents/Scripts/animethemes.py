@@ -134,7 +134,7 @@ parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2,
 parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
 args = parser.parse_args()
 args.arg1, args.arg2, args.arg3 # grab the arguments if available
-if play == True: FFplay = True # force enable FFplay if the play argument was supplied
+if play: FFplay = True # force enable FFplay if the play argument was supplied
 
 # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
 # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively

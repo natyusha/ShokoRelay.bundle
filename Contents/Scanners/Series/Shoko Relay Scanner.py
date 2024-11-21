@@ -74,7 +74,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log.info('===========================[Shoko Relay Scanner v1.2.20%s]%s' % (ordering, '=' * 230))
+    Log.info('===========================[Shoko Relay Scanner v1.2.21%s]%s' % (ordering, '=' * 230))
 
     if files:
         # Scan for video files
@@ -131,7 +131,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     ep_data       = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
                     tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
-                    if ep_data['IsHidden'] == True:
+                    if ep_data['IsHidden']:
                         Log.info(' Skipping Ignored Ep [ID]: An episode that is marked as hidden in Shoko was detected! [%s]' % ep_data['IDs']['ID'])
                         Log.info('-' * 300)
                         continue
