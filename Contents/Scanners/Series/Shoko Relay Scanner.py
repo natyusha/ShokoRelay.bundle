@@ -94,9 +94,11 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     file_data = file_data[0]
                 elif len(file_data) > 1: # This will usually trigger for edge cases where the user only uses season subfolders coupled with file names that only use episode and season numbers
                     Log.error('Multiple Files:           File Search Returned More Than One Result - Skipping!')
+                    Log.info('-' * 300)
                     continue
                 else: # This will usually trigger if files are scanned by Plex before they are hashed in Shoko
                     Log.error('Missing File:             File Search Returned No Results - Skipping!')
+                    Log.info('-' * 300)
                     continue
 
                 # Take the first series id from the file - Make sure a series id exists
@@ -105,6 +107,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     ep_multi  = len(file_data['SeriesIDs'][0]['EpisodeIDs']) # Account for multi episode files
                 else:
                     Log.error('Missing ID:               Unrecognized or Ignored File Detected - Skipping!')
+                    Log.info('-' * 300)
                     continue
 
                 # Get series data using the series id if it wasn't already retrieved in the previous loop
