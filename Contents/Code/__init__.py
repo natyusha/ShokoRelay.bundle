@@ -137,7 +137,7 @@ class ShokoRelayAgent:
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted (high priority) tags
         tags, c_rating, descriptor, descriptor_d, descriptor_s, descriptor_v = [], None, '', '', '', ''
-        for tag in series_tags:
+        for tag in [t for t in series_tags if t['Source'] != 'User']: # Exclude custom user tags from any tag operations
             if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])): tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
             ## Prep weight based content ratings (if enabled) using the content indicators described here: https://wiki.anidb.net/Categories:Content_Indicators
             if Prefs['contentRatings']:
