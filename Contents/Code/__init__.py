@@ -410,8 +410,8 @@ def try_get(arr, idx, default=''):
 # Agent Declaration
 class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):
     name, primary_provider, fallback_agent = 'ShokoRelay', True, False
-    contributes_to = ['com.plexapp.agents.none', 'com.plexapp.agents.hama']
-    accepts_from   = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.lambda']
+    contributes_to = ['com.plexapp.agents.none']
+    accepts_from   = ['com.plexapp.agents.localmedia']
     languages      = [Locale.Language.English, 'fr', 'zh', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt', 'cs', 'ko', 'sl', 'hr']
     def search(self, results, media, lang, manual): self.Search(results, media, lang, manual)
     def update(self, metadata, media, lang, force): self.Update(metadata, media, lang, force)

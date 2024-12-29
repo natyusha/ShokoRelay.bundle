@@ -232,8 +232,7 @@ if videoID is not None:
 print_f('├┬Downloading...')
 
 # replace shorthand in slug with full text
-for key, value in slug_formatting.items():
-    slug = re.sub(key, value, slug)
+for key, value in slug_formatting.items(): slug = re.sub(key, value, slug)
 print_f(f'│├─{slug}: {artist_display}{song_title}')
 
 # download .ogg file from animethemes
