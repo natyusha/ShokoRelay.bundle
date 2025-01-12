@@ -6,7 +6,7 @@ This is a bundle containing a Plex metadata agent, scanner, and automation scrip
 - Extract [the latest release](https://github.com/natyusha/ShokoRelay.bundle/releases/latest/download/ShokoRelay.bundle.zip) into your [Plex Media Server Plug-ins Folder](https://support.plex.tv/articles/201106098-how-do-i-find-the-plug-ins-folder/) `\Plex Media Server\Plug-ins`
 - Ensure that the resulting folder name is `ShokoRelay.bundle` and navigate to it
 - Move the `Scanners` folder located in `Contents` to `\Plex Media Server\`
-- Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Relay Scanner.py` with a text editor:
+- Navigate to `\Plex Media Server\Scanners\Series` and enter your Shoko credentials into `Shoko Relay Scanner.cfg` with a text editor:
   - Hostname
   - Port
   - Username
