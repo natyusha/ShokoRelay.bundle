@@ -1,14 +1,9 @@
 import os, sys, json, urllib, inspect, urllib2, logging, logging.handlers
-import Media, Stack, VideoFiles
+import Media, Stack, VideoFiles, ConfigParser
 
-Prefs = {
-    'Hostname': '127.0.0.1',
-    'Port': 8111,
-    'Username': 'Default',
-    'Password': '',
-    # SingleSeasonOrdering set to "True" to ignore TMDB episode ordering (must be Changed in Agent settings too)
-    'SingleSeasonOrdering': False
-}
+# Load Shoko's credentials and the SingleSeasonOrdering preference from the external configuration file
+cfg = ConfigParser.RawConfigParser()
+cfg.read(os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '.', 'Shoko Relay Scanner.cfg')))
 
 API_KEY = '' # Leave this blank
 
@@ -25,7 +20,7 @@ if not os.path.isdir(LOG_ROOT):
         'Linux'   : '$PLEX_HOME/Library/Application Support/Plex Media Server',
         'Android' : '/storage/emulated/0/Plex Media Server'
     }
-    LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS:  Windows, MacOSX, or Linux
+    LOG_ROOT = os.path.expandvars(path_location[Platform.OS.lower()] if Platform.OS.lower() in path_location else '~') # Platform.OS: Windows, MacOS, or Linux
 
 # Define logger parameters with a max size of 12MiB and five backups for file rotation
 def set_logging(foldername='', filename='', format=''):
@@ -43,8 +38,8 @@ def GetApiKey():
     global API_KEY
     if not API_KEY:
         data = json.dumps({
-            'user'   : Prefs['Username'],
-            'pass'   : Prefs['Password'] if Prefs['Password'] != None else '',
+            'user'   : cfg.get('Prefs', 'Username'),
+            'pass'   : cfg.get('Prefs', 'Password') if cfg.get('Prefs', 'Password') != None else '',
             'device' : 'Shoko Relay for Plex'
         })
         API_KEY = HttpPost('api/auth', data)['apikey']
@@ -53,7 +48,7 @@ def GetApiKey():
 
 def HttpPost(url, postdata):
     myheaders = {'Content-Type': 'application/json'}
-    req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
+    req = urllib2.Request('http://%s:%s/%s' % (cfg.get('Prefs', 'Hostname'), cfg.get('Prefs', 'Port'), url), headers=myheaders)
     return json.load(urllib2.urlopen(req, postdata))
 
 def HttpReq(url, retry=True):
@@ -61,7 +56,7 @@ def HttpReq(url, retry=True):
     Log.info(' Requesting:               %s' % url)
     myheaders = {'Accept': 'application/json', 'apikey': GetApiKey()}
     try:
-        req = urllib2.Request('http://%s:%s/%s' % (Prefs['Hostname'], Prefs['Port'], url), headers=myheaders)
+        req = urllib2.Request('http://%s:%s/%s' % (cfg.get('Prefs', 'Hostname'), cfg.get('Prefs', 'Port'), url), headers=myheaders)
         return json.load(urllib2.urlopen(req))
     except Exception as e:
         if not retry: raise e
@@ -73,7 +68,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
     if files : Log.debug('[Files]                   %s' % ', '.join(files))
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
-    ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
+    ordering = ' Single Season' if cfg.getboolean('Prefs', 'SingleSeasonOrdering') else ' Multi Seasons'
     Log.info('===========================[Shoko Relay Scanner v1.2.24%s]%s' % (ordering, '=' * 230))
 
     if files:
@@ -132,7 +127,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     # Get episode data
                     ep_id         = file_data['SeriesIDs'][0]['EpisodeIDs'][ep]['ID']
                     ep_data       = HttpReq('api/v3/Episode/%s?includeDataFrom=AniDB,TMDB' % ep_id) # http://127.0.0.1:8111/api/v3/Episode/212?includeDataFrom=AniDB,TMDB
-                    tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not Prefs['SingleSeasonOrdering'] else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
+                    tmdb_ep_group = len(ep_data['IDs']['TMDB']['Episode']) or 1 if not cfg.getboolean('Prefs', 'SingleSeasonOrdering') else 1 # Account for TMDB episode groups if SingleSeasonOrdering isn't disabled
 
                     if ep_data['IsHidden']:
                         Log.info(' Skipping Ignored Ep [ID]: An episode that is marked as hidden in Shoko was detected! [%s]' % ep_data['IDs']['ID'])
@@ -156,7 +151,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         elif ep_type == 'Trailer'   : season = -2
                         elif ep_type == 'Parody'    : season = -3
                         elif ep_type == 'Other'     : season = -4
-                        if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
+                        if not cfg.getboolean('Prefs', 'SingleSeasonOrdering') and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
 
                         # Ignore the current file if it has already been added with the same season and episode number
                         if prev_season == season and prev_episode == episode:
