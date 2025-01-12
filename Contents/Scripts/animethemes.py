@@ -240,7 +240,7 @@ def progress(count, block_size, total_size): # track the progress with a simple 
     percent = int(count*block_size*100/total_size)
     print(f'│╰─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
 try:
-    urllib.request.urlretrieve(audioURL, 'temp', reporthook=progress)
+    urllib.request.urlretrieve(audioURL, 'Theme.tmp', reporthook=progress)
 except Exception as error:
     print(f'{error_prefix}──Failed: Download Incomplete\n', error)
     exit(1)
@@ -252,7 +252,7 @@ class clean(Exception): pass
 try:
     # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
     try:
-        duration = int(float(subprocess.check_output('ffprobe -i temp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
+        duration = int(float(subprocess.check_output('ffprobe -i Theme.tmp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
         if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
         print(f'{error_prefix}──FFProbe Failed\n  ', error)
@@ -261,7 +261,7 @@ try:
     # if ffplay is enabled playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
     if FFplay:
         try:
-            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} temp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} Theme.tmp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
         except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
             print(f'{error_prefix}──FFPlay Failed\n │', error)
 
@@ -280,7 +280,7 @@ try:
     if not play:
         try:
             print_f('╰┬Converting...')
-            subprocess.run(f'ffmpeg -i temp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
+            subprocess.run(f'ffmpeg -i Theme.tmp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
             status = ' ╰─Finished! '
         except Exception as error:
             print(f' {error_prefix}─FFmpeg Failed\n  ', error)
@@ -305,4 +305,4 @@ try:
         print_f(f'{status}')
 except clean:
     pass
-os.remove('temp') # delete the original file
+os.remove('Theme.tmp') # delete the original file
