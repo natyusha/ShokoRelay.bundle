@@ -31,7 +31,7 @@
 
     {
         "id": "SingleSeasonOrdering",
-        "label": "Use single season ordering. IMPORTANT: The same setting in \"Shoko Relay Scanner.py\" must match!",
+        "label": "Use single season ordering. IMPORTANT: The same setting in \"Shoko Relay Scanner.cfg\" must match!",
         "type": "bool",
         "default": false
     },
