@@ -86,7 +86,7 @@ def is_running(pid):
     return True
 
 # initialise default values for the arguments and their regex
-theme_slug, offset = None, 0
+theme_slug, offset, idx = None, 0, 0
 play = batch = False
 FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
 slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}$', '^\\d$'
@@ -184,7 +184,7 @@ if anidbID is not None:
     print_f('├┬AnimeThemes')
     if theme_slug is not None:
         theme_type = f'&filter[animetheme][slug]={theme_slug}'
-    else: # default to the first opening if the slug isn't specified in the argument
+    else: # default to the first op/ed if the slug isn't specified in the argument
         theme_type = '&filter[animetheme][type]=OP,ED'
     anime = requests.get(f'https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]={anidbID}&include=animethemes{theme_type}').json()
     try:
@@ -196,8 +196,12 @@ if anidbID is not None:
     print_f(f'│├─Title: {anime_name}')
     print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
     try:
-        animethemeID = anime['anime'][offset]['animethemes'][0]['id']
-        slug = anime['anime'][offset]['animethemes'][0]['slug']
+        if not theme_slug and anime['anime'][offset]['animethemes'][1]['slug'] == 'OP1': idx = 1 # account for cases where the first op comes after the first ed
+    except:
+        pass
+    try:
+        animethemeID = anime['anime'][offset]['animethemes'][idx]['id']
+        slug = anime['anime'][offset]['animethemes'][idx]['slug']
     except Exception as error:
         print(f'{error_prefix}──Failed: Enter a valid argument\n', error)
         exit(1)
