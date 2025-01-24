@@ -136,7 +136,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 
 **Arguments:**
 - Append the arguments "slug" / "offset" `animethemes.py slug offset` in order to specify which opening or ending to download.
-  - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
+  - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2", "op1-tv" and so on
   - offset: an optional single digit number which must be the second argument if the slug is provided
 - Append the argument "play" to the commands above to run in "Preview" mode.
   - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"

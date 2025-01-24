@@ -33,7 +33,7 @@ Behaviour:
       - If "BatchOverwrite" is set to true in config.py the batch argument will instead overwrite any existing Theme.mp3 files.
 Arguments:
   - Append the arguments "slug" / "offset" (animethemes.py slug offset) in order to specify which opening or ending to download.
-      - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2" and so on
+      - slug: an optional identifier which must be the first argument and is formatted as "op", "ed", "op2", "ed2", "op1-tv" and so on
       - offset: an optional single digit number which must be the second argument if the slug is provided
   - Append the argument "play" to the commands above to run in "Preview" mode.
       - play: for force enabling FFplay and disabling Theme.mp3 generation, must be the last or sole argument and is simply entered as "play"
@@ -89,7 +89,7 @@ def is_running(pid):
 theme_slug, offset, idx = None, 0, 0
 play = local = batch = False
 FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
-slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}$', '^\\d$'
+slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}(-tv)?$', '^\\d$'
 
 # define functions for if there are 1, 2 or 3 arguments supplied
 def arg_parse_1(arg1):
@@ -129,7 +129,7 @@ def arg_parse_3(arg3): # there is only a single possible format if there are thr
 
 # check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
 parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=RawTextHelpFormatter)
-parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2" and so on\n\n')
+parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2", "op1-tv" and so on\n\n')
 parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*must be the second argument if the slug is provided\n\n')
 parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n*without other arguments local "Theme.mp3" files will be prioritised\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
 args = parser.parse_args()
