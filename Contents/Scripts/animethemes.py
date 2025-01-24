@@ -142,9 +142,12 @@ media = 'Theme.tmp'
 if local == True and os.path.isfile('Theme.mp3'):
     media, song_title = 'Theme.mp3', 'local'
     print_f('├┬Local Theme Detected')
-    local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
-    print_f(f'│├─{local_metadata.get('title', '???')} - {local_metadata.get('artist', '???')}')
-    print_f(f'│╰─{local_metadata.get('album', '???')} - {local_metadata.get('TIT3', '???')}')
+    try:
+        local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
+    except Exception as error:
+        print(f'{error_prefix}──FFProbe Failed\n  ', error)
+    print_f(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
+    print_f(f'│╰─Source: {local_metadata.get('album', '???')}')
 else:
     # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
     # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
@@ -229,7 +232,7 @@ else:
             print(f'{error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
             exit(1)
         if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
-            artist_display = f'{artist_name} - '
+            artist_display = f' by {artist_name}'
         else:
             artist_display = ''
 
@@ -246,7 +249,7 @@ else:
 
     # replace shorthand in slug with full text
     for key, value in slug_formatting.items(): slug = re.sub(key, value, slug)
-    print_f(f'│├─{slug}: {artist_display}{song_title}')
+    print_f(f'│├─{slug}: {song_title}{artist_display}')
 
     # download .ogg file from animethemes
     def progress(count, block_size, total_size): # track the progress with a simple reporthook
@@ -265,7 +268,7 @@ class clean(Exception): pass
 try:
     # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
     try:
-        duration = int(float(subprocess.check_output(f'ffprobe -i {media} -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
+        duration = int(float(subprocess.run(f'ffprobe -i {media} -show_entries format=duration -v quiet -of csv="p=0"', capture_output=True).stdout)) # find the duration of the song
         if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
         print(f'{error_prefix}──FFProbe Failed\n  ', error)
