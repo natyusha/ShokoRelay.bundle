@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from argparse import RawTextHelpFormatter
-import os, re, sys, time, urllib, argparse, requests, subprocess
+import os, re, sys, json, time, urllib, argparse, requests, subprocess
 import config as cfg
 
 r"""
@@ -87,20 +87,20 @@ def is_running(pid):
 
 # initialise default values for the arguments and their regex
 theme_slug, offset, idx = None, 0, 0
-play = batch = False
+play = local = batch = False
 FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
 slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}$', '^\\d$'
 
 # define functions for if there are 1, 2 or 3 arguments supplied
 def arg_parse_1(arg1):
     arg1 = arg1.lower()
-    global slug_regex, offset_regex, theme_slug, offset, play, batch, FFplay
+    global slug_regex, offset_regex, theme_slug, offset, play, local, batch, FFplay
     if re.match(slug_regex, arg1): # check if the argument is a slug via regex
         theme_slug = arg1.upper()
     elif re.match(offset_regex, arg1): # else check if it is a single digit offset via regex
         offset = int(arg1)
     elif arg1 == 'play': # else check if the user wants to run in preview mode
-        play = True
+        play = local = True
     elif arg1 == 'batch': # else check if the user want to run in batch mode
         batch, FFplay = True, False
     else:
@@ -131,124 +131,133 @@ def arg_parse_3(arg3): # there is only a single possible format if there are thr
 parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=RawTextHelpFormatter)
 parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2" and so on\n\n')
 parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*must be the second argument if the slug is provided\n\n')
-parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
+parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n*without other arguments local "Theme.mp3" files will be prioritised\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
 args = parser.parse_args()
 args.arg1, args.arg2, args.arg3 # grab the arguments if available
 if play: FFplay = True # force enable FFplay if the play argument was supplied
 
-# if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
-# this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
-if theme_slug is not None:
-    if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
-    if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
-
-# grab a Shoko API key using the credentials from the prefs
-try:
-    auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
-except Exception:
-    print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
-    exit(1)
-if 'status' in auth and auth['status'] in (400, 401):
-    print(f'{error_prefix}Failed: Shoko Credentials Invalid')
-    exit(1)
-
-## grab the anidb id using Shoko API and a video file path
 print_f('╭Plex Theme.mp3 Generator')
-folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
-files = []
-for file in os.listdir('.'):
-    if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
-        print(f'{error_prefix}─Skipped: Theme.mp3 already exists in {folder}')
-        exit(1)
-    if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
-try:
-    filepath = folder + files[0] # add the base folder name to the filename in case of duplicate filenames
-except Exception:
-    print(f'{error_prefix}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
-    exit(1)
-print_f('├┬Shoko')
-print_f(f'│├─File: {filepath}')
-# get the anidbid of a series by using the first filename present in its folder
-path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
-try:
-    anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
-except Exception as error:
-    print(f'{error_prefix}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
-    exit(1)
-print_f(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
-
-## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
-## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
-## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][slug]=OP,OP1
-if anidbID is not None:
-    print_f('├┬AnimeThemes')
+# enter local playback mode if play is the solo argument and a Theme.mp3 file is present
+media = 'Theme.tmp'
+if local == True and os.path.isfile('Theme.mp3'):
+    media, song_title = 'Theme.mp3', 'local'
+    print_f('├┬Local Theme Detected')
+    local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
+    print_f(f'│├─{local_metadata.get('title', '???')} - {local_metadata.get('artist', '???')}')
+    print_f(f'│╰─{local_metadata.get('album', '???')} - {local_metadata.get('TIT3', '???')}')
+else:
+    # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
+    # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
     if theme_slug is not None:
-        theme_type = f'&filter[animetheme][slug]={theme_slug}'
-    else: # default to the first op/ed if the slug isn't specified in the argument
-        theme_type = '&filter[animetheme][type]=OP,ED'
-    anime = requests.get(f'https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]={anidbID}&include=animethemes{theme_type}').json()
+        if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
+        if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
+
+    # grab a Shoko API key using the credentials from the prefs
     try:
-        anime_name = anime['anime'][offset]['name']
-        anime_slug = anime['anime'][offset]['slug']
-    except Exception as error:
-        print(f'{error_prefix}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
+        auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
+    except Exception:
+        print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
         exit(1)
-    print_f(f'│├─Title: {anime_name}')
-    print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
-    try:
-        if not theme_slug and anime['anime'][offset]['animethemes'][1]['slug'] == 'OP1': idx = 1 # account for cases where the first op comes after the first ed
-    except:
-        pass
-    try:
-        animethemeID = anime['anime'][offset]['animethemes'][idx]['id']
-        slug = anime['anime'][offset]['animethemes'][idx]['slug']
-    except Exception as error:
-        print(f'{error_prefix}──Failed: Enter a valid argument\n', error)
+    if 'status' in auth and auth['status'] in (400, 401):
+        print(f'{error_prefix}Failed: Shoko Credentials Invalid')
         exit(1)
 
-## grab first video id from anime theme id above (also make it easy to retrofit this script into a video downloader)
-## https://api.animethemes.moe/animetheme/11808?include=animethemeentries.videos,song.artists
-if animethemeID is not None:
-    animetheme = requests.get(f'https://api.animethemes.moe/animetheme/{animethemeID}?include=animethemeentries.videos,song.artists').json()
-    try:    song_title = animetheme['animetheme']['song']['title']
-    except: song_title = ''
-    try:    artist_name = animetheme['animetheme']['song']['artists'][0]['name']
-    except: artist_name = ''
+    ## grab the anidb id using Shoko API and a video file path
+    folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
+    files = []
+    for file in os.listdir('.'):
+        if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
+            print(f'{error_prefix}─Skipped: Theme.mp3 already exists in {folder}')
+            exit(1)
+        if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
     try:
-        videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
-    except Exception as error:
-        print(f'{error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
+        filepath = folder + files[0] # add the base folder name to the filename in case of duplicate filenames
+    except Exception:
+        print(f'{error_prefix}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
         exit(1)
-    if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
-        artist_display = f'{artist_name} - '
-    else:
-        artist_display = ''
-
-## grab first audio link from video id above
-## https://api.animethemes.moe/video?filter[video][id]=16031&include=audio
-if videoID is not None:
-    video = requests.get(f'https://api.animethemes.moe/video?filter[video][id]={videoID}&include=audio').json()
+    print_f('├┬Shoko')
+    print_f(f'│├─File: {filepath}')
+    # get the anidbid of a series by using the first filename present in its folder
+    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
     try:
-        audioURL = video['videos'][0]['audio']['link']
+        anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
     except Exception as error:
-        print(f'{error_prefix}──Failed: Audio URL not found\n', error)
+        print(f'{error_prefix}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
         exit(1)
-print_f('├┬Downloading...')
+    print_f(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
 
-# replace shorthand in slug with full text
-for key, value in slug_formatting.items(): slug = re.sub(key, value, slug)
-print_f(f'│├─{slug}: {artist_display}{song_title}')
+    ## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
+    ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
+    ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][slug]=OP,OP1
+    if anidbID is not None:
+        print_f('├┬AnimeThemes')
+        if theme_slug is not None:
+            theme_type = f'&filter[animetheme][slug]={theme_slug}'
+        else: # default to the first op/ed if the slug isn't specified in the argument
+            theme_type = '&filter[animetheme][type]=OP,ED'
+        anime = requests.get(f'https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]={anidbID}&include=animethemes{theme_type}').json()
+        try:
+            anime_name = anime['anime'][offset]['name']
+            anime_slug = anime['anime'][offset]['slug']
+        except Exception as error:
+            print(f'{error_prefix}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
+            exit(1)
+        print_f(f'│├─Title: {anime_name}')
+        print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
+        try:
+            if not theme_slug and anime['anime'][offset]['animethemes'][1]['slug'] == 'OP1': idx = 1 # account for cases where the first op comes after the first ed
+        except:
+            pass
+        try:
+            animethemeID = anime['anime'][offset]['animethemes'][idx]['id']
+            slug = anime['anime'][offset]['animethemes'][idx]['slug']
+        except Exception as error:
+            print(f'{error_prefix}──Failed: Enter a valid argument\n', error)
+            exit(1)
 
-# download .ogg file from animethemes
-def progress(count, block_size, total_size): # track the progress with a simple reporthook
-    percent = int(count*block_size*100/total_size)
-    print(f'│╰─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
-try:
-    urllib.request.urlretrieve(audioURL, 'Theme.tmp', reporthook=progress)
-except Exception as error:
-    print(f'{error_prefix}──Failed: Download Incomplete\n', error)
-    exit(1)
-print_f('')
+    ## grab first video id from anime theme id above (also make it easy to retrofit this script into a video downloader)
+    ## https://api.animethemes.moe/animetheme/11808?include=animethemeentries.videos,song.artists
+    if animethemeID is not None:
+        animetheme = requests.get(f'https://api.animethemes.moe/animetheme/{animethemeID}?include=animethemeentries.videos,song.artists').json()
+        try:    song_title = animetheme['animetheme']['song']['title']
+        except: song_title = ''
+        try:    artist_name = animetheme['animetheme']['song']['artists'][0]['name']
+        except: artist_name = ''
+        try:
+            videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
+        except Exception as error:
+            print(f'{error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
+            exit(1)
+        if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
+            artist_display = f'{artist_name} - '
+        else:
+            artist_display = ''
+
+    ## grab first audio link from video id above
+    ## https://api.animethemes.moe/video?filter[video][id]=16031&include=audio
+    if videoID is not None:
+        video = requests.get(f'https://api.animethemes.moe/video?filter[video][id]={videoID}&include=audio').json()
+        try:
+            audioURL = video['videos'][0]['audio']['link']
+        except Exception as error:
+            print(f'{error_prefix}──Failed: Audio URL not found\n', error)
+            exit(1)
+    print_f('├┬Downloading...')
+
+    # replace shorthand in slug with full text
+    for key, value in slug_formatting.items(): slug = re.sub(key, value, slug)
+    print_f(f'│├─{slug}: {artist_display}{song_title}')
+
+    # download .ogg file from animethemes
+    def progress(count, block_size, total_size): # track the progress with a simple reporthook
+        percent = int(count*block_size*100/total_size)
+        print(f'│╰─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
+    try:
+        urllib.request.urlretrieve(audioURL, 'Theme.tmp', reporthook=progress)
+    except Exception as error:
+        print(f'{error_prefix}──Failed: Download Incomplete\n', error)
+        exit(1)
+    print_f('')
 
 # label for cleaning up files and skipping other commands if ffprobe fails
 class clean(Exception): pass
@@ -256,7 +265,7 @@ class clean(Exception): pass
 try:
     # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
     try:
-        duration = int(float(subprocess.check_output('ffprobe -i Theme.tmp -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
+        duration = int(float(subprocess.check_output(f'ffprobe -i {media} -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('ascii').strip())) # find the duration of the song
         if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
         print(f'{error_prefix}──FFProbe Failed\n  ', error)
@@ -265,26 +274,26 @@ try:
     # if ffplay is enabled playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
     if FFplay:
         try:
-            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} Theme.tmp', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} {media}', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
         except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
             print(f'{error_prefix}──FFPlay Failed\n │', error)
 
     # escape double quotes for titles/artists/albums which contain them
     def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
 
-    # ffmpeg metadata for easily checking what a Theme.mp3 file contains
-    metadata = {
-        'title':    f' -metadata title="{escape_quotes(song_title)}"',
-        'subtitle': f' -metadata TIT3="{slug}"',
-        'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
-        'album':    f' -metadata album="{escape_quotes(anime_name)}"'
-    }
-
     ## if not just playing convert the temp .ogg file to .mp3 with ffmpeg and add title + artist metadata
     if not play:
+        # ffmpeg metadata for easily checking what a Theme.mp3 file contains
+        metadata = {
+            'title':    f' -metadata title="{escape_quotes(song_title)}"',
+            'subtitle': f' -metadata TIT3="{slug}"',
+            'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
+            'album':    f' -metadata album="{escape_quotes(anime_name)}"'
+        }
+
         try:
             print_f('╰┬Converting...')
-            subprocess.run(f'ffmpeg -i Theme.tmp -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
+            subprocess.run(f'ffmpeg -i {media} -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
             status = ' ╰─Finished! '
         except Exception as error:
             print(f' {error_prefix}─FFmpeg Failed\n  ', error)
@@ -309,4 +318,4 @@ try:
         print_f(f'{status}')
 except clean:
     pass
-os.remove('Theme.tmp') # delete the original file
+if os.path.isfile('Theme.tmp'): os.remove('Theme.tmp') # delete the original file
