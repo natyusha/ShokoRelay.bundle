@@ -71,7 +71,8 @@ class ShokoRelayAgent:
         if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
         # Move common title prefixes to the end of the title (pad with a space)
-        if Prefs['moveCommonTitlePrefixes'] and title.startswith(('Gekijouban ', 'Eiga ', 'OVA ')): title_mod, title = '(Prefix Moved) [LANG]:', (lambda t: t[1] + ' — ' + t[0])(title.split(' ', 1))
+        common_prefixes = r'^(Gekijou ?(?:ban(?: 3D)?|Tanpen|Remix Ban|Henshuuban|Soushuuhen)|Eiga|OVA) (.*$)' # Pattern to match Gekijouban (and several variants), Eiga and OVA
+        if Prefs['moveCommonTitlePrefixes'] and re.match(common_prefixes, title): title_mod, title = '(Prefix Moved) [LANG]:', re.sub(pattern, r'\2 — \1', title)
 
         # Determine the TMDB type
         tmdb_type, tmdb_type_log, tmdb_title = None, '', ''

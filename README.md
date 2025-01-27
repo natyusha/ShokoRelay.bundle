@@ -325,7 +325,7 @@ Due to custom agent limitations certain season names which contain special files
 ### Automatic Title Modification
 **Common Prefixes for Series**  
 When a series starts with a common title prefix it will optionally be moved to the end of the title (for improved alphabetical sorting). A list of the prefixes considered common by the agent are as follows:
-- Gekijouban
+- Gekijouban (and variants)
 - Eiga
 - OVA
 

@@ -89,7 +89,7 @@ def is_running(pid):
 theme_slug, offset, idx = None, 0, 0
 play = local = batch = False
 FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
-slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}(-(bd|web|tv|original))?$', '^\\d$'
+slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}(?:-(?:bd|web|tv|original))?$', '^\\d$'
 
 # define functions for if there are 1, 2 or 3 arguments supplied
 def arg_parse_1(arg1):
