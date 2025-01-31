@@ -344,12 +344,13 @@ In cases where AniDB uses ambiguous episode titles the series title will be used
 > The appended titles will appear after an em dash (**—**) making it easy to search for anything affected by this.
 
 ### TMDB Matching
-If you have TMDB auto links enabled in Shoko you will have access to several features not available otherwise:
-- Plex's default theme song support (using the TvDB ID)
+If you have TMDB auto links enabled in Shoko or simply have a link for a given series, it will have access to several features not available otherwise:
+- Plex's default theme song support (using the TvDB ID provided by TMDB)
 - Fallback for series/episode descriptions and titles (if AniDB is missing that information)
+- Background/backdrop image support as well as additional main series poster options (if available)
 
 With `SingleSeasonOrdering` disabled in the Scanner and Agent the following will also be supported:
-- Season support for long running anime (including posters)
+- Season support for long running anime (including additional posters)
 - Combining multiple Shoko series into a single Plex entry
 - Alternate episode ordering for seasons
 

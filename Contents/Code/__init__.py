@@ -11,7 +11,7 @@ def Start():
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log('===============[Shoko Relay Agent v1.2.25%s]===============' % ordering)
+    Log('===============[Shoko Relay Agent v1.2.26%s]===============' % ordering)
 
 def GetApiKey():
     global API_KEY
@@ -70,7 +70,7 @@ class ShokoRelayAgent:
             if title: break
         if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
 
-        # Move common title prefixes to the end of the title (pad with a space)
+        # Move common title prefixes to the end of the title (padded with an em dash)
         common_prefixes = r'^(Gekijou ?(?:ban(?: 3D)?|Tanpen|Remix Ban|Henshuuban|Soushuuhen)|Eiga|OVA) (.*$)' # Pattern to match Gekijouban (plus several variants), Eiga and OVA
         if Prefs['moveCommonTitlePrefixes'] and re.match(common_prefixes, title): title_mod, title = '(Prefix Moved) [LANG]:', re.sub(common_prefixes, r'\2 — \1', title)
 
