@@ -373,17 +373,14 @@ Using Fairy Tail as an example all of the following series can be safely merged 
 > Only do this when you are happy with the metadata for the series to be merged as you will be unable to correctly refresh it without splitting the series apart first.
 
 **Alternate Episode Ordering**  
-It is quite common for anime to have multiple ways of grouping the episodes into seasons. This includes: DVD/BD ordering, stream site listings or even manga story arcs. If you used Shoko while it still had TvDB support you may find that series in your Plex library are grouping differently than they used to be. Using Bleach as an example you can see that [TMDB](https://www.themoviedb.org/tv/30984-bleach/seasons) doesn't split the original run into seasons while [TvDB](https://thetvdb.com/series/bleach#seasons) does. Fortunately, TMDB's [Episode Groups](https://www.themoviedb.org/tv/30984-bleach/episode_groups) page provides alternate ordering options (often including TvDB's) in case you would like to use one of them instead.
+It is quite common for anime to have multiple ways of grouping the episodes into seasons. This includes: DVD/BD ordering, stream site listings or even manga story arcs. Using Bleach as an example you can see that [TMDB](https://www.themoviedb.org/tv/30984-bleach/seasons) doesn't split the original run into seasons while many people may expect it to. Fortunately, TMDB's [Episode Groups](https://www.themoviedb.org/tv/30984-bleach/episode_groups) page provides several alternate ordering options in case you would like to use one of those instead.
 
-If you have "Download Alternate Ordering" enabled under Shoko's "TMDB Download Options" this can be achieved using Shoko's `/Tmdb/Show/{showID}/Ordering/SetPreferred` v3 API endpoint which is available via [/swagger/](https://docs.shokoanime.com/faq#general).
+In order to select an alternate ordering for a series a few prerequisites must be met:
+- The series must have a TMDB link
+- TMDB's Episode Groups page for the series must have at least one entry
+- "Download Alternate Ordering" must be enabled under Shoko's "TMDB Download Options"
 
-Once you have authenticated with swagger, you can navigate to the previously mentioned endpoint. Using Bleach as an example once again, you would enter `30984` (Bleach's TMDB ID) into the `showID` box. Then you would the set the 16 character `AlternateOrderingID` in the request body to one of the ones available [here](https://www.themoviedb.org/tv/30984-bleach/episode_groups) (both IDs are available from the URL on TMDB). Lastly, click "Execute" and the order will be applied.
-
-```json
-{
-  "AlternateOrderingID": "663fb548c10d4be3e80b2f6d"
-}
-```
+If a series meets the above requirements simply navigate to it and click "Edit Link" (pencil next to the TMDB link) and then "Open Settings" (gear next to the TMDB title). From the now open "TMDB Show Settings" modal simply select the desired ordering and click Save.
 
 > [!NOTE]
 > If you select an alternate order for a series TMDB season posters will no longer be automatically added to Plex as those are only for the default seasons.
