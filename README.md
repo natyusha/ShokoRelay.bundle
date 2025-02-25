@@ -42,6 +42,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 
 ## Changes from Shoko Metadata
 - Uses Shoko's v3 API for fetching metadata and matching files while replacing any TVDB usage with TMDB
+- Completely overhauls the scanner and agent logs to provide more information and ease troubleshooting
 - Allows:
   - Movies and series to be in the same library at once
   - Multi "season" shows matched on TMDB to be merged into a single entry
@@ -304,7 +305,7 @@ When encountering any issues with the scanner or agent, please note that there a
 ### Handling "Stuck" Metadata
 In cases where metadata (generally posters) won't update there is a quick 3 step process to fix it:
 1. Navigate to the series → More "..." Button → Unmatch
-2. Settings → Manage → Troubleshooting → Clean Bundles + Optimize Database
+2. Settings → Manage → Troubleshooting → Clean Bundles
 3. Navigate back to the series → More "..." Button → Match → Select top result
 
 If this somehow still fails then a full [Plex Dance](https://forums.plex.tv/t/the-plex-dance/197064) is likely required.
