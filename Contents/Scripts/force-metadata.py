@@ -99,7 +99,7 @@ for library in cfg.Plex['LibraryNames']:
         failed_list = []
         for series in section.search(title=''):
             print_f(f'│├─Match: {series.title}')
-            relay = series.matches(agent='shokorelay', title=series.title, year='')
+            relay = series.matches(agent='shokorelay', title=(lambda t: (s := t.split(' — '))[1] + ' ' + s[0] if ' — ' in t else t)(series.title), year='') # revert any common title prefix modifications for the match
             try:
                 series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
             except IndexError:
