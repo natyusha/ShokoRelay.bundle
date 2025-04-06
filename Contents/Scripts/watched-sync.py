@@ -6,7 +6,7 @@ import config as cfg
 
 r"""
 Description:
-  - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to Shoko or Shoko to Plex.
+  - This script uses the Python-PlexAPI and Shoko Server to sync watched states from Plex to Shoko or vice versa.
   - If something is marked as watched in Plex it will also be marked as watched in Shoko and AniDB.
   - This was created due to various issues with Plex and Shoko's built in watched status syncing.
       - Primarily, the webhook for syncing requires Plex Pass and does not account for things manually marked as watched.
@@ -28,11 +28,12 @@ Usage:
       - (watched-sync.py 2w) would return results from the last 2 weeks
       - (watched-sync.py 3d) would return results from the last 3 days
   - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
-  - Append the argument "import" (watched-sync.py import) if you want to sync watched states from Shoko to Plex instead.
-      - By default the script will ask for (Y/N) confirmation for each configured Plex user.
-      - This can be bypassed by adding the "force" flag (-f or --force).
+  - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
+      - Append the argument "import" (watched-sync.py import) if you want to sync watched states from Shoko to Plex.
+      - Append the argument "purge" (watched-sync.py purge) if you want to remove all watched states from the configured Plex libraries.
+      - The confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 Behaviour:
-  - Due to the potential for losing a huge amount of data removing watch states has been omitted from this script.
+  - Due to the potential for losing a huge amount of data, removing watch states from Plex has been omitted from this script unless "purge" mode is used.
 """
 
 sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
@@ -44,16 +45,17 @@ def print_f(text): print(text, flush=True)
 # relative date regex definition and import check for argument type
 def arg_parse(arg):
     arg = arg.lower()
-    if not re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', arg) and arg != 'import':
-        raise argparse.ArgumentTypeError('invalid range or import')
+    if not re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', arg) and not re.match('(?:import|purge)', arg):
+        raise argparse.ArgumentTypeError('invalid range, import or purge')
     return arg
 
 # check the arguments if the user is looking to use a relative date or not
-parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: By default "import" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=RawTextHelpFormatter)
-parser.add_argument('relative_date', metavar='range | import', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"')
-parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing')
-relative_date, shoko_import, force_import = parser.parse_args().relative_date, False, parser.parse_args().force
+parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: "import" and "purge" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=RawTextHelpFormatter)
+parser.add_argument('relative_date', metavar='range | import | purge', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
+parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing or purging')
+relative_date, shoko_import, plex_purge, force = parser.parse_args().relative_date, False, False, parser.parse_args().force
 if relative_date == 'import': relative_date, shoko_import = '999y', True
+if relative_date == 'purge':  plex_purge = True
 
 # authenticate and connect to the Plex server/library specified
 try:
@@ -75,15 +77,16 @@ if cfg.Plex['ExtraUsers']:
     except Exception as error: # if the extra users can't be found show an error and continue
         print(f'{error_prefix}Failed:', error)
 
-# grab a Shoko API key using the credentials from the prefs
-try:
-    auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
-except Exception:
-    print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
-    exit(1)
-if 'status' in auth and auth['status'] in (400, 401):
-    print(f'{error_prefix}Failed: Shoko Credentials Invalid')
-    exit(1)
+# grab a Shoko API key using the credentials from the prefs (whenn ot purging)
+if not plex_purge:
+    try:
+        auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
+    except Exception:
+        print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
+        exit(1)
+    if 'status' in auth and auth['status'] in (400, 401):
+        print(f'{error_prefix}Failed: Shoko Credentials Invalid')
+        exit(1)
 
 # loop through all of the accounts listed and sync watched states
 print_f('\n╭Shoko Relay Watched Sync')
@@ -97,13 +100,14 @@ if shoko_import:
 
 for account in accounts:
     # if importing ask the user to confirm syncing for each username
-    if shoko_import and force_import == False:
+    if (shoko_import or plex_purge) and force == False:
         class SkipUser(Exception): pass # label for skipping users via input
         try:
             while True:
-                import_confirmation = input(f'├──Would you like to import Shoko watched states to: {account} (Y/N) ')
-                if   import_confirmation.lower() == 'y': break
-                elif import_confirmation.lower() == 'n': raise SkipUser()
+                query = 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
+                confirmation = input(f'├──Would you like to {query}: {account} (Y/N) ')
+                if   confirmation.lower() == 'y': break
+                elif confirmation.lower() == 'n': raise SkipUser()
                 else: print(f'{error_prefix}───Please enter "Y" or "N"')
         except SkipUser: continue
 
@@ -130,6 +134,9 @@ for account in accounts:
                     if filepath in watched_episodes: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played
                         episode.markPlayed()
                         print_f(f'│├─Importing: {filepath}')
+        elif plex_purge:
+            print_f(f'│├─Clearing watched states...')
+            for episode in section.searchEpisodes(unwatched=False): episode.markUnplayed()
         else:
             # loop through all the watched episodes in the Plex library within the time frame of the relative date
             for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
