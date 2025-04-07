@@ -77,7 +77,7 @@ if cfg.Plex['ExtraUsers']:
     except Exception as error: # if the extra users can't be found show an error and continue
         print(f'{error_prefix}Failed:', error)
 
-# grab a Shoko API key using the credentials from the prefs (whenn ot purging)
+# grab a Shoko API key using the credentials from the prefs (when not purging)
 if not plex_purge:
     try:
         auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
