@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-from argparse import RawTextHelpFormatter
 from common import print_f, plex_auth
-from plexapi.myplex import MyPlexAccount
 import argparse
 import config as cfg
 import common as cmn
@@ -38,7 +36,7 @@ Behaviour:
 """
 
 # check the arguments if the user is looking to run a full clean or not
-parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly.', formatter_class=RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('full_clean', metavar='full', choices=['full'], nargs='?', type=str.lower, help='If you want to do a time consuming full metadata clean up.\n*must be the sole argument and is simply entered as "full"')
 full_clean = True if parser.parse_args().full_clean == 'full' else False
 
@@ -50,7 +48,7 @@ for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
     except Exception as error:
-        print(f'├{cmn.error_prefix}Failed', error)
+        print(f'├{cmn.err}Failed', error)
         continue
 
     ## if running a full scan execute the next 3 steps
@@ -85,7 +83,7 @@ for library in cfg.Plex['LibraryNames']:
             try:
                 series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
             except IndexError:
-                print_f(f'│├{cmn.error_prefix}Failed: {series.title}') # print titles of things which failed to match
+                print_f(f'│├{cmn.err}Failed: {series.title}') # print titles of things which failed to match
                 failed_list.append(series.title)
         input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
 

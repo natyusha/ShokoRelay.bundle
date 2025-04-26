@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from argparse import RawTextHelpFormatter
 from common import print_f, shoko_auth
 import os, re, sys, json, time, urllib, argparse, requests, subprocess
 import config as cfg
@@ -124,7 +123,7 @@ def arg_parse_3(arg3): # there is only a single possible format if there are thr
     return arg3
 
 # check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
-parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2", "op1-tv" and so on\n\n')
 parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*must be the second argument if the slug is provided\n\n')
 parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n*without other arguments local "Theme.mp3" files will be prioritised\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')

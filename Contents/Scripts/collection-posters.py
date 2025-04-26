@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-from argparse import RawTextHelpFormatter
 from common import print_f, plex_auth, shoko_auth
-from plexapi.myplex import MyPlexAccount
 import os, re, urllib, argparse, requests
 import config as cfg
 import common as cmn
@@ -37,7 +35,7 @@ file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif' 
 file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
 
 # check the arguments if the user is looking to clean posters or not
-parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
 clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
 
@@ -49,7 +47,7 @@ for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
     except Exception as error:
-        print(f'├{cmn.error_prefix}Failed', error)
+        print(f'├{cmn.err}Failed', error)
         continue
 
     # if the user is looking to clean posters
@@ -65,7 +63,7 @@ for library in cfg.Plex['LibraryNames']:
                         os.remove(os.path.join(posters_path, poster))
             print_f('│╰─Finished!')
         except Exception as error:
-            print(f'│├{cmn.error_prefix}Failed', error)
+            print(f'│├{cmn.err}Failed', error)
     else:
         shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
@@ -76,7 +74,7 @@ for library in cfg.Plex['LibraryNames']:
                 for file in os.listdir(cfg.Plex['PostersFolder']):
                     if file.lower().endswith(file_formats): user_posters.append(file) # check image files regardless of case
             except Exception as error:
-                print(f'╰{cmn.error_prefix}Failed', error)
+                print(f'╰{cmn.err}Failed', error)
                 exit(1)
 
         print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
@@ -96,7 +94,7 @@ for library in cfg.Plex['LibraryNames']:
                             fallback = False # don't fallback to the Shoko group if user poster found
                             continue
                 except Exception as error:
-                    print(f'│├{cmn.error_prefix}──Failed', error)
+                    print(f'│├{cmn.err}──Failed', error)
 
             # fallback to Shoko group posters if no user defined poster
             if fallback:
@@ -107,6 +105,6 @@ for library in cfg.Plex['LibraryNames']:
                     print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
                 except:
-                    print(f'│├{cmn.error_prefix}──Failed: No Shoko Group → {collection.title}')
+                    print(f'│├{cmn.err}──Failed: No Shoko Group → {collection.title}')
         print_f('│╰─Finished!')
 print_f('╰Posters Task Complete')

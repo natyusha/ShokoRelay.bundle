@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from argparse import RawTextHelpFormatter
 from common import print_f, plex_auth, shoko_auth
 from plexapi.myplex import MyPlexAccount
 import os, re, urllib, argparse, requests
@@ -46,7 +45,7 @@ def arg_parse(arg):
     return arg
 
 # check the arguments if the user is looking to use a relative date or not
-parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: "import" and "purge" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: "import" and "purge" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('relative_date', metavar='range | import | purge', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing or purging')
 relative_date, shoko_import, plex_purge, force = parser.parse_args().relative_date, False, False, parser.parse_args().force
@@ -63,7 +62,7 @@ if cfg.Plex['ExtraUsers']:
         data = [admin.query(f'https://plex.tv/api/home/users/{user.id}/switch', method=admin._session.post) for user in extra_users]
         for userID in data: accounts.append(MyPlexAccount(token=userID.attrib.get('authenticationToken')))
     except Exception as error: # if the extra users can't be found show an error and continue
-        print(f'{cmn.error_prefix}Failed:', error)
+        print(f'{cmn.err}Failed:', error)
 
 if not plex_purge: shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function (when not purging)
 
@@ -87,13 +86,13 @@ for account in accounts:
                 confirmation = input(f'├──Would you like to {query}: {account} (Y/N) ')
                 if   confirmation.lower() == 'y': break
                 elif confirmation.lower() == 'n': raise SkipUser()
-                else: print(f'{cmn.error_prefix}───Please enter "Y" or "N"')
+                else: print(f'{cmn.err}───Please enter "Y" or "N"')
         except SkipUser: continue
 
     try:
         plex = account.resource(cfg.Plex['ServerName']).connect()
-    except Exception:
-        print(f'╰{cmn.error_prefix}Failed: Server Name Not Found')
+    except Exception as error:
+        print(f'╰{cmn.err}Failed:', error)
         exit(1)
 
     # loop through the configured libraries
@@ -102,7 +101,7 @@ for account in accounts:
         try:
             section = plex.library.section(library)
         except Exception as error:
-            print(f'│{cmn.error_prefix}─Failed', error)
+            print(f'│{cmn.err}─Failed', error)
             continue
 
         # if importing loop through all the unwatched episodes in the Plex library
@@ -128,6 +127,6 @@ for account in accounts:
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
                     except Exception:
-                        print(f'│├{cmn.error_prefix}─Failed: Make sure that "{filepath}" is matched by Shoko')
+                        print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
         print_f('│╰─Finished!')
 print('╰Watched Sync Complete')
