@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from argparse import RawTextHelpFormatter
+from common import print_f, plex_auth
 from plexapi.myplex import MyPlexAccount
-import sys, argparse
+import argparse
 import config as cfg
+import common as cmn
 
 r"""
 Description:
@@ -35,32 +37,12 @@ Behaviour:
   - All Smart Collections are ignored as they are not managed by Shoko Relay
 """
 
-sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
-error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
-
-# unbuffered print command to allow the user to see progress immediately
-def print_f(text): print(text, flush=True)
-
 # check the arguments if the user is looking to run a full clean or not
 parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly.', formatter_class=RawTextHelpFormatter)
 parser.add_argument('full_clean', metavar='full', choices=['full'], nargs='?', type=str.lower, help='If you want to do a time consuming full metadata clean up.\n*must be the sole argument and is simply entered as "full"')
 full_clean = True if parser.parse_args().full_clean == 'full' else False
 
-# authenticate and connect to the Plex server/library specified
-try:
-    if cfg.Plex['X-Plex-Token']:
-        admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
-    else:
-        admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
-except Exception:
-    print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
-    exit(1)
-
-try:
-    plex = admin.resource(cfg.Plex['ServerName']).connect()
-except Exception:
-    print(f'{error_prefix}Failed: Server Name Not Found')
-    exit(1)
+plex = plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
 # loop through the configured libraries
 print_f('\n╭Shoko Relay: Force Plex Metadata')
@@ -68,7 +50,7 @@ for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
     except Exception as error:
-        print(f'├{error_prefix}Failed', error)
+        print(f'├{cmn.error_prefix}Failed', error)
         continue
 
     ## if running a full scan execute the next 3 steps
@@ -103,7 +85,7 @@ for library in cfg.Plex['LibraryNames']:
             try:
                 series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
             except IndexError:
-                print_f(f'│├{error_prefix}Failed: {series.title}') # print titles of things which failed to match
+                print_f(f'│├{cmn.error_prefix}Failed: {series.title}') # print titles of things which failed to match
                 failed_list.append(series.title)
         input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
 

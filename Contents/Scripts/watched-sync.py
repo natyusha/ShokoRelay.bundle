@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from argparse import RawTextHelpFormatter
+from common import print_f, plex_auth, shoko_auth
 from plexapi.myplex import MyPlexAccount
-import os, re, sys, urllib, argparse, requests
+import os, re, urllib, argparse, requests
 import config as cfg
+import common as cmn
 
 r"""
 Description:
@@ -36,12 +38,6 @@ Behaviour:
   - Due to the potential for losing a huge amount of data, removing watch states from Plex has been omitted from this script unless "purge" mode is used.
 """
 
-sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
-error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
-
-# unbuffered print command to allow the user to see progress immediately
-def print_f(text): print(text, flush=True)
-
 # relative date regex definition and import check for argument type
 def arg_parse(arg):
     arg = arg.lower()
@@ -57,15 +53,7 @@ relative_date, shoko_import, plex_purge, force = parser.parse_args().relative_da
 if relative_date == 'import': relative_date, shoko_import = '999y', True
 if relative_date == 'purge':  plex_purge = True
 
-# authenticate and connect to the Plex server/library specified
-try:
-    if cfg.Plex['X-Plex-Token']:
-        admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
-    else:
-        admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
-except Exception:
-    print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
-    exit(1)
+admin = plex_auth(connect=False) # authenticate to the Plex server/library specified using the credentials from the prefs and the common auth function
 
 # add the admin account to a list (if it is enabled) then append any other users to it
 accounts = [admin] if cfg.Plex['SyncAdmin'] else []
@@ -75,18 +63,9 @@ if cfg.Plex['ExtraUsers']:
         data = [admin.query(f'https://plex.tv/api/home/users/{user.id}/switch', method=admin._session.post) for user in extra_users]
         for userID in data: accounts.append(MyPlexAccount(token=userID.attrib.get('authenticationToken')))
     except Exception as error: # if the extra users can't be found show an error and continue
-        print(f'{error_prefix}Failed:', error)
+        print(f'{cmn.error_prefix}Failed:', error)
 
-# grab a Shoko API key using the credentials from the prefs (when not purging)
-if not plex_purge:
-    try:
-        auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
-    except Exception:
-        print(f'{error_prefix}Failed: Unable to Connect to Shoko Server')
-        exit(1)
-    if 'status' in auth and auth['status'] in (400, 401):
-        print(f'{error_prefix}Failed: Shoko Credentials Invalid')
-        exit(1)
+if not plex_purge: shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function (when not purging)
 
 # loop through all of the accounts listed and sync watched states
 print_f('\n╭Shoko Relay Watched Sync')
@@ -94,7 +73,7 @@ print_f('\n╭Shoko Relay Watched Sync')
 if shoko_import:
     print_f(f'├─Generating: Shoko Watched Episode List...')
     watched_episodes = []
-    shoko_watched = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=only&includeFiles=true&apikey={auth["apikey"]}').json()
+    shoko_watched = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=only&includeFiles=true&apikey={shoko_key}').json()
     for file in shoko_watched['List']:
         watched_episodes.append(os.path.basename(file['Files'][0]['Locations'][0]['RelativePath']))
 
@@ -108,13 +87,13 @@ for account in accounts:
                 confirmation = input(f'├──Would you like to {query}: {account} (Y/N) ')
                 if   confirmation.lower() == 'y': break
                 elif confirmation.lower() == 'n': raise SkipUser()
-                else: print(f'{error_prefix}───Please enter "Y" or "N"')
+                else: print(f'{cmn.error_prefix}───Please enter "Y" or "N"')
         except SkipUser: continue
 
     try:
         plex = account.resource(cfg.Plex['ServerName']).connect()
     except Exception:
-        print(f'╰{error_prefix}Failed: Server Name Not Found')
+        print(f'╰{cmn.error_prefix}Failed: Server Name Not Found')
         exit(1)
 
     # loop through the configured libraries
@@ -123,7 +102,7 @@ for account in accounts:
         try:
             section = plex.library.section(library)
         except Exception as error:
-            print(f'│{error_prefix}─Failed', error)
+            print(f'│{cmn.error_prefix}─Failed', error)
             continue
 
         # if importing loop through all the unwatched episodes in the Plex library
@@ -142,13 +121,13 @@ for account in accounts:
             for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
                 for episode_path in episode.iterParts():
                     filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
-                    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={auth["apikey"]}').json()
+                    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
                     try:
                         if path_ends_with[0]['Watched'] == None:
                             print_f(f'│├─Relaying: {filepath} → {episode.title}')
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
-                                requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={auth["apikey"]}')
+                                requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
                     except Exception:
-                        print(f'│├{error_prefix}─Failed: Make sure that "{filepath}" is matched by Shoko')
+                        print(f'│├{cmn.error_prefix}─Failed: Make sure that "{filepath}" is matched by Shoko')
         print_f('│╰─Finished!')
 print('╰Watched Sync Complete')

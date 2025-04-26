@@ -72,7 +72,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 ## Utility Scripts
 Shoko Relay includes several utility / automation scripts which can help to quickly add full length theme songs, automatic collection posters, correct negative season numbers, synced watched states, and more.
 
-The scripts require basic knowledge of running Python and other simple commands in a terminal. They are located in the `.\Contents\Scripts` folder inside `ShokoRelay.bundle` and can be moved to whatever location is convenient for the user (as long as the `config.py` file is kept in the same folder).
+The scripts require basic knowledge of running Python and other simple commands in a terminal. They are located in the `.\Contents\Scripts` folder inside `ShokoRelay.bundle` and can be moved to whatever location is convenient for the user (as long as the `config.py` and `common.py` files are kept in the same folder).
 
 For ease of use, adding the Scripts folder to the **[PATH](https://en.wikipedia.org/wiki/PATH_(variable))** is also recommended.
 

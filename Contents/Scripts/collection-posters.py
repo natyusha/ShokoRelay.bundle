@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from argparse import RawTextHelpFormatter
+from common import print_f, plex_auth, shoko_auth
 from plexapi.myplex import MyPlexAccount
-import os, re, sys, urllib, argparse, requests
+import os, re, urllib, argparse, requests
 import config as cfg
+import common as cmn
 
 r"""
 Description:
@@ -34,32 +36,12 @@ file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif' 
 # characters to replace in the collection name when comparing it to the filename using regex substitution
 file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
 
-sys.stdout.reconfigure(encoding='utf-8') # allow unicode characters in print
-error_prefix = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
-
-# unbuffered print command to allow the user to see progress immediately
-def print_f(text): print(text, flush=True)
-
 # check the arguments if the user is looking to clean posters or not
 parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=RawTextHelpFormatter)
 parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
 clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
 
-# authenticate and connect to the Plex server/library specified
-try:
-    if cfg.Plex['X-Plex-Token']:
-        admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
-    else:
-        admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
-except Exception:
-    print(f'{error_prefix}Failed: Plex Credentials Invalid or Server Offline')
-    exit(1)
-
-try:
-    plex = admin.resource(cfg.Plex['ServerName']).connect()
-except Exception:
-    print(f'{error_prefix}Failed: Server Name Not Found')
-    exit(1)
+plex = plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
 # loop through the configured libraries
 print_f('\n╭Shoko Relay: Collection Posters')
@@ -67,7 +49,7 @@ for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
     except Exception as error:
-        print(f'├{error_prefix}Failed', error)
+        print(f'├{cmn.error_prefix}Failed', error)
         continue
 
     # if the user is looking to clean posters
@@ -83,17 +65,9 @@ for library in cfg.Plex['LibraryNames']:
                         os.remove(os.path.join(posters_path, poster))
             print_f('│╰─Finished!')
         except Exception as error:
-            print(f'│├{error_prefix}Failed', error)
+            print(f'│├{cmn.error_prefix}Failed', error)
     else:
-        # grab a Shoko API key using the credentials from the prefs
-        try:
-            auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
-        except Exception:
-            print(f'╰{error_prefix}Failed: Unable to Connect to Shoko Server')
-            exit(1)
-        if 'status' in auth and auth['status'] in (400, 401):
-            print(f'╰{error_prefix}Failed: Shoko Credentials Invalid')
-            exit(1)
+        shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
         # make a list of all the user defined collection posters (if any)
         if cfg.Plex['PostersFolder']:
@@ -102,7 +76,7 @@ for library in cfg.Plex['LibraryNames']:
                 for file in os.listdir(cfg.Plex['PostersFolder']):
                     if file.lower().endswith(file_formats): user_posters.append(file) # check image files regardless of case
             except Exception as error:
-                print(f'╰{error_prefix}Failed', error)
+                print(f'╰{cmn.error_prefix}Failed', error)
                 exit(1)
 
         print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
@@ -122,17 +96,17 @@ for library in cfg.Plex['LibraryNames']:
                             fallback = False # don't fallback to the Shoko group if user poster found
                             continue
                 except Exception as error:
-                    print(f'│├{error_prefix}──Failed', error)
+                    print(f'│├{cmn.error_prefix}──Failed', error)
 
             # fallback to Shoko group posters if no user defined poster
             if fallback:
                 try:
-                    group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={auth["apikey"]}').json()
+                    group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={shoko_key}').json()
                     shoko_poster = group_search['List'][0]['Images']['Posters'][0]
                     poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/{shoko_poster["Source"]}/Poster/{shoko_poster["ID"]}'
                     print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
                 except:
-                    print(f'│├{error_prefix}──Failed: No Shoko Group → {collection.title}')
+                    print(f'│├{cmn.error_prefix}──Failed: No Shoko Group → {collection.title}')
         print_f('│╰─Finished!')
 print_f('╰Posters Task Complete')
