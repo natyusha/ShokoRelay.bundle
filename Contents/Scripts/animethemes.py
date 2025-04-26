@@ -140,7 +140,7 @@ if local == True and os.path.isfile('Theme.mp3'):
     try:
         local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
     except Exception as error:
-        print(f'{cmn.error_prefix}──FFProbe Failed\n  ', error)
+        print(f'{cmn.err}──FFProbe Failed\n  ', error)
     print_f(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
     print_f(f'│╰─Source: {local_metadata.get('album', '???')}')
 else:
@@ -157,13 +157,13 @@ else:
     files = []
     for file in os.listdir('.'):
         if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
-            print(f'{cmn.error_prefix}─Skipped: Theme.mp3 already exists in {folder}')
+            print(f'{cmn.err}─Skipped: Theme.mp3 already exists in {folder}')
             exit(1)
         if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
     try:
         filepath = folder + files[0] # add the base folder name to the filename in case of duplicate filenames
     except Exception:
-        print(f'{cmn.error_prefix}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
+        print(f'{cmn.err}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
         exit(1)
     print_f('├┬Shoko')
     print_f(f'│├─File: {filepath}')
@@ -172,7 +172,7 @@ else:
     try:
         anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
     except Exception as error:
-        print(f'{cmn.error_prefix}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
+        print(f'{cmn.err}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
         exit(1)
     print_f(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
 
@@ -190,7 +190,7 @@ else:
             anime_name = anime['anime'][offset]['name']
             anime_slug = anime['anime'][offset]['slug']
         except Exception as error:
-            print(f'{cmn.error_prefix}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
+            print(f'{cmn.err}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
             exit(1)
         print_f(f'│├─Title: {anime_name}')
         print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
@@ -202,7 +202,7 @@ else:
             animethemeID = anime['anime'][offset]['animethemes'][idx]['id']
             slug = anime['anime'][offset]['animethemes'][idx]['slug']
         except Exception as error:
-            print(f'{cmn.error_prefix}──Failed: Enter a valid argument\n', error)
+            print(f'{cmn.err}──Failed: Enter a valid argument\n', error)
             exit(1)
 
     ## grab first video id from anime theme id above (also make it easy to retrofit this script into a video downloader)
@@ -216,7 +216,7 @@ else:
         try:
             videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
         except Exception as error:
-            print(f'{cmn.error_prefix}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
+            print(f'{cmn.err}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
             exit(1)
         if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
             artist_display = f' by {artist_name}'
@@ -230,7 +230,7 @@ else:
         try:
             audioURL = video['videos'][0]['audio']['link']
         except Exception as error:
-            print(f'{cmn.error_prefix}──Failed: Audio URL not found\n', error)
+            print(f'{cmn.err}──Failed: Audio URL not found\n', error)
             exit(1)
     print_f('├┬Downloading...')
 
@@ -245,7 +245,7 @@ else:
     try:
         urllib.request.urlretrieve(audioURL, 'Theme.tmp', reporthook=progress)
     except Exception as error:
-        print(f'{cmn.error_prefix}──Failed: Download Incomplete\n', error)
+        print(f'{cmn.err}──Failed: Download Incomplete\n', error)
         exit(1)
     print_f('')
 
@@ -258,7 +258,7 @@ try:
         duration = int(float(subprocess.run(f'ffprobe -i {media} -show_entries format=duration -v quiet -of csv="p=0"', capture_output=True).stdout)) # find the duration of the song
         if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
-        print(f'{cmn.error_prefix}──FFProbe Failed\n  ', error)
+        print(f'{cmn.err}──FFProbe Failed\n  ', error)
         raise clean()
 
     # if ffplay is enabled playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
@@ -266,7 +266,7 @@ try:
         try:
             ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} {media}', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
         except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
-            print(f'{cmn.error_prefix}──FFPlay Failed\n │', error)
+            print(f'{cmn.err}──FFPlay Failed\n │', error)
 
     # escape double quotes for titles/artists/albums which contain them
     def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
@@ -286,7 +286,7 @@ try:
             subprocess.run(f'ffmpeg -i {media} -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
             status = ' ╰─Finished! '
         except Exception as error:
-            print(f' {cmn.error_prefix}─FFmpeg Failed\n  ', error)
+            print(f' {cmn.err}─FFmpeg Failed\n  ', error)
             status = ' Failed! '
     else:
         print_f('╰┬Playing...')
