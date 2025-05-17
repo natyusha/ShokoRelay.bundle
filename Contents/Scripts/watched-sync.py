@@ -47,8 +47,9 @@ def arg_parse(arg):
 # check the arguments if the user is looking to use a relative date or not
 parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: "import" and "purge" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('relative_date', metavar='range | import | purge', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
+parser.add_argument('-v', '--votes', action='store_true', help='include user votes/ratings when syncing, importing or purging')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing or purging')
-relative_date, shoko_import, plex_purge, force = parser.parse_args().relative_date, False, False, parser.parse_args().force
+relative_date, shoko_import, plex_purge, votes, force = parser.parse_args().relative_date, False, False, parser.parse_args().votes, parser.parse_args().force
 if relative_date == 'import': relative_date, shoko_import = '999y', True
 if relative_date == 'purge':  plex_purge = True
 
@@ -70,11 +71,13 @@ if not plex_purge: shoko_key = shoko_auth() # grab a Shoko API key using the cre
 print_f('\n╭Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
 if shoko_import:
-    print_f(f'├─Generating: Shoko Watched Episode List...')
-    watched_episodes = []
-    shoko_watched = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=only&includeFiles=true&apikey={shoko_key}').json()
-    for file in shoko_watched['List']:
-        watched_episodes.append(os.path.basename(file['Files'][0]['Locations'][0]['RelativePath']))
+    print_f(f'├─Generating: Shoko Episode List...')
+    watched_eps, voted_eps = [], {}
+    throttle = '' if votes else '&includeWatched=only' # limit the files to watched ones only if votes aren't enbabled
+    episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1{throttle}&includeFiles=true&apikey={shoko_key}').json()
+    for episode in episodes['List']:
+        if episode['Watched']: watched_eps.append(os.path.basename(episode['Files'][0]['Locations'][0]['RelativePath']))
+        if votes and episode['UserRating']: voted_eps[os.path.basename(episode['Files'][0]['Locations'][0]['RelativePath'])] = episode['UserRating']['Value']
 
 for account in accounts:
     # if importing ask the user to confirm syncing for each username
@@ -82,7 +85,7 @@ for account in accounts:
         class SkipUser(Exception): pass # label for skipping users via input
         try:
             while True:
-                query = 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
+                query = 'import Shoko watched states and votes to' if votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
                 confirmation = input(f'├──Would you like to {query}: {account} (Y/N) ')
                 if   confirmation.lower() == 'y': break
                 elif confirmation.lower() == 'n': raise SkipUser()
@@ -104,17 +107,28 @@ for account in accounts:
             print(f'│{cmn.err}─Failed', error)
             continue
 
-        # if importing loop through all the unwatched episodes in the Plex library
-        if shoko_import:
+        # if importing loop through all the episodes in the Plex library
+        if shoko_import: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played
             for episode in section.searchEpisodes(unwatched=True):
                 for episode_path in episode.iterParts():
                     filepath = os.path.basename(episode_path.file)
-                    if filepath in watched_episodes: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played
+                    if filepath in watched_eps:
                         episode.markPlayed()
                         print_f(f'│├─Importing: {filepath}')
+            if votes: # if a rated episode's filename in Plex is found in Shoko's voted episodes list update the rating
+                for episode in section.searchEpisodes():
+                    for episode_path in episode.iterParts():
+                        filepath = os.path.basename(episode_path.file)
+                        if filepath in voted_eps:
+                            vote = voted_eps[filepath]
+                            episode.rate(vote)
+                            print_f(f'│├─Rating [{vote:04.1f}]: {filepath}')
         elif plex_purge:
             print_f(f'│├─Clearing watched states...')
             for episode in section.searchEpisodes(unwatched=False): episode.markUnplayed()
+            if votes:
+                print_f(f'│├─Clearing ratings...')
+                for episode in section.searchEpisodes(filters={'userRating>>': 0}): episode.rate(None)
         else:
             # loop through all the watched episodes in the Plex library within the time frame of the relative date
             for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
@@ -128,5 +142,16 @@ for account in accounts:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
                     except Exception:
                         print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
+            if votes: # loop through all the rated episodes in the Plex library if votes are enabled
+                for episode in section.searchEpisodes(filters={'userRating>>': 0}):
+                    for episode_path in episode.iterParts():
+                        filepath, rating = os.path.sep + os.path.basename(episode_path.file), episode.userRating # add a path separator to the filename to avoid duplicate matches
+                        path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
+                        try:
+                            print_f(f'│├─Voting [{rating:04.1f}]: {filepath} → {episode.title}')
+                            for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
+                                requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Vote?apikey={shoko_key}', json={'Value': rating})
+                        except Exception:
+                            print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
         print_f('│╰─Finished!')
 print('╰Watched Sync Complete')
