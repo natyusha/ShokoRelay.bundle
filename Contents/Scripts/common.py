@@ -13,6 +13,9 @@ err = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # unbuffered print command to allow the user to see progress immediately
 def print_f(text): print(text, flush=True)
 
+# revert common series title prefix modifications in plex
+def revert_title(t): return (s := t.split(' — '))[1] + ' ' + s[0] if ' — ' in t else t
+
 # grab a Shoko API key using the credentials from the prefs
 def shoko_auth():
     try:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from common import print_f, plex_auth, shoko_auth
+from common import print_f, plex_auth, shoko_auth, revert_title
 from plexapi.myplex import MyPlexAccount
 import os, re, urllib, argparse, requests
 import config as cfg
@@ -72,12 +72,16 @@ print_f('\n╭Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
 if shoko_import:
     print_f(f'├─Generating: Shoko Episode List...')
-    watched_eps, voted_eps = [], {}
+    watched_eps, voted_eps, voted_series = [], {}, {}
     throttle = '' if votes else '&includeWatched=only' # limit the files to watched ones only if votes aren't enbabled
     episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1{throttle}&includeFiles=true&apikey={shoko_key}').json()
+    series   = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series?pageSize=0&page=1&apikey={shoko_key}').json() if votes else None
     for episode in episodes['List']:
         if episode['Watched']: watched_eps.append(os.path.basename(episode['Files'][0]['Locations'][0]['RelativePath']))
         if votes and episode['UserRating']: voted_eps[os.path.basename(episode['Files'][0]['Locations'][0]['RelativePath'])] = episode['UserRating']['Value']
+    if votes:      
+        for series in series['List']:
+            if series['UserRating']: voted_series[series['Name']] = series['UserRating']['Value']
 
 for account in accounts:
     # if importing ask the user to confirm syncing for each username
@@ -115,20 +119,27 @@ for account in accounts:
                     if filepath in watched_eps:
                         episode.markPlayed()
                         print_f(f'│├─Importing: {filepath}')
-            if votes: # if a rated episode's filename in Plex is found in Shoko's voted episodes list update the rating
-                for episode in section.searchEpisodes():
+            if votes:
+                for episode in section.searchEpisodes(): # if a rated episode's filename in Plex is found in Shoko's voted episodes list update the rating
                     for episode_path in episode.iterParts():
                         filepath = os.path.basename(episode_path.file)
                         if filepath in voted_eps:
                             vote = voted_eps[filepath]
                             episode.rate(vote)
-                            print_f(f'│├─Rating [{vote:04.1f}]: {filepath}')
+                            print_f(f'│├─Rating Episode [{vote:04.1f}]: {filepath}')
+                for series in section.search(title=''): # if a rated series name is found in Shoko's voted series list update the rating
+                    title = revert_title(series.title) # revert any common title prefix modifications for the match
+                    if title in voted_series:
+                        vote = voted_series[title]
+                        series.rate(vote)
+                        print_f(f'│├─Rating Series [{vote:04.1f}]: {title}')
         elif plex_purge:
             print_f(f'│├─Clearing watched states...')
             for episode in section.searchEpisodes(unwatched=False): episode.markUnplayed()
             if votes:
                 print_f(f'│├─Clearing ratings...')
                 for episode in section.searchEpisodes(filters={'userRating>>': 0}): episode.rate(None)
+                for series in section.search(filters={'userRating>>': 0}): series.rate(None)
         else:
             # loop through all the watched episodes in the Plex library within the time frame of the relative date
             for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
@@ -142,16 +153,21 @@ for account in accounts:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
                     except Exception:
                         print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
-            if votes: # loop through all the rated episodes in the Plex library if votes are enabled
-                for episode in section.searchEpisodes(filters={'userRating>>': 0}):
+            if votes:
+                for episode in section.searchEpisodes(filters={'userRating>>': 0}): # loop through all the rated episodes in the Plex library if votes are enabled
                     for episode_path in episode.iterParts():
                         filepath, rating = os.path.sep + os.path.basename(episode_path.file), episode.userRating # add a path separator to the filename to avoid duplicate matches
                         path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
                         try:
-                            print_f(f'│├─Voting [{rating:04.1f}]: {filepath} → {episode.title}')
+                            print_f(f'│├─Voting Episode [{rating:04.1f}]: {filepath} → {episode.title}')
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Vote?apikey={shoko_key}', json={'Value': rating})
                         except Exception:
                             print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
+                for series in section.search(filters={'userRating>>': 0}): # sync series level ratings
+                    rating, title = series.userRating, revert_title(series.title) # revert any common title prefix modifications for the match
+                    series_starts_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/StartsWith/{title}?limit=2147483647&apikey={shoko_key}').json()
+                    print_f(f'│├─Voting Series[{rating:04.1f}]: {title}')
+                    requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/{series_starts_with[0]['IDs']['ID']}/Vote?apikey={shoko_key}', json={'Value': rating})
         print_f('│╰─Finished!')
 print('╰Watched Sync Complete')
