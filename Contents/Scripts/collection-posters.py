@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common import print_f, plex_auth, shoko_auth
 import os, re, urllib, argparse, requests
 import config as cfg
 import common as cmn
@@ -39,10 +38,10 @@ parser = argparse.ArgumentParser(description='Set Plex collection posters to use
 parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
 clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
 
-plex = plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
+plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
 # loop through the configured libraries
-print_f('\n╭Shoko Relay: Collection Posters')
+print('\n╭Shoko Relay: Collection Posters')
 for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
@@ -52,20 +51,20 @@ for library in cfg.Plex['LibraryNames']:
 
     # if the user is looking to clean posters
     if clean_posters:
-        print_f(f'├┬Removing Posters @ {cfg.Plex["ServerName"]}/{library}')
+        print(f'├┬Removing Posters @ {cfg.Plex["ServerName"]}/{library}')
         try:
             for collection in section.collections():
                 # check for multiple custom posters and delete the oldest ones
                 if len(collection.posters()) > 2:
                     posters_path = os.path.join(cfg.Plex['DataFolder'], collection.metadataDirectory, 'Uploads', 'posters')
                     for poster in sorted(os.listdir(posters_path), key=lambda poster: os.path.getctime(os.path.join(posters_path, poster)))[:-1]: # list all but the newest poster
-                        print_f(f'│├─Removing: {collection.title} → {poster}')
+                        print(f'│├─Removing: {collection.title} → {poster}')
                         os.remove(os.path.join(posters_path, poster))
-            print_f('│╰─Finished!')
+            print('│╰─Finished!')
         except Exception as error:
             print(f'│├{cmn.err}Failed', error)
     else:
-        shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
+        shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
         # make a list of all the user defined collection posters (if any)
         if cfg.Plex['PostersFolder']:
@@ -77,7 +76,7 @@ for library in cfg.Plex['LibraryNames']:
                 print(f'╰{cmn.err}Failed', error)
                 exit(1)
 
-        print_f(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
+        print(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
         # loop through Plex collections grabbing their names to compare to Shoko's group names and user defined poster names
         for collection in section.collections():
             # check for user defined posters first
@@ -89,7 +88,7 @@ for library in cfg.Plex['LibraryNames']:
                         for key in file_formatting:
                             tile_formatted = re.sub(key, '', tile_formatted)
                         if os.path.splitext(user_poster)[0] == tile_formatted:
-                            print_f(f'│├─Relaying: {user_poster} → {collection.title}')
+                            print(f'│├─Relaying: {user_poster} → {collection.title}')
                             collection.uploadPoster(filepath=os.path.join(cfg.Plex['PostersFolder'], user_poster))
                             fallback = False # don't fallback to the Shoko group if user poster found
                             continue
@@ -102,9 +101,9 @@ for library in cfg.Plex['LibraryNames']:
                     group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={shoko_key}').json()
                     shoko_poster = group_search['List'][0]['Images']['Posters'][0]
                     poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/{shoko_poster["Source"]}/Poster/{shoko_poster["ID"]}'
-                    print_f(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
+                    print(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
                 except:
                     print(f'│├{cmn.err}──Failed: No Shoko Group → {collection.title}')
-        print_f('│╰─Finished!')
-print_f('╰Posters Task Complete')
+        print('│╰─Finished!')
+print('╰Posters Task Complete')

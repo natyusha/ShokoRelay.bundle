@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common import print_f, shoko_auth
 import os, re, sys, json, time, urllib, argparse, requests, subprocess
 import config as cfg
 import common as cmn
@@ -131,18 +130,18 @@ args = parser.parse_args()
 args.arg1, args.arg2, args.arg3 # grab the arguments if available
 if play: FFplay = True # force enable FFplay if the play argument was supplied
 
-print_f('╭Plex Theme.mp3 Generator')
+print('╭Plex Theme.mp3 Generator')
 # enter local playback mode if play is the solo argument and a Theme.mp3 file is present
 media = 'Theme.tmp'
 if local == True and os.path.isfile('Theme.mp3'):
     media, song_title = 'Theme.mp3', 'local'
-    print_f('├┬Local Theme Detected')
+    print('├┬Local Theme Detected')
     try:
         local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
     except Exception as error:
         print(f'{cmn.err}──FFProbe Failed\n  ', error)
-    print_f(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
-    print_f(f'│╰─Source: {local_metadata.get('album', '???')}')
+    print(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
+    print(f'│╰─Source: {local_metadata.get('album', '???')}')
 else:
     # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
     # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
@@ -150,7 +149,7 @@ else:
         if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
         if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
 
-    shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
+    shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
     ## grab the anidb id using Shoko API and a video file path
     folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
@@ -165,8 +164,8 @@ else:
     except Exception:
         print(f'{cmn.err}─Failed: Make sure that the working directory contains video files matched by Shoko\n')
         exit(1)
-    print_f('├┬Shoko')
-    print_f(f'│├─File: {filepath}')
+    print('├┬Shoko')
+    print(f'│├─File: {filepath}')
     # get the anidbid of a series by using the first filename present in its folder
     path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
     try:
@@ -174,13 +173,13 @@ else:
     except Exception as error:
         print(f'{cmn.err}╰─Failed: Make sure that the video file listed above is matched by Shoko\n', error)
         exit(1)
-    print_f(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
+    print(f'│╰─URL: https://anidb.net/anime/{str(anidbID)}')
 
     ## get the first op/ed from a series with a known anidb id (Kage no Jitsuryokusha ni Naritakute! op as an example)
     ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][type]=OP,ED
     ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][slug]=OP,OP1
     if anidbID is not None:
-        print_f('├┬AnimeThemes')
+        print('├┬AnimeThemes')
         if theme_slug is not None:
             theme_type = f'&filter[animetheme][slug]={theme_slug}'
         else: # default to the first op/ed if the slug isn't specified in the argument
@@ -192,8 +191,8 @@ else:
         except Exception as error:
             print(f'{cmn.err}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
             exit(1)
-        print_f(f'│├─Title: {anime_name}')
-        print_f(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
+        print(f'│├─Title: {anime_name}')
+        print(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
         try:
             if not theme_slug and anime['anime'][offset]['animethemes'][1]['slug'] == 'OP1': idx = 1 # account for cases where the first op comes after the first ed
         except:
@@ -232,11 +231,11 @@ else:
         except Exception as error:
             print(f'{cmn.err}──Failed: Audio URL not found\n', error)
             exit(1)
-    print_f('├┬Downloading...')
+    print('├┬Downloading...')
 
     # replace shorthand in slug with full text
     for key, value in slug_formatting.items(): slug = re.sub(key, value, slug)
-    print_f(f'│├─{slug}: {song_title}{artist_display}')
+    print(f'│├─{slug}: {song_title}{artist_display}')
 
     # download .ogg file from animethemes
     def progress(count, block_size, total_size): # track the progress with a simple reporthook
@@ -247,7 +246,7 @@ else:
     except Exception as error:
         print(f'{cmn.err}──Failed: Download Incomplete\n', error)
         exit(1)
-    print_f('')
+    print('')
 
 # label for cleaning up files and skipping other commands if ffprobe fails
 class clean(Exception): pass
@@ -282,14 +281,14 @@ try:
         }
 
         try:
-            print_f('╰┬Converting...')
+            print('╰┬Converting...')
             subprocess.run(f'ffmpeg -i {media} -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
             status = ' ╰─Finished! '
         except Exception as error:
             print(f' {cmn.err}─FFmpeg Failed\n  ', error)
             status = ' Failed! '
     else:
-        print_f('╰┬Playing...')
+        print('╰┬Playing...')
         status = ' ╰─'
 
     ## kill ffplay and end the operation after pressing ctrl-c if not running as a batch or with ffplay disabled
@@ -298,14 +297,14 @@ try:
             for t in range(duration):
                 print(f'{status}Press Ctrl-C to continue... [{str(duration - t - 1).zfill(len(str(duration)))}s]', flush=True, end='\r') # show time remaining with padded zeros
                 time.sleep(1)
-            print_f('')
+            print('')
             time.sleep(1.5) # account for ending the countdown 1 second early to avoid file locks
         except KeyboardInterrupt:
-            print_f('')
+            print('')
             pass
         while is_running(ffplay.pid): time.sleep(.25) # wait for ffplay to be killed before deleting the temp file
     else:
-        print_f(f'{status}')
+        print(f'{status}')
 except clean:
     pass
 if os.path.isfile('Theme.tmp'): os.remove('Theme.tmp') # delete the original file

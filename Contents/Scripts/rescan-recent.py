@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common import print_f, shoko_auth
 import os, re, argparse, requests
 import config as cfg
 import common as cmn
@@ -39,30 +38,30 @@ arg_value, shoko_import, shoko_remove = parser.parse_args().recent_series, False
 if    arg_value == 'import': shoko_import = True
 elif  arg_value == 'remove': shoko_remove = True
 
-shoko_key = shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
+shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
-print_f('\n╭Shoko Relay Rescan Recent')
+print('\n╭Shoko Relay Rescan Recent')
 if shoko_import:
     # If importing run an api command to get the drop folder ids then another one to scan them
-    print_f(f'├┬Scanning Shoko\'s Import Folders...')
+    print(f'├┬Scanning Shoko\'s Import Folders...')
     try:
         import_folders = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder?apikey={shoko_key}').json()
         for folder in import_folders:
             if folder['DropFolderType'] == 1:
                 requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder/{folder["ID"]}/Scan?apikey={shoko_key}')
-                print_f(f'│├─Scanning: {folder['Name']}')
+                print(f'│├─Scanning: {folder['Name']}')
     except Exception as error:
         print(f'│{cmn.err}─Failed:', error)
 elif shoko_remove:
     # If removing run an api command to remove missing files
-    print_f(f'├┬Removing Missing Files From Shoko...')
+    print(f'├┬Removing Missing Files From Shoko...')
     try:
         requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Action/RemoveMissingFiles/true?apikey={shoko_key}')
     except Exception as error:
         print(f'│{cmn.err}─Failed:', error)
 else:
     # grab a list of Shoko's most recently added series
-    print_f(f'├┬Checking Shoko\'s ({arg_value}) most recently added series...')
+    print(f'├┬Checking Shoko\'s ({arg_value}) most recently added series...')
     recently_added = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Dashboard/RecentlyAddedSeries?pageSize={arg_value}&page=1&includeRestricted=true&apikey={shoko_key}').json()
 
     # loop through recently added series and add the series ids to a list
@@ -79,8 +78,8 @@ else:
         try:
             with open(os.path.join(path, 'plex.autoscan'), 'w'): pass
             os.remove(os.path.join(path, 'plex.autoscan'))
-            print_f(f'│├─Rescanning: {path}')
+            print(f'│├─Rescanning: {path}')
         except Exception as error:
             print(f'│{cmn.err}─Failed:', error)
-print_f('│╰─Finished!')
-print_f('╰Task Complete')
+print('│╰─Finished!')
+print('╰Task Complete')
