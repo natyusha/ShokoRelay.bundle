@@ -13,13 +13,14 @@ err = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 # revert common series title prefix modifications in plex
 def revert_title(t): return (s := t.split(' — '))[1] + ' ' + s[0] if ' — ' in t else t
 
-# simple y/n confirmation
-def confirmation(query):
+# simple y/n confirmation which is bypassed with a force argument
+def confirmation(query, force=False, pad=2):
+    if force: return True
     while True:
         response = input(query).strip().lower()
         if   response == 'y': return True
         elif response == 'n': return False
-        print(f'{err}──Please enter "Y" or "N"')
+        print(err + '─' * pad + 'Please enter "Y" or "N"')
 
 # grab a Shoko API key using the credentials from the prefs
 def shoko_auth():

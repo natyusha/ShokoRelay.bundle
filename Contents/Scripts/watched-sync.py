@@ -28,6 +28,7 @@ Usage:
       - (watched-sync.py 2w) would return results from the last 2 weeks
       - (watched-sync.py 3d) would return results from the last 3 days
   - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
+  - Add the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
   - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
       - Append the argument "import" (watched-sync.py import) if you want to sync watched states from Shoko to Plex.
       - Append the argument "purge" (watched-sync.py purge) if you want to remove all watched states from the configured Plex libraries.
@@ -83,17 +84,10 @@ if shoko_import:
             if series['UserRating']: voted_series[series['Name']] = series['UserRating']['Value']
 
 for account in accounts:
-    # if importing ask the user to confirm syncing for each username
-    if (shoko_import or plex_purge) and force == False:
-        class SkipUser(Exception): pass # label for skipping users via input
-        try:
-            while True:
-                query = 'import Shoko watched states and votes to' if votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
-                confirmation = input(f'├──Would you like to {query}: {account} (Y/N) ')
-                if   confirmation.lower() == 'y': break
-                elif confirmation.lower() == 'n': raise SkipUser()
-                else: print(f'{cmn.err}───Please enter "Y" or "N"')
-        except SkipUser: continue
+    # if importing/purging ask the user to confirm syncing or purging for each username
+    query = 'import Shoko watched states and votes to' if votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
+    if (shoko_import or plex_purge) and cmn.confirmation(f'├──Would you like to {query}: {account} (Y/N) ', force, 3): pass
+    else: continue
 
     try:
         plex = account.resource(cfg.Plex['ServerName']).connect()

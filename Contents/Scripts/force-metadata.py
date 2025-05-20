@@ -18,11 +18,11 @@ Preferences:
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
 Usage:
   - Run in a terminal (force-metadata.py) to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
-  - Append the flag "-f" (force-metadata.py -f) if you want to do a time consuming full metadata clean up.
-  - Important: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
+  - Append the flag "-d" (force-metadata.py -d) if you want to do a time consuming full metadata clean up (plex dance).
+  - Important: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
-   - All operations including a full clean can be limited to select titles with the "-t" flag (force-metadata.py -t "TITLE")
+   - All operations including a dance can be limited to select titles with the "-t" flag (force-metadata.py -t "TITLE")
 Behaviour:
   - This script will ignore locked fields/posters assuming that the user wants to keep them intact.
   - Manually merged series will not be split apart and may need to be handled manually to correctly refresh their metadata.
@@ -36,10 +36,11 @@ Behaviour:
 """
 
 # check the arguments if the user is looking to run a full clean or not
-parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "full" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly. By limiting the operation with the "-t" option you can do a full cleanup on select series only.', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-f', '--full-clean',   action='store_true', help='If you want to do a time consuming full metadata clean up')
+parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly. By limiting the operation with the "-t" flag you can do a full cleanup on filtered series only.', formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('-d', '--dance',   action='store_true', help='If you want to do a time consuming full metadata clean up (Plex dance)')
+parser.add_argument('-f', '--force',   action='store_true', help='ignore user confirmation prompts when running a dance')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
-full_clean, target, failed_list = parser.parse_args().full_clean, parser.parse_args().target, []
+dance, force, target, failed_list = parser.parse_args().dance, parser.parse_args().force, parser.parse_args().target, []
 
 plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
@@ -54,7 +55,7 @@ for library in cfg.Plex['LibraryNames']:
         continue
 
     ## if running a full scan execute the next 3 steps
-    if full_clean:
+    if dance and cmn.confirmation('├─Would you like to start a potentially time consuming Plex Dance™: (Y/N) ', force):
         """ not fully compatible with files that were added through Shoko Relay scanner's subfolder scanner queue
         # split apart any merged series to allow each part to receive updated metadata
         print(f'├┬Queueing Splits @ {cfg.Plex["ServerName"]}/{library}')
@@ -64,19 +65,19 @@ for library in cfg.Plex['LibraryNames']:
         input('│╰─Splitting Queued: Press Enter to continue once Plex is finished...')
         """
 
-        # unmatch all anime to clear out bad metadata
+        # unmatch all/filtered anime to clear out bad metadata
         print(f'├┬Queueing Unmatches @ {cfg.Plex["ServerName"]}/{library}')
         for series in section.search(title=target):
             print(f'│├─Unmatch: {series.title}')
             series.unmatch()
         input('│╰─Unmatching Queued: Press Enter to continue once Plex is finished...')
 
-        # clean bundles of things unmatched
+        # clean bundles for unmatched series
         print('├┬Cleaning Bundles...')
         plex.library.cleanBundles()
         input('│╰─Clean Bundles Queued: Press Enter to continue once Plex is finished...')
 
-        # fix match for all anime and grab fresh metadata
+        # fix match for unmatched series and grab fresh metadata
         print(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
         for series in section.search(title=target):
             print(f'│├─Match: {series.title}')
@@ -121,6 +122,6 @@ for library in cfg.Plex['LibraryNames']:
 print('╰Force Metadata Task Complete')
 
 # if there were failed matches list them so the user doesn't have to scroll up
-if full_clean and failed_list:
+if dance and failed_list:
     print('\nThe following series failed to match:')
     for failed in failed_list: print(f'{failed}')
