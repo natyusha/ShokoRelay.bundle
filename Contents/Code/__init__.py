@@ -111,7 +111,7 @@ class ShokoRelayAgent:
         # metadata.content_rating =
 
         # Get Rating
-        metadata.rating = float(series_data['AniDB']['Rating']['Value']/100)
+        metadata.rating = series_data['AniDB']['Rating']['Value']/100
         Log('Rating (Critic):               %s' % metadata.rating)
 
         # Get Studio as Animation Work (アニメーション制作)
@@ -306,7 +306,7 @@ class ShokoRelayAgent:
 
                 # Get Rating
                 ep_object.rating = ep_data['AniDB']['Rating']['Value']
-                Log('Rating:                        %s' % float(ep_object.rating))
+                Log('Rating (Critic):               %s' % ep_object.rating)
 
                 # Get Summary
                 ep_summary_mod, tmdb_ep_summary = '(Preferred):          ', try_get(tmdb_ep_data, 'Overview', None)
