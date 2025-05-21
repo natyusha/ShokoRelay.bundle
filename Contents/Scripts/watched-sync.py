@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from plexapi.myplex import MyPlexAccount
 import os, re, urllib, argparse, requests
-import config as cfg
-import common as cmn
+import config as cfg; import common as cmn
 
 r"""
 Description:
@@ -30,9 +29,9 @@ Usage:
   - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
   - Add the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
   - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
-      - Append the argument "import" (watched-sync.py import) if you want to sync watched states from Shoko to Plex.
-      - Append the argument "purge" (watched-sync.py purge) if you want to remove all watched states from the configured Plex libraries.
-      - The confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
+      - Append the argument "import" (watched-sync.py import) if you want to sync watched states (and votes if enabled) from Shoko to Plex.
+      - Append the argument "purge" (watched-sync.py purge) if you want to remove all watched states (and votes if enabled) from the configured Plex libraries.
+      - Confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 Behaviour:
   - Due to the potential for losing a huge amount of data, removing watch states from Plex has been omitted from this script unless "purge" mode is used.
 """

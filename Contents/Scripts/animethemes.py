@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os, re, sys, json, time, urllib, argparse, requests, subprocess
-import config as cfg
-import common as cmn
+import config as cfg; import common as cmn
 
 r"""
 Description:
@@ -152,8 +151,7 @@ else:
     shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
     ## grab the anidb id using Shoko API and a video file path
-    folder = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep
-    files = []
+    folder, files = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep, []
     for file in os.listdir('.'):
         if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
             print(f'{cmn.err}─Skipped: Theme.mp3 already exists in {folder}')
@@ -180,10 +178,7 @@ else:
     ## https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]=16073&include=animethemes&filter[animetheme][slug]=OP,OP1
     if anidbID is not None:
         print('├┬AnimeThemes')
-        if theme_slug is not None:
-            theme_type = f'&filter[animetheme][slug]={theme_slug}'
-        else: # default to the first op/ed if the slug isn't specified in the argument
-            theme_type = '&filter[animetheme][type]=OP,ED'
+        theme_type = f'&filter[animetheme][slug]={theme_slug}' if theme_slug is not None else '&filter[animetheme][type]=OP,ED' # default to the first op/ed if the slug isn't specified in the argument
         anime = requests.get(f'https://api.animethemes.moe/anime?filter[has]=resources&filter[site]=AniDB&filter[external_id]={anidbID}&include=animethemes{theme_type}').json()
         try:
             anime_name = anime['anime'][offset]['name']
@@ -217,10 +212,7 @@ else:
         except Exception as error:
             print(f'{cmn.err}──Failed: The AnimeThemes entry is awaiting file upload\n', error)
             exit(1)
-        if artist_name != '': # set the artist info to an empty sting if animethemes doesn't have it
-            artist_display = f' by {artist_name}'
-        else:
-            artist_display = ''
+        artist_display = f' by {artist_name}' if artist_name != '' else '' # set the artist info to an empty sting if animethemes doesn't have it
 
     ## grab first audio link from video id above
     ## https://api.animethemes.moe/video?filter[video][id]=16031&include=audio
@@ -307,4 +299,4 @@ try:
         print(f'{status}')
 except clean:
     pass
-if os.path.isfile('Theme.tmp'): os.remove('Theme.tmp') # delete the original file
+if os.path.isfile('Theme.tmp'): os.remove('Theme.tmp') # delete the temp file if it exists

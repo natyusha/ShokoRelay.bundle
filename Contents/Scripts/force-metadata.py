@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import config as cfg
-import common as cmn
+import config as cfg; import common as cmn
 
 r"""
 Description:
@@ -18,11 +17,13 @@ Preferences:
       - It must be a list to work e.g. "'LibraryNames': ['Anime Shows', 'Anime Movies']"
 Usage:
   - Run in a terminal (force-metadata.py) to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
-  - Append the flag "-d" (force-metadata.py -d) if you want to do a time consuming full metadata clean up (plex dance).
+  - Append the "dance" flag (-d or --dance) if you want to do a time consuming full metadata clean up (Plex dance).
+      - This will ask for (Y/N) confirmation for each configured library.
   - Important: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
    - All operations including a dance can be limited to select titles with the "-t" flag (force-metadata.py -t "TITLE")
+   - Confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 Behaviour:
   - This script will ignore locked fields/posters assuming that the user wants to keep them intact.
   - Manually merged series will not be split apart and may need to be handled manually to correctly refresh their metadata.
@@ -37,8 +38,8 @@ Behaviour:
 
 # check the arguments if the user is looking to run a full clean or not
 parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog='IMPORTANT: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly. By limiting the operation with the "-t" flag you can do a full cleanup on filtered series only.', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-d', '--dance',   action='store_true', help='If you want to do a time consuming full metadata clean up (Plex dance)')
-parser.add_argument('-f', '--force',   action='store_true', help='ignore user confirmation prompts when running a dance')
+parser.add_argument('-d', '--dance', action='store_true', help='If you want to do a time consuming full metadata clean up (Plex dance)')
+parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when running a dance')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
 dance, force, target, failed_list = parser.parse_args().dance, parser.parse_args().force, parser.parse_args().target, []
 

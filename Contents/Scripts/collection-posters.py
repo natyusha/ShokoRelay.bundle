@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os, re, urllib, argparse, requests
-import config as cfg
-import common as cmn
+import config as cfg; import common as cmn
 
 r"""
 Description:
