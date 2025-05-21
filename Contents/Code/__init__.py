@@ -111,8 +111,11 @@ class ShokoRelayAgent:
         # metadata.content_rating =
 
         # Get Rating
-        metadata.rating = series_data['AniDB']['Rating']['Value']/100
-        Log('Rating (Critic):               %s' % metadata.rating)
+        rating, rating_source = 0, '(Disabled):            '
+        if   Prefs['criticRatings'] == 'AniDB': rating, rating_source = series_data['AniDB']['Rating']['Value']/100, '(AniDB):               '
+        elif Prefs['criticRatings'] == 'TMDB' and tmdb_type: rating, rating_source = series_data['TMDB'][tmdb_type][0]['UserRating']['Value'], '(TMDB):                '
+        metadata.rating = rating if rating > 0 else None
+        Log('Rating %s %s' % (rating_source, metadata.rating))
 
         # Get Studio as Animation Work (アニメーション制作)
         studio = HttpReq('api/v3/Series/%s/Cast?roleType=Studio' % series_id) # http://127.0.0.1:8111/api/v3/Series/24/Cast?roleType=Studio
@@ -304,11 +307,14 @@ class ShokoRelayAgent:
                 ep_object.content_rating = metadata.content_rating
                 Log('Content Rating (Assumed):      %s' % ep_object.content_rating)
 
-                # Get Rating
-                ep_object.rating = ep_data['AniDB']['Rating']['Value']
-                Log('Rating (Critic):               %s' % ep_object.rating)
+                # Get Episode Rating
+                ep_rating, ep_rating_source = 0, '(Disabled):            '
+                if   Prefs['criticRatings'] == 'AniDB': ep_rating, ep_rating_source = ep_data['AniDB']['Rating']['Value'], '(AniDB):               '
+                elif Prefs['criticRatings'] == 'TMDB' and tmdb_ep_data: ep_rating, ep_rating_source = tmdb_ep_data['UserRating']['Value'], '(TMDB):                '
+                ep_object.rating = ep_rating if ep_rating > 0 else None
+                Log('Rating %s %s' % (ep_rating_source, ep_object.rating))
 
-                # Get Summary
+                # Get Episode Summary
                 ep_summary_mod, tmdb_ep_summary = '(Preferred):          ', try_get(tmdb_ep_data, 'Overview', None)
                 if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_summary: ep_summary_mod, ep_summary = '(TMDB Ep Group):      ', tmdb_ep_summary # If TMDB episode group names are enabled and a group is present override the summary
                 else: ep_summary = try_get(ep_data, 'Description', None)

@@ -66,6 +66,14 @@
     },
 
     {
+        "id": "criticRatings",
+        "label": "The source for series and episode \"Critic\" ratings",
+        "type": "enum",
+        "values" : ["AniDB", "TMDB", "Disabled"],
+        "default": "AniDB"
+    },
+
+    {
         "id": "moveCommonTitlePrefixes",
         "label": "Move common series title prefixes like \"Gekijouban\" to the end of the title",
         "type": "bool",

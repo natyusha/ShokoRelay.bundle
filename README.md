@@ -62,7 +62,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
 - Support for:
   - Files which contain more than one episode or episodes which span multiple files
   - Credits / Parodies / Trailers and Other types of special files
-  - Individual episode ratings (from AniDB)
+  - Individual episode ratings (from AniDB or TMDB)
   - Automatic season posters
 - Will replace:
   - Ambiguous AniDB episode titles with the series title plus a suffix for the type of episode
