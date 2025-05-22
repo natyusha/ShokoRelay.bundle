@@ -217,7 +217,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
 > - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
 > - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
 
-- All operations including a dance can be limited to select titles with the "-t" flag (force-metadata.py -t "TITLE")
+- All operations including a dance can be limited to select titles with the "-t" flag (force-metadata.py -t "TITLE").
 - Confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 
 **Behaviour:**
@@ -281,8 +281,11 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - `watched-sync.py 2w` would return results from the last 2 weeks
   - `watched-sync.py 3d` would return results from the last 3 days
 - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
-- Add the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
-  - Note: there is currently no way to completely remove votes from Shoko via the api or webui
+- Append the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
+
+> :pencil2: **Note**  
+> There is currently no way to completely remove votes from Shoko via the v3 API.
+
 - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
   - Append the argument "import" `watched-sync.py import` if you want to sync watched states (and votes if enabled) from Shoko to Plex.
   - Append the argument "purge" `watched-sync.py purge` if you want to remove all watched states (and votes if enabled) from the configured Plex libraries.
