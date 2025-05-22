@@ -1,7 +1,8 @@
 ![Shoko Relay Logo](https://github.com/natyusha/ShokoRelay.bundle/assets/985941/23bfd7c2-eb89-46d5-a7cb-558c374393d6 "Shoko Relay")  
-[![Discord](https://img.shields.io/discord/96234011612958720?logo=discord&logoColor=white&label=discord&color=5865F2)](https://discord.com/channels/96234011612958720/268484849419943936)
-[![Shoko Docs](https://img.shields.io/badge/shoko_docs-5c5c5c?logo=vitepress&logoColor=white)](https://docs.shokoanime.com/plex/configuring-shoko-relay)
-=======================
+[![Discord](https://img.shields.io/discord/96234011612958720?logo=discord&logoColor=fff&label=Discord&color=5865F2 "Shoko Discord")](https://discord.com/channels/96234011612958720/268484849419943936)
+[![Shoko Docs](https://img.shields.io/badge/VitePress-Shoko_Docs-4E7CF5?logo=vitepress&logoColor=fff)](https://docs.shokoanime.com/plex/configuring-shoko-relay)
+[![GitHub Latest](https://img.shields.io/github/v/tag/natyusha/ShokoRelay.bundle?label=Latest&logo=github&logoColor=fff)](https://github.com/natyusha/ShokoRelay.bundle/releases/latest)
+-
 This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) v5.1.0 or newer and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
 ## Installation
