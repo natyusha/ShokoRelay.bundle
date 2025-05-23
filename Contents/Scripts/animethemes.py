@@ -60,6 +60,12 @@ Examples Commands:
 # file formats that will work with the script (uses Shoko's defaults)
 file_formats = ('.mkv', '.avi', '.mp4', '.mov', '.ogm', '.wmv', '.mpg', '.mpeg', '.mk3d', '.m4v')
 
+# initialise default values for the arguments and their regex
+theme_slug, offset, idx = None, 0, 0
+play = local = batch = False
+FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
+slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}(?:-(?:bd|web|tv|original))?$', '^\\d$'
+
 # regex substitution pairs for additional slug formatting (executed top to bottom)
 slug_formatting = {
     'OP':        'Opening ',
@@ -78,16 +84,10 @@ def is_running(pid):
     except OSError: return False
     return True
 
-# initialise default values for the arguments and their regex
-theme_slug, offset, idx = None, 0, 0
-play = local = batch = False
-FFplay = cfg.AnimeThemes['FFplay_Enabled'] # from config instead of argument
-slug_regex, offset_regex = '^(?:op|ed)(?!0)[0-9]{0,2}(?:-(?:bd|web|tv|original))?$', '^\\d$'
-
 # define functions for if there are 1, 2 or 3 arguments supplied
 def arg_parse_1(arg1):
     arg1 = arg1.lower()
-    global slug_regex, offset_regex, theme_slug, offset, play, local, batch, FFplay
+    global theme_slug, offset, play, local, batch, FFplay
     if re.match(slug_regex, arg1): # check if the argument is a slug via regex
         theme_slug = arg1.upper()
     elif re.match(offset_regex, arg1): # else check if it is a single digit offset via regex
@@ -101,7 +101,7 @@ def arg_parse_1(arg1):
     return arg1
 def arg_parse_2(arg2): # use a combination of the single argument logic for the second argument (excluding batch)
     arg1, arg2 = sys.argv[1], arg2.lower()
-    global slug_regex, offset_regex, theme_slug, offset, play
+    global theme_slug, offset, play
     if re.match(slug_regex, arg1) and re.match(offset_regex, arg2):
         theme_slug, offset = arg1.upper(), int(arg2)
     elif re.match(offset_regex, arg1) and arg2 == 'play':
@@ -113,18 +113,21 @@ def arg_parse_2(arg2): # use a combination of the single argument logic for the 
     return arg2
 def arg_parse_3(arg3): # there is only a single possible format if there are three arguments at once
     arg1, arg2, arg3 = sys.argv[1], sys.argv[2], arg3.lower()
-    global slug_regex, offset_regex, offset, theme_slug, play
+    global offset, theme_slug, play
     if (re.match(slug_regex, arg1.lower()) and re.match(offset_regex, arg2) and arg3 == 'play'):
         theme_slug, offset, play = arg1.upper(), int(arg2), True
     else:
         raise argparse.ArgumentTypeError('invalid (slug + offset + play)')
     return arg3
 
+
 # check the arguments if the user is looking for a specific op/ed, a series match offset, to preview or to batch
-parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog='Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch', formatter_class=argparse.RawTextHelpFormatter)
+note = 'Batch Processing Example Commands:\n  bash:         for d in "/PathToAnime/"*/; do cd "$d" && animethemes.py batch; done\n  cmd:          for /d %d in ("X:\\PathToAnime\\*") do cd /d %d && animethemes.py batch'
+parser = argparse.ArgumentParser(description='Download the first OP (or ED if there is none) for the given series.', epilog=note, formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('arg1', metavar='slug',         nargs='?', type=arg_parse_1, help='An optional identifier which must be the first argument.\n*formatted as "op", "ed", "op2", "ed2", "op1-tv" and so on\n\n')
 parser.add_argument('arg2', metavar='offset',       nargs='?', type=arg_parse_2, help='An optional single digit number.\n*must be the second argument if the slug is provided\n\n')
-parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n*without other arguments local "Theme.mp3" files will be prioritised\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
+parser.add_argument('arg3', metavar='play | batch', nargs='?', type=arg_parse_3, help='play: To run in "Preview" mode.\n*must be the last or sole argument and is simply entered as "play"\n'
+                    '*without other arguments local "Theme.mp3" files will be prioritised\n\nbatch: When running the script on multiple folders at a time.\n*must be the sole argument and is simply entered as "batch"')
 args = parser.parse_args()
 args.arg1, args.arg2, args.arg3 # grab the arguments if available
 if play: FFplay = True # force enable FFplay if the play argument was supplied
@@ -132,11 +135,11 @@ if play: FFplay = True # force enable FFplay if the play argument was supplied
 print('╭Plex Theme.mp3 Generator')
 # enter local playback mode if play is the solo argument and a Theme.mp3 file is present
 media = 'Theme.tmp'
-if local == True and os.path.isfile('Theme.mp3'):
+if local is True and os.path.isfile('Theme.mp3'):
     media, song_title = 'Theme.mp3', 'local'
     print('├┬Local Theme Detected')
     try:
-        local_metadata = json.loads(subprocess.run(f'ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
+        local_metadata = json.loads(subprocess.run('ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
     except Exception as error:
         print(f'{cmn.err}──FFProbe Failed\n  ', error)
     print(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
@@ -145,7 +148,7 @@ else:
     # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
     # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
     if theme_slug is not None:
-        if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1','')
+        if re.match('^(?:OP1|ED1)$', theme_slug): theme_slug = theme_slug.replace('1', '')
         if re.match('^(?:OP|ED)$', theme_slug): theme_slug += f',{theme_slug}1'
 
     shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
@@ -153,7 +156,7 @@ else:
     ## grab the anidb id using Shoko API and a video file path
     folder, files = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep, []
     for file in os.listdir('.'):
-        if batch == True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
+        if batch is True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
             print(f'{cmn.err}─Skipped: Theme.mp3 already exists in {folder}')
             exit(1)
         if file.lower().endswith(file_formats): files.append(file) # check for video files regardless of case
@@ -190,7 +193,7 @@ else:
         print(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')
         try:
             if not theme_slug and anime['anime'][offset]['animethemes'][1]['slug'] == 'OP1': idx = 1 # account for cases where the first op comes after the first ed
-        except:
+        except Exception:
             pass
         try:
             animethemeID = anime['anime'][offset]['animethemes'][idx]['id']
@@ -203,10 +206,10 @@ else:
     ## https://api.animethemes.moe/animetheme/11808?include=animethemeentries.videos,song.artists
     if animethemeID is not None:
         animetheme = requests.get(f'https://api.animethemes.moe/animetheme/{animethemeID}?include=animethemeentries.videos,song.artists').json()
-        try:    song_title = animetheme['animetheme']['song']['title']
-        except: song_title = ''
-        try:    artist_name = animetheme['animetheme']['song']['artists'][0]['name']
-        except: artist_name = ''
+        try:              song_title = animetheme['animetheme']['song']['title']
+        except Exception: song_title = ''
+        try:              artist_name = animetheme['animetheme']['song']['artists'][0]['name']
+        except Exception: artist_name = ''
         try:
             videoID = animetheme['animetheme']['animethemeentries'][0]['videos'][0]['id']
         except Exception as error:
@@ -231,7 +234,7 @@ else:
 
     # download .ogg file from animethemes
     def progress(count, block_size, total_size): # track the progress with a simple reporthook
-        percent = int(count*block_size*100/total_size)
+        percent = int(count * block_size * 100 / total_size)
         print(f'│╰─URL: {audioURL} [{str(percent).zfill(3)}%]', flush=True, end='\r')
     try:
         urllib.request.urlretrieve(audioURL, 'Theme.tmp', reporthook=progress)
@@ -242,6 +245,7 @@ else:
 
 # label for cleaning up files and skipping other commands if ffprobe fails
 class clean(Exception): pass
+
 
 try:
     # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
@@ -260,7 +264,7 @@ try:
             print(f'{cmn.err}──FFPlay Failed\n │', error)
 
     # escape double quotes for titles/artists/albums which contain them
-    def escape_quotes(s): return s.replace('\\','\\\\').replace('"',r'\"')
+    def escape_quotes(s): return s.replace('\\', '\\\\').replace('"', r'\"')
 
     ## if not just playing convert the temp .ogg file to .mp3 with ffmpeg and add title + artist metadata
     if not play:

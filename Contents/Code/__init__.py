@@ -61,7 +61,8 @@ class ShokoRelayAgent:
 
         # Make a dict of language -> title for all series titles in the AniDB series data (one pair per language)
         title_mod, series_titles = '[LANG]:               ', {}
-        for item in [i for i in sorted(series_data['AniDB']['Titles'], key=lambda i: i['Type'], reverse=True) if i['Type'] != 'Short']: series_titles[item['Language']] = item['Name'] # Sort by reversed Type (Synonym -> Short (Excluded) -> Official -> Main) so that the dict prioritises official titles over synonyms
+        # Sort by reversed Type (Synonym -> Short (Excluded) -> Official -> Main) so that the dict prioritises official titles over synonyms
+        for item in [i for i in sorted(series_data['AniDB']['Titles'], key=lambda i: i['Type'], reverse=True) if i['Type'] != 'Short']: series_titles[item['Language']] = item['Name']
         series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
         # Get Title according to the language preference
@@ -365,7 +366,7 @@ class ShokoRelayAgent:
                     try:
                         metadata.themes[theme_url] = Proxy.Media(HTTP.Request(theme_url))
                         Log('Adding Theme Music:            %s' % theme_url % tid)
-                    except:
+                    except Exception:
                         Log('Error Adding Theme Music:      %s (Not Found)' % theme_url)
 
     def image_add(self, meta, images, log):
@@ -376,7 +377,7 @@ class ShokoRelayAgent:
                 meta[url] = Proxy.Media(HTTP.Request(url).content, idx + 1) # Proxy.Media(file, sort_order) where sort_order starts at 1
                 valid.append(url)
                 Log('Image Add %s     %s' % (log, url))
-            except:
+            except Exception:
                 Log('Image Add Err %s %s (Not Found)' % (log, url))
 
         meta.validate_keys(valid)
@@ -411,8 +412,8 @@ def title_case(text):
     return text
 
 def try_get(arr, idx, default=''):
-    try:    return arr[idx]
-    except: return default
+    try:              return arr[idx]
+    except Exception: return default
 
 # Agent Declaration
 class ShokoRelayAgent(Agent.TV_Shows, ShokoRelayAgent):

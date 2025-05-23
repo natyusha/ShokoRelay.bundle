@@ -27,10 +27,11 @@ def set_logging(foldername='', filename='', format=''):
     foldername = os.path.join(LOG_ROOT, '')
     filename   = 'Shoko Relay Scanner.log'
     format     = '%(asctime)s : %(levelname)s - %(message)s'
-    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=12*1024*1024, backupCount=5)
+    handler = logging.handlers.RotatingFileHandler(os.path.join(foldername, filename), maxBytes=12 * 1024 * 1024, backupCount=5)
     handler.setFormatter(logging.Formatter(format))
     handler.setLevel(logging.DEBUG)
     Log.addHandler(handler)
+
 
 set_logging() # Start logger
 
@@ -39,7 +40,7 @@ def GetApiKey():
     if not API_KEY:
         data = json.dumps({
             'user'   : cfg.get('Prefs', 'Username'),
-            'pass'   : cfg.get('Prefs', 'Password') if cfg.get('Prefs', 'Password') != None else '',
+            'pass'   : cfg.get('Prefs', 'Password') if cfg.get('Prefs', 'Password') is not None else '',
             'device' : 'Shoko Relay for Plex'
         })
         API_KEY = HttpPost('api/auth', data)['apikey']
@@ -197,8 +198,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 subfolders.append(dir)
                 Log.info(' Added to Scan:            %s' % dir) # Add the subfolder to subfolder scanning queue
 
-            grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep)-1-root.count(os.sep))[0]
-            if subdir_files and (len(list(reversed(path.split(os.sep))))>1 or subdir_dirs):
+            grouping_dir = full_path.rsplit(os.sep, full_path.count(os.sep) - 1 - root.count(os.sep))[0]
+            if subdir_files and (len(list(reversed(path.split(os.sep)))) > 1 or subdir_dirs):
                 Log.info(' Files Detected:           Subfolder Scan & Plex Grouping Removal Initiated in Current Folder')
                 if grouping_dir in subdirs: subdirs.remove(grouping_dir) # Prevent group folders from being called by Plex normal call to Scan()
                 Log.info('-' * 300)
@@ -206,5 +207,5 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Scan(path, sorted(subdir_files), mediaList, [], language, root)
 
 def try_get(arr, idx, default=''):
-    try:    return arr[idx]
-    except: return default
+    try:              return arr[idx]
+    except Exception: return default

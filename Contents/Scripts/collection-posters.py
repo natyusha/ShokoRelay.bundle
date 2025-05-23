@@ -27,7 +27,7 @@ Usage:
 """
 
 # file formats that will work with Plex (several are not listed in Plex's documentation but still work)
-file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif' , '.tiff', '.webp')
+file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif', '.tiff', '.webp')
 
 # characters to replace in the collection name when comparing it to the filename using regex substitution
 file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
@@ -102,7 +102,7 @@ for library in cfg.Plex['LibraryNames']:
                     poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/{shoko_poster["Source"]}/Poster/{shoko_poster["ID"]}'
                     print(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
                     collection.uploadPoster(url=poster_url)
-                except:
+                except Exception:
                     print(f'│├{cmn.err}──Failed: No Shoko Group → {collection.title}')
         print('│╰─Finished!')
 print('╰Posters Task Complete')

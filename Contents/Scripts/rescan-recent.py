@@ -29,10 +29,12 @@ def arg_parse(arg):
         raise argparse.ArgumentTypeError('invalid range or import/remove')
     return arg
 
+
 # check the arguments for how many recent series to rescan
-parser = argparse.ArgumentParser(description='Trigger a Plex rescan of the 5 most recently added series in Shoko.', formatter_class=argparse.RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description='Trigger a Plex rescan of recently added series or force an import of unrecognized files in Shoko.', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('recent_series', metavar='range', nargs='?', type=arg_parse, default='5', help='range:  Change the number of recently added series (from 1-99) to rescan.\n        *must be the sole argument and is entered as an Integer\n\n')
-parser.add_argument('rescan_remove', metavar='import | remove', nargs='?', type=arg_parse, help='import: If you want to force Shoko to import unrecognized files.\n        *must be the sole argument and is entered as "import"\n\nremove: If you want to force Shoko to remove missing files incl. MyList.\n        *must be the sole argument and is entered as "remove"')
+parser.add_argument('rescan_remove', metavar='import | remove', nargs='?', type=arg_parse, help='import: If you want to force Shoko to import unrecognized files.\n'
+                    '        *must be the sole argument and is entered as "import"\n\nremove: If you want to force Shoko to remove missing files incl. MyList.\n        *must be the sole argument and is entered as "remove"')
 arg_value, shoko_import, shoko_remove = parser.parse_args().recent_series, False, False
 if    arg_value == 'import': shoko_import = True
 elif  arg_value == 'remove': shoko_remove = True
@@ -42,7 +44,7 @@ shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from t
 print('\n╭Shoko Relay Rescan Recent')
 if shoko_import:
     # If importing run an api command to get the drop folder ids then another one to scan them
-    print(f'├┬Scanning Shoko\'s Import Folders...')
+    print('├┬Scanning Shoko\'s Import Folders...')
     try:
         import_folders = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder?apikey={shoko_key}').json()
         for folder in import_folders:
@@ -53,7 +55,7 @@ if shoko_import:
         print(f'│{cmn.err}─Failed:', error)
 elif shoko_remove:
     # If removing run an api command to remove missing files
-    print(f'├┬Removing Missing Files From Shoko...')
+    print('├┬Removing Missing Files From Shoko...')
     try:
         requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Action/RemoveMissingFiles/true?apikey={shoko_key}')
     except Exception as error:

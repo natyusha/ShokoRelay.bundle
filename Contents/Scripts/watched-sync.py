@@ -44,9 +44,12 @@ def arg_parse(arg):
         raise argparse.ArgumentTypeError('invalid range, import or purge')
     return arg
 
+
 # check the arguments if the user is looking to use a relative date or not
 parser = argparse.ArgumentParser(description='Sync watched states from Plex to Shoko.', epilog='NOTE: "import" and "purge" mode will ask for (Y/N) confirmation for each configured Plex user.', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('relative_date', metavar='range | import | purge', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n        *the full list of suffixes are:\n        m=minutes\n        h=hours\n        d=days\n        w=weeks\n        mon=months\n        y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
+parser.add_argument('relative_date', metavar='range | import | purge', nargs='?', type=arg_parse, default='999y', help='range:  Limit the time range (from 1-999) for syncing watched states.\n        *must be the sole argument and is entered as Integer+Suffix\n'
+                    '        *the full list of suffixes are:\n         m=minutes\n         h=hours\n         d=days\n         w=weeks\n         mon=months\n         y=years\n\nimport: If you want to sync watched states from Shoko to Plex instead.\n'
+                    '        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
 parser.add_argument('-v', '--votes', action='store_true', help='include user votes/ratings when syncing, importing or purging')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing or purging')
 relative_date, shoko_import, plex_purge, votes, force = parser.parse_args().relative_date, False, False, parser.parse_args().votes, parser.parse_args().force
@@ -71,7 +74,7 @@ if not plex_purge: shoko_key = cmn.shoko_auth() # grab a Shoko API key using the
 print('\n╭Shoko Relay Watched Sync')
 # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
 if shoko_import:
-    print(f'├─Generating: Shoko Episode List...')
+    print('├─Generating: Shoko Episode List...')
     watched_eps, voted_eps, voted_series = [], {}, {}
     throttle = '' if votes else '&includeWatched=only' # limit the files to watched ones only if votes aren't enbabled
     episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1{throttle}&includeFiles=true&apikey={shoko_key}').json()
@@ -127,10 +130,10 @@ for account in accounts:
                         series.rate(vote)
                         print(f'│├─Rating Series [{vote:04.1f}]: {title}')
         elif plex_purge:
-            print(f'│├─Clearing watched states...')
+            print('│├─Clearing watched states...')
             for episode in section.searchEpisodes(unwatched=False): episode.markUnplayed()
             if votes:
-                print(f'│├─Clearing ratings...')
+                print('│├─Clearing ratings...')
                 for episode in section.searchEpisodes(filters={'userRating>>': 0}): episode.rate(None)
                 for series in section.search(filters={'userRating>>': 0}): series.rate(None)
         else:
@@ -140,7 +143,7 @@ for account in accounts:
                     filepath = os.path.sep + os.path.basename(episode_path.file) # add a path separator to the filename to avoid duplicate matches
                     path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
                     try:
-                        if path_ends_with[0]['Watched'] == None:
+                        if path_ends_with[0]['Watched'] is None:
                             print(f'│├─Relaying: {filepath} → {episode.title}')
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')

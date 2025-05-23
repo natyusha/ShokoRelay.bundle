@@ -1,8 +1,8 @@
-try:    from plexapi.myplex import MyPlexAccount
-except: pass
+try:              from plexapi.myplex import MyPlexAccount
+except Exception: pass
 
-try:    import requests
-except: pass
+try:              import requests
+except Exception: pass
 
 import sys
 import config as cfg
