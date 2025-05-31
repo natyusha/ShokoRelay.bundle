@@ -152,7 +152,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         elif ep_type == 'Trailer'   : season = -2
                         elif ep_type == 'Parody'    : season = -3
                         elif ep_type == 'Other'     : season = -4
-                        if not cfg.getboolean('Prefs', 'SingleSeasonOrdering') and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
+                        if not cfg.getboolean('Prefs', 'SingleSeasonOrdering') and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible
 
                         # Ignore the current file if it has already been added with the same season and episode number
                         if prev_season == season and prev_episode == episode:

@@ -113,7 +113,7 @@ class ShokoRelayAgent:
 
         # Get Rating
         rating, rating_source = 0, '(Disabled):            '
-        if   Prefs['criticRatings'] == 'AniDB': rating, rating_source = series_data['AniDB']['Rating']['Value']/100, '(AniDB):               '
+        if   Prefs['criticRatings'] == 'AniDB': rating, rating_source = series_data['AniDB']['Rating']['Value'] / 100, '(AniDB):               '
         elif Prefs['criticRatings'] == 'TMDB' and tmdb_type: rating, rating_source = series_data['TMDB'][tmdb_type][0]['UserRating']['Value'], '(TMDB):                '
         metadata.rating = rating if rating > 0 else None
         Log('Rating %s %s' % (rating_source, metadata.rating))
@@ -256,7 +256,7 @@ class ShokoRelayAgent:
                 elif ep_type == 'Trailer'   : season = -2
                 elif ep_type == 'Parody'    : season = -3
                 elif ep_type == 'Other'     : season = -4
-                if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible and SingleSeasonOrdering is disabled
+                if not Prefs['SingleSeasonOrdering'] and tmdb_ep_data: ep_source, season, episode = '(TMDB Ep Group): ' if tmdb_ep_group > 1 else '(TMDB):          ', tmdb_ep_data['SeasonNumber'], tmdb_ep_data['EpisodeNumber'] # Grab TMDB info when possible
 
                 Log('Season  %s      %s' % (ep_source, season))
                 Log('Episode %s      %s' % (ep_source, episode))
