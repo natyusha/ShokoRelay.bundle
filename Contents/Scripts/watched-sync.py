@@ -90,6 +90,8 @@ for account in accounts:
     # if importing/purging ask the user to confirm for each username
     query = 'import Shoko watched states and votes to' if votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
     if (shoko_import or plex_purge) and cmn.confirmation(f'├──Would you like to {query}: {account} (Y/N) ', force, 3): pass
+    elif not (shoko_import or plex_purge): pass
+    else: continue
 
     try:
         plex = account.resource(cfg.Plex['ServerName']).connect()
