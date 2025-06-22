@@ -57,7 +57,7 @@ for library in cfg.Plex['LibraryNames']:
         continue
 
     ## if running a full scan execute the next 3 steps
-    if dance and cmn.confirmation('├─Would you like to start a potentially time consuming Plex Dance™: (Y/N) ', force):
+    if dance and cmn.confirmation(f'├─Initiate a potentially time consuming Plex Dance™ for {cfg.Plex["ServerName"]}/{library}: (Y/N) ', force):
         """ not fully compatible with files that were added through Shoko Relay scanner's subfolder scanner queue
         # split apart any merged series to allow each part to receive updated metadata
         print(f'├┬Queueing Splits @ {cfg.Plex["ServerName"]}/{library}')
@@ -90,7 +90,7 @@ for library in cfg.Plex['LibraryNames']:
                 print(f'│├{cmn.err}Failed: {series.title}') # print titles of things which failed to match
                 failed_list.append(series.title)
         input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
-    else: print('╰Operation Aborted!')
+    else: print(f'{cmn.err}─Operation Aborted!')
 
     # rename negative seasons to their correct names
     print(f'├┬Renaming Negative Seasons @ {cfg.Plex["ServerName"]}/{library}')
