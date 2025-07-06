@@ -276,8 +276,8 @@ class ShokoRelayAgent:
                 if not ep_title: ep_title, lang = ep_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
                 if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_title: ep_title, lang = tmdb_ep_title, 'shoko (TMDB Ep Group)' # If TMDB episode group names are enabled and a group is present override the title
 
-                # Replace ambiguous title with series title
-                if ep_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web'):
+                # Replace ambiguous single entry titles with the series title
+                if ep_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') and ep_data['AniDB']['EpisodeNumber'] == 1:
                     # Get series title according to the language preference
                     ep_title_mod, original_title = '(FromSeries) [LANG]:    ', ep_title
                     for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
