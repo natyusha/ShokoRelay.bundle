@@ -285,17 +285,13 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - `watched-sync.py 3d` would return results from the last 3 days
 - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
 - Append the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
-
-> :pencil2: **Note**  
-> There is currently no way to completely remove votes from Shoko via the v3 API.
-
 - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
   - Append the argument "import" `watched-sync.py import` if you want to sync watched states (and votes if enabled) from Shoko to Plex.
   - Append the argument "purge" `watched-sync.py purge` if you want to remove all watched states (and votes if enabled) from the configured Plex libraries.
   - Confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 
 **Behaviour:**
-- Due to the potential for losing a huge amount of data, removing watch states from Plex has been omitted from this script unless "purge" mode is used.
+- Due to the potential for losing a huge amount of data, removing watch states or ratings from Plex has been omitted from this script unless "purge" mode is used.
 </details>
 
 ## Additional Information

@@ -28,13 +28,12 @@ Usage:
       - (watched-sync.py 3d) would return results from the last 3 days
   - The full list of suffixes (from 1-999) are: m=minutes, h=hours, d=days, w=weeks, mon=months, y=years
   - Append the "votes" flag (-v or --votes) to add user ratings/votes to all operations.
-      - Note: There is currently no way to completely remove votes from Shoko via the v3 API.
   - There are two alternate modes for this script which will ask for (Y/N) confirmation for each configured Plex user.
       - Append the argument "import" (watched-sync.py import) if you want to sync watched states (and votes if enabled) from Shoko to Plex.
       - Append the argument "purge" (watched-sync.py purge) if you want to remove all watched states (and votes if enabled) from the configured Plex libraries.
       - Confirmation prompts can be bypassed by adding the "force" flag (-f or --force).
 Behaviour:
-  - Due to the potential for losing a huge amount of data, removing watch states from Plex has been omitted from this script unless "purge" mode is used.
+  - Due to the potential for losing a huge amount of data, removing watch states or ratings from Plex has been omitted from this script unless "purge" mode is used.
 """
 
 # relative date regex definition and import check for argument type
@@ -163,7 +162,7 @@ for account in accounts:
                             print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
                 for series in section.search(filters={'userRating>>': 0}): # sync series level ratings
                     rating, title = series.userRating, cmn.revert_title(series.title) # revert any common title prefix modifications for the match
-                    series_starts_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/StartsWith/{title}?limit=2147483647&apikey={shoko_key}').json()
+                    series_starts_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/StartsWith/{title}?apikey={shoko_key}').json()
                     print(f'│├─Voting Series[{rating:04.1f}]: {title}')
                     requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/{series_starts_with[0]['IDs']['ID']}/Vote?apikey={shoko_key}', json={'Value': rating})
         print('│╰─Finished!')
