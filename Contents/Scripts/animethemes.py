@@ -154,7 +154,7 @@ else:
     shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
     ## grab the anidb id using Shoko API and a video file path
-    folder, files = os.path.sep + os.path.basename(os.getcwd()) + os.path.sep, []
+    folder, files = cmn.basename_sep(os.getcwd()) + os.path.sep, []
     for file in os.listdir('.'):
         if batch is True and file.lower() == 'theme.mp3' and not cfg.AnimeThemes['BatchOverwrite']: # if batching with overwrite disabled skip when a Theme.mp3 file is present
             print(f'{cmn.err}─Skipped: Theme.mp3 already exists in {folder}')

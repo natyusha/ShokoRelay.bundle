@@ -4,7 +4,7 @@ except Exception: pass
 try:              import requests
 except Exception: pass
 
-import sys
+import os, sys
 import config as cfg
 
 sys.stdout.reconfigure(encoding='utf-8', line_buffering=True) # allow unicode characters in print and flush after each newline
@@ -12,6 +12,9 @@ err = '\033[31m⨯\033[0m' # use the red terminal colour for ⨯
 
 # revert common series title prefix modifications in plex
 def revert_title(t): return (s := t.split(' — '))[1] + ' ' + s[0] if ' — ' in t else t
+
+# return the basename from a path preceded by a path separator
+def basename_sep(f): return os.path.sep + os.path.basename(f)
 
 # simple y/n confirmation which is bypassed with a force argument
 def confirmation(query, force=False, pad=2):
