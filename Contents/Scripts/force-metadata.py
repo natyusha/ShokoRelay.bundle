@@ -42,13 +42,13 @@ parser = argparse.ArgumentParser(description='Remove empty collections, normalis
 parser.add_argument('-d', '--dance', action='store_true', help='If you want to do a time consuming full metadata clean up (Plex dance)')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when running a dance')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
-dance, force, target, failed_list, collection_count = parser.parse_args().dance, parser.parse_args().force, parser.parse_args().target, [], {}
+args, failed_list, collection_count = parser.parse_args(), [], {}
 
 plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
 # loop through the configured libraries
 print('\n╭Shoko Relay: Force Plex Metadata')
-if target: print(f'├─Operations limited to the following title filter: "{target}"')
+if args.target: print(f'├─Operations limited to the following title filter: "{args.target}"')
 for library in cfg.Plex['LibraryNames']:
     try:
         section = plex.library.section(library)
@@ -57,12 +57,12 @@ for library in cfg.Plex['LibraryNames']:
         continue
 
     ## if running a full scan execute the next 3 steps
-    if dance:
-        if cmn.confirmation(f'├─Initiate a potentially time consuming Plex Dance™ for {cfg.Plex["ServerName"]}/{library}: (Y/N) ', force):
+    if args.dance and section.search(title=args.target):
+        if cmn.confirmation(f'├─Initiate a potentially time consuming Plex Dance™ for {cfg.Plex["ServerName"]}/{library}: (Y/N) ', args.force):
             """ not fully compatible with files that were added through Shoko Relay scanner's subfolder scanner queue
             # split apart any merged series to allow each part to receive updated metadata
             print(f'├┬Queueing Splits @ {cfg.Plex["ServerName"]}/{library}')
-            for series in section.search(title=target):
+            for series in section.search(title=args.target):
                 print(f'│├─Splitting: {series.title}')
                 series.split()
             input('│╰─Splitting Queued: Press Enter to continue once Plex is finished...')
@@ -70,7 +70,7 @@ for library in cfg.Plex['LibraryNames']:
 
             # unmatch all/filtered anime to clear out bad metadata
             print(f'├┬Queueing Unmatches @ {cfg.Plex["ServerName"]}/{library}')
-            for series in section.search(title=target):
+            for series in section.search(title=args.target):
                 print(f'│├─Unmatch: {series.title}')
                 series.unmatch()
             input('│╰─Unmatching Queued: Press Enter to continue once Plex is finished...')
@@ -82,7 +82,7 @@ for library in cfg.Plex['LibraryNames']:
 
             # fix match for unmatched series and grab fresh metadata
             print(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
-            for series in section.search(title=target):
+            for series in section.search(title=args.target):
                 print(f'│├─Match: {series.title}')
                 relay = series.matches(agent='shokorelay', title=cmn.revert_title(series.title), year='') # revert any common title prefix modifications for the match
                 try:
@@ -95,7 +95,7 @@ for library in cfg.Plex['LibraryNames']:
 
     # rename negative seasons to their correct names
     print(f'├┬Renaming Negative Seasons @ {cfg.Plex["ServerName"]}/{library}')
-    for season in section.searchSeasons(title=target):
+    for season in section.searchSeasons(title=args.target):
         if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
         elif season.title == 'Season -2': season.editTitle('Trailers')
         elif season.title == 'Season -3': season.editTitle('Parodies')
@@ -104,7 +104,7 @@ for library in cfg.Plex['LibraryNames']:
 
     # add original titles if there are sort title additions from Shoko Relay
     print(f'├┬Adding Original Titles @ {cfg.Plex["ServerName"]}/{library}')
-    for series in section.search(title=target):
+    for series in section.search(title=args.target):
         if series.title != series.titleSort: series.editOriginalTitle(series.titleSort.replace(series.title + ' [', '')[:-1], locked=False)
     print('│╰─Finished Adding Original Titles!')
 
@@ -132,6 +132,6 @@ if single_series_collections:
     for title, _ in single_series_collections: print(f'{title}')
 
 # if there were failed matches list them so the user doesn't have to scroll up
-if dance and failed_list:
+if args.dance and failed_list:
     print('\nThe following series failed to match:')
     for failed in failed_list: print(f'{failed}')

@@ -22,7 +22,7 @@ Usage:
       - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
       - The following characters must be stripped from the filenames: \ / : * ? " < > |
       - The accepted file extensions are: bmp / gif / jpe / jpeg / jpg / png / tbn / tif / tiff / webp
-  - Append the argument 'clean' (collection-posters.py clean) if you want to remove old collection posters instead.
+  - Append the "clean" flag (-c or --clean) if you want to remove old collection posters instead.
       - This works by deleting everything but the newest custom poster for all collections.
 """
 
@@ -34,8 +34,8 @@ file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
 
 # check the arguments if the user is looking to clean posters or not
 parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('clean_posters', metavar='clean', choices=['clean'], nargs='?', type=str.lower, help='If you want to remove old collection posters instead.\n*must be the sole argument and is simply entered as "clean"')
-clean_posters = True if parser.parse_args().clean_posters == 'clean' else False
+parser.add_argument('-c', '--clean', action='store_true', help='If you want to remove old collection posters instead.')
+args = parser.parse_args()
 
 plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
 
@@ -49,7 +49,7 @@ for library in cfg.Plex['LibraryNames']:
         continue
 
     # if the user is looking to clean posters
-    if clean_posters:
+    if args.clean:
         print(f'├┬Removing Posters @ {cfg.Plex["ServerName"]}/{library}')
         try:
             for collection in section.collections():

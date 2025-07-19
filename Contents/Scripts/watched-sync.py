@@ -36,10 +36,10 @@ Behaviour:
   - Due to the potential for losing a huge amount of data, removing watch states or ratings from Plex has been omitted from this script unless "purge" mode is used.
 """
 
-# relative date regex definition and import check for argument type
+# relative date regex definition and import/purge check for argument type
 def arg_parse(arg):
     arg = arg.lower()
-    if not re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', arg) and not re.match('(?:import|purge)', arg):
+    if not re.match('^(?:[1-9]|[1-9][0-9]|[1-9][0-9][0-9])(?:m|h|d|w|mon|y)$', arg) and not re.match('^(?:import|purge)$', arg):
         raise argparse.ArgumentTypeError('invalid range, import or purge')
     return arg
 
@@ -51,9 +51,9 @@ parser.add_argument('relative_date', metavar='range | import | purge', nargs='?'
                     '        *must be the sole argument and is simply entered as "import"\n\npurge:  If you want to clear all watched states from Plex.\n        *must be the sole argument and is simply entered as "purge"')
 parser.add_argument('-v', '--votes', action='store_true', help='include user votes/ratings when syncing, importing or purging')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when importing or purging')
-relative_date, shoko_import, plex_purge, votes, force = parser.parse_args().relative_date, False, False, parser.parse_args().votes, parser.parse_args().force
-if relative_date == 'import': relative_date, shoko_import = '999y', True
-if relative_date == 'purge':  plex_purge = True
+args, shoko_import, plex_purge = parser.parse_args(), False, False
+if   args.relative_date == 'import': shoko_import = True
+elif args.relative_date == 'purge':  plex_purge   = True
 
 admin = cmn.plex_auth(connect=False) # authenticate to the Plex server/library specified using the credentials from the prefs and the common auth function
 
@@ -77,7 +77,7 @@ if shoko_import: # if importing grab the filenames for all the watched episodes 
     episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=Only&includeFiles=true&apikey={shoko_key}').json()
     for episode in episodes['List']:
         if episode['Watched']: watched_eps.append(cmn.basename_sep(episode['Files'][0]['Locations'][0]['RelativePath']))
-    if votes: # if including votes grab the filenames/series names for all the voted episodes/series in Shoko and add them to a list
+    if args.votes: # if including votes grab the filenames/series names for all the voted episodes/series in Shoko and add them to a list
         print('├─Generating: Shoko Series List (Voted)...')
         series, voted_series = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series?pageSize=0&page=1&apikey={shoko_key}').json(), {}
         for series in series['List']:
@@ -91,8 +91,8 @@ if shoko_import: # if importing grab the filenames for all the watched episodes 
 
 for account in accounts:
     # if importing/purging ask the user to confirm for each username
-    query = 'import Shoko watched states and votes to' if votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
-    if (shoko_import or plex_purge) and cmn.confirmation(f'├──Would you like to {query}: {account} (Y/N) ', force, 3): pass
+    query = 'import Shoko watched states and votes to' if args.votes else 'import Shoko watched states to' if shoko_import else 'clear all watched states from'
+    if (shoko_import or plex_purge) and cmn.confirmation(f'├──Would you like to {query}: {account} (Y/N) ', args.force, 3): pass
     elif not (shoko_import or plex_purge): pass
     else: continue
 
@@ -119,7 +119,7 @@ for account in accounts:
                     if filepath in watched_eps:
                         episode.markPlayed()
                         print(f'│├─Importing: {filepath}')
-            if votes: # if a rated episode's filename in Plex is found in Shoko's voted episodes or series list update the rating accordingly
+            if args.votes: # if a rated episode's filename in Plex is found in Shoko's voted episodes or series list update the rating accordingly
                 for episode in section.searchEpisodes():
                     for episode_path in episode.iterParts():
                         try:
@@ -137,13 +137,13 @@ for account in accounts:
         elif plex_purge:
             print('│├─Clearing watched states...')
             for episode in section.searchEpisodes(unwatched=False): episode.markUnplayed()
-            if votes:
+            if args.votes:
                 print('│├─Clearing ratings...')
                 for episode in section.searchEpisodes(filters={'userRating>>': 0}): episode.rate(None)
                 for series in section.search(filters={'userRating>>': 0}): series.rate(None)
         else:
             # loop through all the watched episodes in the Plex library within the time frame of the relative date
-            for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': relative_date}):
+            for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': args.relative_date}):
                 for episode_path in episode.iterParts():
                     filepath = cmn.basename_sep(episode_path.file) # add a path separator to the filename to avoid duplicate matches
                     path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
@@ -154,7 +154,7 @@ for account in accounts:
                                 requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
                     except Exception:
                         print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
-            if votes:
+            if args.votes:
                 for episode in section.searchEpisodes(filters={'userRating>>': 0}): # loop through all the rated episodes in the Plex library if votes are enabled
                     for episode_path in episode.iterParts():
                         filepath, rating = cmn.basename_sep(episode_path.file), episode.userRating # add a path separator to the filename to avoid duplicate matches

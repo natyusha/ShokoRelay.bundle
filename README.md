@@ -190,7 +190,7 @@ After installing the dependencies you must use a text editor to enter your Shoko
   - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
   - The following characters must be stripped from the filenames: \ / : * ? " < > |
   - The accepted file extensions are: bmp / gif / jpe / jpeg / jpg / png / tbn / tif / tiff / webp
-- Append the argument "clean" `collection-posters.py clean` if you want to remove old collection posters instead.
+- Append the "clean" flag (-c or --clean) if you want to remove old collection posters instead.
   - This works by deleting everything but the newest custom poster for all collections.
 </details>
 
