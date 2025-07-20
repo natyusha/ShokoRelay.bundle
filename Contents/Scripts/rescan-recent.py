@@ -25,8 +25,8 @@ Usage:
 # recent series regex definition and import check for argument type
 def arg_parse(arg):
     arg = arg.lower()
-    if not re.match('^(?:(?:[1-9]|[1-9][0-9])$', arg) and not re.match('^(?:import|remove)$', arg):
-        raise argparse.ArgumentTypeError('invalid range, import or purge')
+    if not re.match('^(?:[1-9]|[1-9][0-9])$', arg) and not re.match('^(?:import|remove)$', arg):
+        raise argparse.ArgumentTypeError('invalid range, import or remove')
     return arg
 
 
