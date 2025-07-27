@@ -139,7 +139,7 @@ if local is True and os.path.isfile('Theme.mp3'):
     media, song_title = 'Theme.mp3', 'local'
     print('├┬Local Theme Detected')
     try:
-        local_metadata = json.loads(subprocess.run('ffprobe -i Theme.mp3 -show_entries format_tags -v quiet -of json', capture_output=True, universal_newlines=True, encoding='utf-8').stdout)['format']['tags']
+        local_metadata = json.loads(subprocess.run(['ffprobe', '-i', 'Theme.mp3', '-show_entries', 'format_tags', '-v', 'quiet', '-of', 'json'], capture_output=True, text=True).stdout)['format']['tags']
     except Exception as error:
         print(f'{cmn.err}──FFProbe Failed\n  ', error)
     print(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
@@ -250,7 +250,7 @@ class clean(Exception): pass
 try:
     # grab the duration to allow a time remaining display when playing back and for determining if a song is tv size or not
     try:
-        duration = int(float(subprocess.run(f'ffprobe -i {media} -show_entries format=duration -v quiet -of csv="p=0"', capture_output=True).stdout)) # find the duration of the song
+        duration = int(float(json.loads(subprocess.run(['ffprobe', '-i', media, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'json'], capture_output=True, text=True).stdout)['format']['duration'])) # find the duration of the song
         if duration < 100: song_title += ' (TV Size)' # add "(TV Size)" to the end of the title if the song is less than 1:40 long
     except Exception as error:
         print(f'{cmn.err}──FFProbe Failed\n  ', error)
@@ -259,26 +259,15 @@ try:
     # if ffplay is enabled playback the originally downloaded file with ffplay for an easy way to see if it is the correct song
     if FFplay:
         try:
-            ffplay = subprocess.Popen(f'ffplay -v quiet -autoexit -nodisp -volume {cfg.AnimeThemes["FFplay_Volume"]} {media}', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True) # playback the theme until the script is closed
+            ffplay = subprocess.Popen(['ffplay', '-v', 'quiet', '-autoexit', '-nodisp', '-volume', str(cfg.AnimeThemes['FFplay_Volume']), media], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) # playback the theme until the script is closed
         except Exception as error: # continue to run even if ffplay fails as it is not necessary for the script to complete
             print(f'{cmn.err}──FFPlay Failed\n │', error)
 
-    # escape double quotes for titles/artists/albums which contain them
-    def escape_quotes(s): return s.replace('\\', '\\\\').replace('"', r'\"')
-
     ## if not just playing convert the temp .ogg file to .mp3 with ffmpeg and add title + artist metadata
     if not play:
-        # ffmpeg metadata for easily checking what a Theme.mp3 file contains
-        metadata = {
-            'title':    f' -metadata title="{escape_quotes(song_title)}"',
-            'subtitle': f' -metadata TIT3="{slug}"',
-            'artist':   f' -metadata artist="{escape_quotes(artist_name)}"',
-            'album':    f' -metadata album="{escape_quotes(anime_name)}"'
-        }
-
         try:
             print('╰┬Converting...')
-            subprocess.run(f'ffmpeg -i {media} -v quiet -y -ab 320k{metadata["title"]}{metadata["subtitle"]}{metadata["artist"]}{metadata["album"]} Theme.mp3', shell=True, check=True)
+            subprocess.run(['ffmpeg', '-i', media, '-v', 'quiet', '-y', '-ab', '320k', '-metadata', f'title={song_title}', '-metadata', f'TIT3={slug}', '-metadata', f'artist={artist_name}', '-metadata', f'album={anime_name}', 'Theme.mp3'], check=True)
             status = ' ╰─Finished! '
         except Exception as error:
             print(f' {cmn.err}─FFmpeg Failed\n  ', error)
