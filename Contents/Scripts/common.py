@@ -41,9 +41,9 @@ def shoko_auth():
 def plex_auth(connect=True):
     try:
         if cfg.Plex['X-Plex-Token']:
-            admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'])
+            admin = MyPlexAccount(token=cfg.Plex['X-Plex-Token'], timeout=60)
         else:
-            admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'])
+            admin = MyPlexAccount(cfg.Plex['Username'], cfg.Plex['Password'], timeout=60)
     except Exception as error:
         print(f'{err}Failed:', error)
         exit(1)

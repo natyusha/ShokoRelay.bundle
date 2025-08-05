@@ -71,8 +71,12 @@ for library in cfg.Plex['LibraryNames']:
             # unmatch all/filtered anime to clear out bad metadata
             print(f'├┬Queueing Unmatches @ {cfg.Plex["ServerName"]}/{library}')
             for series in section.search(title=args.target):
-                print(f'│├─Unmatch: {series.title}')
-                series.unmatch()
+                try:
+                    series.unmatch()
+                    print(f'│├─Unmatch: {series.title}')
+                except Exception:
+                    print(f'│{cmn.err}─Failed Unmatch: {series.title}') # print titles of things which failed to unmatch
+                    failed_list.append(f'Unmatch: {series.title}')
             input('│╰─Unmatching Queued: Press Enter to continue once Plex is finished...')
 
             # clean bundles for unmatched series
@@ -83,13 +87,13 @@ for library in cfg.Plex['LibraryNames']:
             # fix match for unmatched series and grab fresh metadata
             print(f'├┬Queueing Matches @ {cfg.Plex["ServerName"]}/{library}')
             for series in section.search(title=args.target):
-                print(f'│├─Match: {series.title}')
                 relay = series.matches(agent='shokorelay', title=cmn.revert_title(series.title), year='') # revert any common title prefix modifications for the match
                 try:
                     series.fixMatch(auto=False, agent='shokorelay', searchResult=relay[0])
+                    print(f'│├─Match: {series.title}')
                 except IndexError:
-                    print(f'│├{cmn.err}Failed: {series.title}') # print titles of things which failed to match
-                    failed_list.append(series.title)
+                    print(f'│{cmn.err}─Failed Match: {series.title}') # print titles of things which failed to match
+                    failed_list.append(f'Match: {series.title}')
             input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
         else: print(f'{cmn.err}──Operation Aborted!')
 
