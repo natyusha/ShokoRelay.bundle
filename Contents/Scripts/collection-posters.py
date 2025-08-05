@@ -30,10 +30,10 @@ Usage:
 file_formats = ('.bmp', '.gif', '.jpe', '.jpeg', '.jpg', '.png', '.tbn', '.tif', '.tiff', '.webp')
 
 # characters to replace in the collection name when comparing it to the filename using regex substitution
-file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', ">", '\\|')
+file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', '>', '\\|')
 
 # check the arguments if the user is looking to clean posters or not
-parser = argparse.ArgumentParser(description='Set Plex collection posters to user provided ones or Shoko\'s.', formatter_class=argparse.RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description="Set Plex collection posters to user provided ones or Shoko's.", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-c', '--clean', action='store_true', help='If you want to remove old collection posters instead.')
 args = parser.parse_args()
 
@@ -50,7 +50,7 @@ for library in cfg.Plex['LibraryNames']:
 
     # if the user is looking to clean posters
     if args.clean:
-        print(f'├┬Removing Posters @ {cfg.Plex["ServerName"]}/{library}')
+        print(f"├┬Removing Posters @ {cfg.Plex['ServerName']}/{library}")
         try:
             for collection in section.collections():
                 # check for multiple custom posters and delete the oldest ones
@@ -75,7 +75,7 @@ for library in cfg.Plex['LibraryNames']:
                 print(f'╰{cmn.err}Failed', error)
                 exit(1)
 
-        print(f'├┬Applying Posters @ {cfg.Plex["ServerName"]}/{library}')
+        print(f"├┬Applying Posters @ {cfg.Plex['ServerName']}/{library}")
         # loop through Plex collections grabbing their names to compare to Shoko's group names and user defined poster names
         for collection in section.collections():
             # check for user defined posters first
@@ -97,10 +97,10 @@ for library in cfg.Plex['LibraryNames']:
             # fallback to Shoko group posters if no user defined poster
             if fallback:
                 try:
-                    group_search = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={shoko_key}').json()
+                    group_search = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Group?pageSize=1&page=1&includeEmpty=false&randomImages=false&topLevelOnly=true&startsWith={urllib.parse.quote(collection.title)}&apikey={shoko_key}").json()
                     shoko_poster = group_search['List'][0]['Images']['Posters'][0]
-                    poster_url = f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Image/{shoko_poster["Source"]}/Poster/{shoko_poster["ID"]}'
-                    print(f'│├─Relaying: Shoko/{shoko_poster["Source"]}/{shoko_poster["ID"]} → {collection.title}')
+                    poster_url = f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Image/{shoko_poster['Source']}/Poster/{shoko_poster['ID']}"
+                    print(f"│├─Relaying: Shoko/{shoko_poster['Source']}/{shoko_poster['ID']} → {collection.title}")
                     collection.uploadPoster(url=poster_url)
                 except Exception:
                     print(f'│├{cmn.err}──Failed: No Shoko Group → {collection.title}')

@@ -142,8 +142,8 @@ if local is True and os.path.isfile('Theme.mp3'):
         local_metadata = json.loads(subprocess.run(['ffprobe', '-i', 'Theme.mp3', '-show_entries', 'format_tags', '-v', 'quiet', '-of', 'json'], capture_output=True, text=True).stdout)['format']['tags']
     except Exception as error:
         print(f'{cmn.err}──FFProbe Failed\n  ', error)
-    print(f'│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}')
-    print(f'│╰─Source: {local_metadata.get('album', '???')}')
+    print(f"│├─{local_metadata.get('TIT3', '???')}: {local_metadata.get('title', '???')} by {local_metadata.get('artist', '???')}")
+    print(f"│╰─Source: {local_metadata.get('album', '???')}")
 else:
     # if the theme slug is set to the first op/ed entry search for it with and without a 1 appended
     # this is done due to the first op/ed slugs not having a 1 appended unless there are multiple op/ed respectively
@@ -187,7 +187,7 @@ else:
             anime_name = anime['anime'][offset]['name']
             anime_slug = anime['anime'][offset]['slug']
         except Exception as error:
-            print(f'{cmn.err}╰─Failed: The current anime isn\'t present on AnimeThemes\n', error)
+            print(f"{cmn.err}╰─Failed: The current anime isn't present on AnimeThemes\n", error)
             exit(1)
         print(f'│├─Title: {anime_name}')
         print(f'│╰─URL: https://animethemes.moe/anime/{anime_slug}')

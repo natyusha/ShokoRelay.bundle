@@ -44,26 +44,26 @@ shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from t
 print('\n╭Shoko Relay Rescan Recent')
 if shoko_import:
     # If importing run an api command to get the drop folder ids then another one to scan them
-    print('├┬Scanning Shoko\'s Import Folders...')
+    print("├┬Scanning Shoko's Import Folders...")
     try:
-        import_folders = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder?apikey={shoko_key}').json()
+        import_folders = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/ImportFolder?apikey={shoko_key}").json()
         for folder in import_folders:
             if folder['DropFolderType'] == 1:
-                requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/ImportFolder/{folder["ID"]}/Scan?apikey={shoko_key}')
-                print(f'│├─Scanning: {folder['Name']}')
+                requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/ImportFolder/{folder['ID']}/Scan?apikey={shoko_key}")
+                print(f"│├─Scanning: {folder['Name']}")
     except Exception as error:
         print(f'│{cmn.err}─Failed:', error)
 elif shoko_remove:
     # If removing run an api command to remove missing files
     print('├┬Removing Missing Files From Shoko...')
     try:
-        requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Action/RemoveMissingFiles/true?apikey={shoko_key}')
+        requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Action/RemoveMissingFiles/true?apikey={shoko_key}")
     except Exception as error:
         print(f'│{cmn.err}─Failed:', error)
 else:
     # grab a list of Shoko's most recently added series
-    print(f'├┬Checking Shoko\'s ({args.recent_series}) most recently added series...')
-    recently_added = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Dashboard/RecentlyAddedSeries?pageSize={args.recent_series}&page=1&includeRestricted=true&apikey={shoko_key}').json()
+    print(f"├┬Checking Shoko's ({args.recent_series}) most recently added series...")
+    recently_added = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Dashboard/RecentlyAddedSeries?pageSize={args.recent_series}&page=1&includeRestricted=true&apikey={shoko_key}").json()
 
     # loop through recently added series and add the series ids to a list
     recently_added_ids = []
@@ -71,7 +71,7 @@ else:
 
     # loop through the series ids and grab filepaths for each
     for ids in recently_added_ids:
-        recent_episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/{ids}/Episode?pageSize=1&page=1&includeFiles=true&includeMediaInfo=false&includeAbsolutePaths=true&fuzzy=true&apikey={shoko_key}').json()
+        recent_episodes = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{ids}/Episode?pageSize=1&page=1&includeFiles=true&includeMediaInfo=false&includeAbsolutePaths=true&fuzzy=true&apikey={shoko_key}").json()
         path = os.path.dirname(recent_episodes['List'][0]['Files'][0]['Locations'][0]['AbsolutePath'])
         # use regex substitution to remap paths to those used locally
         for key, value in cfg.PathRemapping.items(): path = re.sub(key, re.escape(value), path)

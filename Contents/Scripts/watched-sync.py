@@ -74,18 +74,18 @@ print('\n╭Shoko Relay Watched Sync')
 if shoko_import: # if importing grab the filenames for all the watched episodes in Shoko and add them to a list
     print('├─Generating: Shoko Episode List (Watched)...')
     watched_eps = []
-    episodes = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeWatched=Only&includeFiles=true&apikey={shoko_key}').json()
+    episodes = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Episode?pageSize=0&page=1&includeWatched=Only&includeFiles=true&apikey={shoko_key}").json()
     for episode in episodes['List']:
         if episode['Watched']: watched_eps.append(cmn.basename_sep(episode['Files'][0]['Locations'][0]['RelativePath']))
     if args.votes: # if including votes grab the filenames/series names for all the voted episodes/series in Shoko and add them to a list
         print('├─Generating: Shoko Series List (Voted)...')
-        series, voted_series = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series?pageSize=0&page=1&apikey={shoko_key}').json(), {}
+        series, voted_series = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series?pageSize=0&page=1&apikey={shoko_key}").json(), {}
         for series in series['List']:
             if series['UserRating']:
-                series_eps = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/{series["IDs"]["ID"]}/Episode?pageSize=0&page=1&includeFiles=true&apikey={shoko_key}').json()
+                series_eps = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{series['IDs']['ID']}/Episode?pageSize=0&page=1&includeFiles=true&apikey={shoko_key}").json()
                 voted_series[cmn.basename_sep(series_eps['List'][0]['Files'][0]['Locations'][0]['RelativePath'])] = series['UserRating']['Value']
         print('├─Generating: Shoko Episode List (Voted)...')
-        episodes, voted_eps = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode?pageSize=0&page=1&includeVoted=Only&includeFiles=true&apikey={shoko_key}').json(), {}
+        episodes, voted_eps = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Episode?pageSize=0&page=1&includeVoted=Only&includeFiles=true&apikey={shoko_key}").json(), {}
         for episode in episodes['List']:
             if episode['UserRating']: voted_eps[cmn.basename_sep(episode['Files'][0]['Locations'][0]['RelativePath'])] = episode['UserRating']['Value']
 
@@ -104,7 +104,7 @@ for account in accounts:
 
     # loop through the configured libraries
     for library in cfg.Plex['LibraryNames']:
-        print(f'├┬Querying: {account} @ {cfg.Plex["ServerName"]}/{library}')
+        print(f"├┬Querying: {account} @ {cfg.Plex['ServerName']}/{library}")
         try:
             section = plex.library.section(library)
         except Exception as error:
@@ -146,32 +146,32 @@ for account in accounts:
             for episode in section.searchEpisodes(unwatched=False, filters={'lastViewedAt>>': args.relative_date}):
                 for episode_path in episode.iterParts():
                     filepath = cmn.basename_sep(episode_path.file) # add a path separator to the filename to avoid duplicate matches
-                    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
+                    path_ends_with = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}").json()
                     try:
                         if path_ends_with[0]['Watched'] is None:
                             print(f'│├─Relaying: {filepath} → {episode.title}')
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
-                                requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Watched/true?apikey={shoko_key}')
+                                requests.post(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Episode/{EpisodeID['ID']}/Watched/true?apikey={shoko_key}")
                     except Exception:
                         print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
             if args.votes:
                 for episode in section.searchEpisodes(filters={'userRating>>': 0}): # loop through all the rated episodes in the Plex library if votes are enabled
                     for episode_path in episode.iterParts():
                         filepath, rating = cmn.basename_sep(episode_path.file), episode.userRating # add a path separator to the filename to avoid duplicate matches
-                        path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
+                        path_ends_with = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}").json()
                         try:
                             print(f'│├─Voting Episode [{rating:04.1f}]: {filepath} → {episode.title}')
                             for EpisodeID in path_ends_with[0]['SeriesIDs'][0]['EpisodeIDs']:
-                                requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Episode/{EpisodeID["ID"]}/Vote?apikey={shoko_key}', json={'Value': rating})
+                                requests.post(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Episode/{EpisodeID['ID']}/Vote?apikey={shoko_key}", json={'Value': rating})
                         except Exception:
                             print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
                 for series in section.search(filters={'userRating>>': 0}): # sync series level ratings
                     rating, title = series.userRating, cmn.revert_title(series.title) # revert any common title prefix modifications for the match
                     try:
                         filepath = cmn.basename_sep(series.episodes()[0].media[0].parts[0].file) # grab the filepath with path separator for the first episode asociated with the series so it can be used to find the shokoid
-                        path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
+                        path_ends_with = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}").json()
                         print(f'│├─Voting Series [{rating:04.1f}]: {filepath} → {title}')
-                        requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/Series/{path_ends_with[0]["SeriesIDs"][0]["SeriesID"]["ID"]}/Vote?apikey={shoko_key}', json={'Value': rating})
+                        requests.post(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{path_ends_with[0]['SeriesIDs'][0]['SeriesID']['ID']}/Vote?apikey={shoko_key}", json={'Value': rating})
                     except Exception:
                         print(f'│├{cmn.err}─Failed: Make sure that "{filepath}" is matched by Shoko')
         print('│╰─Finished!')

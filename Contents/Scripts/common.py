@@ -28,7 +28,7 @@ def confirmation(query, force=False, pad=2):
 # grab a Shoko API key using the credentials from the prefs
 def shoko_auth():
     try:
-        auth = requests.post(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/auth', json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
+        auth = requests.post(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/auth", json={'user': cfg.Shoko['Username'], 'pass': cfg.Shoko['Password'], 'device': 'Shoko Relay Scripts for Plex'}).json()
     except Exception as error:
         print(f'{err}Failed:', error)
         exit(1)
