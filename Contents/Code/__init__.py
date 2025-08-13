@@ -93,7 +93,7 @@ class ShokoRelayAgent:
             if alt_title: break
 
         # Append the Alternate title to the Sort Title to make it searchable
-        if alt_title and alt_title != metadata.title: metadata.title_sort = title + ' [' + alt_title + ']'
+        if alt_title and alt_title != metadata.title: metadata.title_sort = title + ' ! [' + alt_title + ']'
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
         Log('Alt Title (AddToSort) [LANG]:  %s [%s]' % (alt_title, lang.upper()))
 
