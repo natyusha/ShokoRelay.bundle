@@ -70,7 +70,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
     ordering = ' Single Season' if cfg.getboolean('Prefs', 'SingleSeasonOrdering') else ' Multi Seasons'
-    Log.info('===========================[Shoko Relay Scanner v1.2.31%s]%s' % (ordering, '=' * 230))
+    Log.info('===========================[Shoko Relay Scanner v1.2.32%s]%s' % (ordering, '=' * 230))
 
     if files:
         # Scan for video files

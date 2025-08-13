@@ -11,7 +11,7 @@ def Start():
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log('===============[Shoko Relay Agent v1.2.31%s]===============' % ordering)
+    Log('===============[Shoko Relay Agent v1.2.32%s]===============' % ordering)
 
 def GetApiKey():
     global API_KEY
@@ -92,8 +92,8 @@ class ShokoRelayAgent:
             alt_title = try_get(series_titles, lang, None)
             if alt_title: break
 
-        # Append the Alternate title to the Sort Title to make it searchable
-        if alt_title and alt_title != metadata.title: metadata.title_sort = title + ' ! [' + alt_title + ']'
+        # Append the Alternate title to the Sort Title to make it searchable (padded with an en dash)
+        if alt_title and alt_title != metadata.title and alt_title != revert_title(metadata.title): metadata.title_sort = title + ' – ' + alt_title
         else: alt_title, metadata.title_sort = 'Alternate Title Matches the Title - Skipping!', title
         Log('Alt Title (AddToSort) [LANG]:  %s [%s]' % (alt_title, lang.upper()))
 
@@ -410,6 +410,9 @@ def title_case(text):
     if ' ' in text: text = (lambda t: t[0] + ' ' + t[1][:1].upper() + t[1][1:])(text.rsplit(' ', 1))     # Force capitalise the first character of the last word no matter what
     for key, value in force_special.items(): text = re.sub(r'\b' + key + r'\b', value, text, flags=re.I) # Apply special cases as a last step
     return text
+
+# revert common series title prefix modifications
+def revert_title(t): return t.split(' — ')[1] + ' ' + t.split(' — ')[0] if ' — ' in t else t
 
 def try_get(arr, idx, default=''):
     try:              return arr[idx]

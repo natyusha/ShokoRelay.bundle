@@ -106,10 +106,10 @@ for library in cfg.Plex['LibraryNames']:
         elif season.title == 'Season -4': season.editTitle('Other')
     print('│╰─Finished Renaming Seasons!')
 
-    # add original titles if there are sort title additions from Shoko Relay
+    # add original titles if there are sort title additions from Shoko Relay (denoted by an en dash)
     print(f"├┬Adding Original Titles @ {cfg.Plex['ServerName']}/{library}")
     for series in section.search(title=args.target):
-        if series.title != series.titleSort: series.editOriginalTitle(series.titleSort.replace(series.title + ' [', '')[:-1], locked=False)
+        if series.title != series.titleSort: series.editOriginalTitle(series.titleSort.replace(series.title + ' – ', ''), locked=False)
     print('│╰─Finished Adding Original Titles!')
 
     # clear any empty collections that are left over and set the sort title to match the title
