@@ -22,8 +22,9 @@ Usage:
       - Any Posters in the "PostersFolder" must have the same name as their respective collection in Plex.
       - The following characters must be stripped from the filenames: \ / : * ? " < > |
       - The accepted file extensions are: bmp / gif / jpe / jpeg / jpg / png / tbn / tif / tiff / webp
-  - Append the "clean" flag (-c or --clean) if you want to remove old collection posters instead.
+  - Append the "clean" flag (-c or --clean) if you want to remove old collection posters too.
       - This works by deleting everything but the newest custom poster for all collections.
+  - Append the "skip" flag (-s or --skip) if you want to skip poster application.
 """
 
 # file formats that will work with Plex (several are not listed in Plex's documentation but still work)
@@ -34,7 +35,8 @@ file_formatting = ('\\\\', '\\/', ':', '\\*', '\\?', '"', '<', '>', '\\|')
 
 # check the arguments if the user is looking to clean posters or not
 parser = argparse.ArgumentParser(description="Set Plex collection posters to user provided ones or Shoko's.", formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-c', '--clean', action='store_true', help='If you want to remove old collection posters instead.')
+parser.add_argument('-c', '--clean', action='store_true', help='if you want to remove old collection posters too')
+parser.add_argument('-s', '--skip', action='store_true', help='if you want to skip poster application')
 args = parser.parse_args()
 
 plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
@@ -62,7 +64,7 @@ for library in cfg.Plex['LibraryNames']:
             print('│╰─Finished!')
         except Exception as error:
             print(f'│├{cmn.err}Failed', error)
-    else:
+    if not args.skip:
         shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
 
         # make a list of all the user defined collection posters (if any)

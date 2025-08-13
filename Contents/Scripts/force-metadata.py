@@ -39,7 +39,7 @@ Behaviour:
 # check the arguments if the user is looking to run a full clean or not
 note   = 'IMPORTANT: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly. By limiting the operation with the "-t" flag you can do a full cleanup on filtered series only.'
 parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog=note, formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-d', '--dance', action='store_true', help='If you want to do a time consuming full metadata clean up (Plex dance)')
+parser.add_argument('-d', '--dance', action='store_true', help='if you want to do a time consuming full metadata clean up (Plex dance)')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when running a dance')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
 args, failed_list, collection_count = parser.parse_args(), [], {}
