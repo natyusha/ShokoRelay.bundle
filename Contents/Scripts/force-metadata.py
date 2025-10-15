@@ -49,13 +49,7 @@ plex = cmn.plex_auth() # authenticate and connect to the Plex server/library spe
 # loop through the configured libraries
 print('\n╭Shoko Relay: Force Plex Metadata')
 if args.target: print(f'├─Operations limited to the following title filter: "{args.target}"')
-for library in cfg.Plex['LibraryNames']:
-    try:
-        section = plex.library.section(library)
-    except Exception as error:
-        print(f'├{cmn.err}Failed', error)
-        continue
-
+for library, section in cmn.plex_library_sections(plex):
     ## if running a full scan execute the next 3 steps
     if args.dance and section.search(title=args.target):
         if cmn.confirmation(f"├─Initiate a potentially time consuming Plex Dance™ for {cfg.Plex['ServerName']}/{library}: (Y/N) ", args.force):

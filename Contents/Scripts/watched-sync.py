@@ -103,13 +103,8 @@ for account in accounts:
         exit(1)
 
     # loop through the configured libraries
-    for library in cfg.Plex['LibraryNames']:
+    for library, section in cmn.plex_library_sections(plex):
         print(f"├┬Querying: {account} @ {cfg.Plex['ServerName']}/{library}")
-        try:
-            section = plex.library.section(library)
-        except Exception as error:
-            print(f'│{cmn.err}─Failed', error)
-            continue
 
         # if importing loop through all the episodes in the Plex library
         if shoko_import: # if an unwatched episode's filename in Plex is found in Shoko's watched episodes list mark it as played

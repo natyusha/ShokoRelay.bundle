@@ -6,11 +6,10 @@ r"""
 Description:
   - This is mostly used for quickly adding currently airing series to Plex that were unrecognized when initially imported into Shoko.
   - Once the files are recognized running this script will trigger a rescan in Plex for any series that they are attached to.
-  - This requires Plex's partial scanning (or an alternative) to be enabled.
 Author:
   - natyusha
 Requirements:
-  - Python 3.7+, Requests Library (pip install requests), Plex, Shoko Server
+  - Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, Shoko Server
 Preferences:
   - Before doing anything with this script you must enter your Shoko Server credentials into config.py.
   - The Path Remapping section can be configured when running the scripts from a location where the paths differ from Shoko's.
@@ -61,8 +60,10 @@ elif shoko_remove:
     except Exception as error:
         print(f'│{cmn.err}─Failed:', error)
 else:
+    plex = cmn.plex_auth() # authenticate and connect to the Plex server/library specified using the credentials from the prefs and the common auth function
+
     # grab a list of Shoko's most recently added series
-    print(f"├┬Checking Shoko's ({args.recent_series}) most recently added series...")
+    print(f"├┬Rescanning Shoko's ({args.recent_series}) most recently added series...")
     recently_added = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Dashboard/RecentlyAddedSeries?pageSize={args.recent_series}&page=1&includeRestricted=true&apikey={shoko_key}").json()
 
     # loop through recently added series and add the series ids to a list
@@ -75,12 +76,13 @@ else:
         path = os.path.dirname(recent_episodes['List'][0]['Files'][0]['Locations'][0]['AbsolutePath'])
         # use regex substitution to remap paths to those used locally
         for key, value in cfg.PathRemapping.items(): path = re.sub(key, re.escape(value), path)
-        # create an empty file in the location to trigger autoscan and then immediately delete it
-        try:
-            with open(os.path.join(path, 'plex.autoscan'), 'w'): pass
-            os.remove(os.path.join(path, 'plex.autoscan'))
-            print(f'│├─Rescanning: {path}')
-        except Exception as error:
-            print(f'│{cmn.err}─Failed:', error)
-print('│╰─Finished!')
+        # loop through the configured libraries
+        found = False
+        for library, section in cmn.plex_library_sections(plex):
+            for location in section.locations:
+                if path.startswith(location):
+                    scan, found = section.update(path), True # trigger scan
+                    print(f'│├─Target: {library} → {path}')
+        if not found: print(f'│├{cmn.err}Failed: Not Found → {path}')
+print('│╰Finished!')
 print('╰Task Complete')

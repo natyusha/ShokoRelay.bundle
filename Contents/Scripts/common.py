@@ -55,3 +55,15 @@ def plex_auth(connect=True):
         print(f'{err}Failed:', error)
         exit(1)
     return plex
+
+# determine the sections for the configured Plex libraries
+def plex_library_sections(plex):
+    plex_libs = []
+    for library in cfg.Plex['LibraryNames']:
+        try:
+            section = plex.library.section(library)
+            plex_libs.append((library, section))
+        except Exception as error:
+            print(f'├{err}Failed', error)
+            continue
+    return plex_libs

@@ -84,7 +84,7 @@ Before using any of the scripts you must have the requisite dependencies install
 | Dependency                                      | AnimeThemes  | Collection-Posters | Force-Metadata | Rescan-Recent | Watched-Sync |
 | :---------------------------------------------- | :----------: | :----------------: | :------------: | :-----------: | :----------: |
 | [Python 3](https://www.python.org/downloads/)   | ✔️           | ✔️                 | ✔️             | ✔️            | ✔️           |
-| [PlexAPI](https://pypi.org/project/PlexAPI/)    | ❌           | ✔️                 | ✔️             | ❌            | ✔️           |
+| [PlexAPI](https://pypi.org/project/PlexAPI/)    | ❌           | ✔️                 | ✔️             | ✔️            | ✔️           |
 | [Requests](https://pypi.org/project/requests/)  | ✔️           | ✔️                 | ❌             | ✔️            | ✔️           |
 | [FFmpeg](https://ffmpeg.org/download.html)      | ✔️           | ❌                 | ❌             | ❌            | ❌           |
 
@@ -239,13 +239,12 @@ After installing the dependencies you must use a text editor to enter your Shoko
 ### [rescan-recent.py](https://github.com/natyusha/ShokoRelay.bundle/blob/master/Contents/Scripts/rescan-recent.py)
 - This is mostly used for quickly adding currently airing series to Plex that were unrecognized when initially imported into Shoko.
 - Once the files are recognized running this script will trigger a rescan in Plex for any series that they are attached to.
-- This requires Plex's partial scanning (or an alternative) to be enabled.
 
 <details>
 <summary><b>Additional Information</b></summary><br>
 
 **Requirements:**
-- Python 3.7+, Requests Library (pip install requests), Plex, Shoko Server
+- Python 3.7+, Python-PlexAPI (pip install plexapi), Requests Library (pip install requests), Plex, Shoko Server
 
 **Preferences:**
 - Before doing anything with this script you must enter your Shoko Server credentials into `config.py`.
