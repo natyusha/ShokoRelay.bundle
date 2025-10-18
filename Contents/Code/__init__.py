@@ -11,7 +11,7 @@ def Start():
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log('===============[Shoko Relay Agent v1.2.33%s]===============' % ordering)
+    Log('===============[Shoko Relay Agent v1.2.34%s]===============' % ordering)
 
 def GetApiKey():
     global API_KEY
