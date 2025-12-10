@@ -61,6 +61,7 @@ Enable the following options in Shoko to ensure that Plex has at least one sourc
   - Will move common series title prefixes like "Gekijouban", "Eiga" etc. to the end of the title
 - Removes the original tag hiding options and replaces them with a tag weight system similar to what [HAMA](https://github.com/ZeroQI/Hama.bundle) uses
   - **Note:** Automatically ignores all tags from Shoko's [TagBlacklistAniDBHelpers](https://github.com/ShokoAnime/ShokoServer/blob/9c0ae9208479420dea3b766156435d364794e809/Shoko.Server/Utilities/TagFilter.cs#L37) list
+  - Supports manually excluding any unwanted AniDB tags
 - Series and movies will list the Studio as Animation Work (アニメーション制作) or Work (制作)
 - Support for:
   - Files which contain more than one episode or episodes which span multiple files

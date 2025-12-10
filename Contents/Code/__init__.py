@@ -66,7 +66,7 @@ class ShokoRelayAgent:
         series_titles['shoko'] = series_data['Name'] # Add Shoko's preferred series title to the dict
 
         # Get Title according to the language preference
-        for lang in [l.strip().lower() for l in Prefs['SeriesTitleLanguage'].split(',')]:
+        for lang in [l.strip().lower() for l in Prefs['SeriesTitleLanguage'].split(',') if l.strip()]:
             title = try_get(series_titles, lang, None)
             if title: break
         if not title: title, lang = series_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred series title
@@ -88,7 +88,7 @@ class ShokoRelayAgent:
         Log('Title %s   %s [%s]' % (title_mod, title, lang.upper()))
 
         # Get Alternate Title according to the language preference
-        for lang in [l.strip().lower() for l in Prefs['SeriesAltTitleLanguage'].split(',')]:
+        for lang in [l.strip().lower() for l in Prefs['SeriesAltTitleLanguage'].split(',') if l.strip()]:
             alt_title = try_get(series_titles, lang, None)
             if alt_title: break
 
@@ -141,12 +141,15 @@ class ShokoRelayAgent:
         metadata.genres.clear()
 
         ## Filter out weighted tags by the configured tag weight but leave ones weighted 0 as that means that they are unweighted (high priority) tags
-        tags, c_rating, descriptor, descriptor_d, descriptor_s, descriptor_v = [], None, '', '', '', ''
+        tags, c_tags, c_rating, descriptor, descriptor_d, descriptor_s, descriptor_v = [], set(), None, '', '', '', ''
+        tag_blacklist = {t.strip().lower() for t in (Prefs['tagBlacklist'] or '').split(',') if t.strip()}             # Prepare a set comprised of any blacklisted tags (lowercase)
+        tag_c_ratings = {'kodomo', 'mina', 'shoujo', 'shounen', 'josei', 'seinen', 'borderline porn', '18 restricted'} # Prepare a set comprised of tags required for content ratings (lowercase)
         for tag in [t for t in series_tags if t['Source'] != 'User']: # Exclude custom user tags from any tag operations
-            if (tag['Weight'] == 0 or tag['Weight'] >= int(Prefs['minimumTagWeight'])): tags.append(title_case(tag['Name'])) # Convert tags to title case and add them to the list
+            indicator, weight = tag['Name'].lower(), tag['Weight']
+            if (weight == 0 or weight >= int(Prefs['minimumTagWeight'])) and indicator not in tag_blacklist: tags.append(title_case(tag['Name'])) # Add title case tags to a list if they meet the minimum weight and aren't in the blacklist
             ## Prep weight based content ratings (if enabled) using the content indicators described here: https://wiki.anidb.net/Categories:Content_Indicators
             if Prefs['contentRatings']:
-                indicator, weight = tag['Name'].lower(), tag['Weight']
+                if indicator in tag_c_ratings: c_tags.add(indicator)             # If a tag is present that is required for content ratings add it to a set to avoid the tag blacklist interfering
                 if indicator == 'nudity' or indicator == 'violence':             # Raise ratings for the "Nudity" and "Violence" tags to TV-14 and then TV-MA if the weight exceeds 400 and 500 respectively
                     if indicator == 'nudity': descriptor_s = 'S'                 # Apply the "Sexual Situations" descriptor for the "Nudity" tag
                     if indicator == 'violence': descriptor_v = 'V'               # Apply the "Violence" descriptor for the "Violence" tag
@@ -180,13 +183,13 @@ class ShokoRelayAgent:
         ## Uses the target audience tags on AniDB: https://anidb.net/tag/2606/animetb
         if Prefs['contentRatings']:
             if not c_rating: # If the rating wasn't already determined using the content indicators above take the lowest target audience rating
-                if   'Kodomo' in tags                      : c_rating = 'TV-Y'
-                elif 'Mina'   in tags                      : c_rating = 'TV-G'
-                elif 'Shoujo' in tags or 'Shounen' in tags : c_rating = 'TV-PG'
-                elif 'Josei'  in tags or 'Seinen'  in tags : c_rating = 'TV-14'
-            if 'Borderline Porn' in tags: c_rating = 'TV-MA' # Override any previous rating for borderline porn content
-            if c_rating: c_rating += descriptor              # Append the content descriptor using the content indicators above
-            if '18 Restricted'   in tags: c_rating = 'X'     # Override any previous rating and remove content indicators for 18 restricted content
+                if   'kodomo' in c_tags                        : c_rating = 'TV-Y'
+                elif 'mina'   in c_tags                        : c_rating = 'TV-G'
+                elif 'shoujo' in c_tags or 'shounen' in c_tags : c_rating = 'TV-PG'
+                elif 'josei'  in c_tags or 'seinen'  in c_tags : c_rating = 'TV-14'
+            if 'borderline porn' in c_tags: c_rating = 'TV-MA' # Override any previous rating for borderline porn content
+            if c_rating: c_rating += descriptor                # Append the content descriptor using the content indicators above
+            if '18 restricted'   in c_tags: c_rating = 'X'     # Override any previous rating and remove content indicators for 18 restricted content
 
             metadata.content_rating = c_rating
             Log('Content Rating (Assumed):      %s' % metadata.content_rating)
@@ -269,18 +272,18 @@ class ShokoRelayAgent:
                 ep_titles['shoko'] = ep_data['Name'] # Add Shoko's preferred episode title to the dict
 
                 # Get episode title according to the language preference
-                ep_title_mod, tmdb_ep_title = '[LANG]:                 ', try_get(tmdb_ep_data, 'Title', None)
-                for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
+                ep_title_mod, tmdb_ep_title, ep_title_lang = '[LANG]:                 ', try_get(tmdb_ep_data, 'Title', None), [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',') if l.strip()]
+                for lang in ep_title_lang:
                     ep_title = try_get(ep_titles, lang, None)
                     if ep_title: break
                 if not ep_title: ep_title, lang = ep_titles['shoko'], 'shoko (fallback)' # If not found, fallback to Shoko's preferred episode title
                 if Prefs['tmdbEpGroupNames'] and tmdb_ep_group > 1 and tmdb_ep_title: ep_title, lang = tmdb_ep_title, 'shoko (TMDB Ep Group)' # If TMDB episode group names are enabled and a group is present override the title
 
                 # Replace ambiguous single entry titles with the series title
-                if ep_title in ('Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web') and ep_data['AniDB']['EpisodeNumber'] == 1:
+                if ep_title in {'Complete Movie', 'Music Video', 'OAD', 'OVA', 'Short Movie', 'Special', 'TV Special', 'Web'} and ep_data['AniDB']['EpisodeNumber'] == 1:
                     # Get series title according to the language preference
                     ep_title_mod, original_title = '(FromSeries) [LANG]:    ', ep_title
-                    for lang in [l.strip().lower() for l in Prefs['EpisodeTitleLanguage'].split(',')]:
+                    for lang in ep_title_lang:
                         if lang != 'shoko': ep_title = try_get(series_titles, lang, ep_title) # Exclude "shoko" as it will return the preferred language for series and not episodes
                         if ep_title != original_title: break
                     if ep_title == original_title and tmdb_ep_title: ep_title_mod, ep_title = '(TMDB) [LANG]:          ', tmdb_ep_title # Fallback to the TMDB title if there is a TMDB Episodes match
@@ -398,9 +401,9 @@ def summary_sanitizer(summary):
 
 def title_case(text):
     # Words to force lowercase in tags to follow AniDB capitalisation rules: https://wiki.anidb.net/Capitalisation (some romaji tag endings and separator words are also included)
-    force_lower = ('a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as', '4-koma', '-hime', '-kei', '-kousai', '-sama', '-warashi', 'no', 'vs', 'x')
+    force_lower = {'a', 'an', 'the', 'and', 'but', 'or', 'nor', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'off', 'on', 'onto', 'out', 'over', 'per', 'to', 'up', 'with', 'as', '4-koma', '-hime', '-kei', '-kousai', '-sama', '-warashi', 'no', 'vs', 'x'}
     # Abbreviations or acronyms that should be fully capitalised
-    force_upper = ('3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv')
+    force_upper = {'3d', 'bdsm', 'cg', 'cgi', 'ed', 'fff', 'ffm', 'ii', 'milf', 'mmf', 'mmm', 'npc', 'op', 'rpg', 'tbs', 'tv'}
     # Special cases where a specific capitalisation style is preferred
     force_special = {'comicfesta': 'ComicFesta', 'd\'etat': 'd\'Etat', 'noitamina': 'noitaminA'}
     text = re.sub(r'[\'\w\d]+\b', lambda t: t.group(0).capitalize(), text)                               # Capitalise all words accounting for apostrophes

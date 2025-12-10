@@ -58,6 +58,13 @@
     },
 
     {
+        "id": "tagBlacklist",
+        "label": "AniDB tags to exclude from the genre list, separated by a comma.",
+        "type": "text",
+        "default": ""
+    },
+
+    {
         "id": "minimumTagWeight",
         "label": "The minimum weight for AniDB tags to be applied",
         "type": "enum",
