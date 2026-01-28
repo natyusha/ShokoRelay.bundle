@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse
+import os, argparse, requests, urllib.parse
 import config as cfg; import common as cmn
 
 r"""
@@ -19,6 +19,8 @@ Usage:
   - Run in a terminal (force-metadata.py) to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
   - Append the "dance" flag (-d or --dance) if you want to do a time consuming full metadata clean up (Plex dance).
       - This will ask for (Y/N) confirmation for each configured library.
+  - Append the "logo" flag (-l or --logo) if you want to force add TMDB logos to a series.
+  - Append the "skip" flag (-s or --skip) if you want to skip library wide actions.
   - Important: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
@@ -40,8 +42,10 @@ Behaviour:
 # check the arguments if the user is looking to run a full clean or not
 note   = 'IMPORTANT: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this script will not function correctly. By limiting the operation with the "-t" flag you can do a full cleanup on filtered series only.'
 parser = argparse.ArgumentParser(description='Remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.', epilog=note, formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('-l', '--logo',  action='store_true', help='if you want to add clear logos (from TMDB) to series')
 parser.add_argument('-d', '--dance', action='store_true', help='if you want to do a time consuming full metadata clean up (Plex dance)')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when running a dance')
+parser.add_argument('-s', '--skip',  action='store_true', help='skip default actions')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
 args, failed_list, collection_count = parser.parse_args(), [], {}
 
@@ -92,36 +96,56 @@ for library, section in cmn.plex_library_sections(plex):
             input('│╰─Matching Queued: Press Enter to continue once Plex is finished...')
         else: print(f'{cmn.err}──Operation Aborted!')
 
-    # rename negative seasons to their correct names
-    print(f"├┬Renaming Negative Seasons @ {cfg.Plex['ServerName']}/{library}")
-    for season in section.searchSeasons(title=args.target):
-        if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
-        elif season.title == 'Season -2': season.editTitle('Trailers')
-        elif season.title == 'Season -3': season.editTitle('Parodies')
-        elif season.title == 'Season -4': season.editTitle('Other')
-    print('│╰─Finished Renaming Seasons!')
+    # force add clear logos
+    if args.logo and section.search(title=args.target):
+        print(f"├┬Adding Clear Logos @ {cfg.Plex['ServerName']}/{library}")
+        shoko_key = cmn.shoko_auth() # grab a Shoko API key using the credentials from the prefs and the common auth function
+        for series in section.search(title=args.target):
+            try:
+                for episode in series.episodes():
+                    file = episode.media[0].parts[0].file
+                    break
+                count, filename = 0, urllib.parse.quote(os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)))
+                file_data       = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith/{filename}?apikey={shoko_key}").json()
+                series_images   = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{file_data[0]['SeriesIDs'][0]['SeriesID']['ID']}/Images?includeDisabled=false&apikey={shoko_key}").json()
+                for logo in sorted(series_images['Logos'], key=lambda b: not b['Preferred']): # put preferred images first
+                    series.uploadLogo(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Image/TMDB/Logo{logo['RelativeFilepath']}"); count += 1
+                print(f'│├─Adding ({count}) Logos To: {series.title}')
+            except Exception:
+                print(f'│{cmn.err}─Failed to Add Logos For: {series.title}')
+        print('│╰─Finished Adding Clear Logos!')
 
-    # add original titles if there are sort title additions from Shoko Relay (denoted by an en dash)
-    print(f"├┬Adding Original Titles @ {cfg.Plex['ServerName']}/{library}")
-    for series in section.search(title=args.target):
-        if series.title != series.titleSort: series.editOriginalTitle(series.titleSort.replace(series.title + ' – ', ''), locked=False)
-    print('│╰─Finished Adding Original Titles!')
+    if not args.skip:
+        # rename negative seasons to their correct names
+        print(f"├┬Renaming Negative Seasons @ {cfg.Plex['ServerName']}/{library}")
+        for season in section.searchSeasons(title=args.target):
+            if   season.title in ('Season -1', '[Unknown Season]'): season.editTitle('Credits')
+            elif season.title == 'Season -2': season.editTitle('Trailers')
+            elif season.title == 'Season -3': season.editTitle('Parodies')
+            elif season.title == 'Season -4': season.editTitle('Other')
+        print('│╰─Finished Renaming Seasons!')
 
-    # clear any empty collections that are left over and set the sort title to match the title
-    print(f"├┬Checking Collections @ {cfg.Plex['ServerName']}/{library}")
-    for collection in section.collections():
-        if collection.smart: continue # ignore any smart collections as they are not managed by Shoko Relay
-        if collection.title not in collection_count: collection_count[collection.title] = 0
-        collection_count[collection.title] += collection.childCount # tabulate the item count for all collections by title
-        if collection.childCount != 0:
-            if collection.title != collection.titleSort:
-                collection.editSortTitle(collection.title, locked=True)
-                print(f'│├─Correcting Sort Title: {collection.title}')
-            continue
-        else:
-            collection.delete()
-            print(f'│├─Deleting Empty Entry: {collection.title}')
-    print('│╰─Finished!')
+        # add original titles if there are sort title additions from Shoko Relay (denoted by an en dash)
+        print(f"├┬Adding Original Titles @ {cfg.Plex['ServerName']}/{library}")
+        for series in section.search(title=args.target):
+            if series.title != series.titleSort: series.editOriginalTitle(series.titleSort.replace(series.title + ' – ', ''), locked=False)
+        print('│╰─Finished Adding Original Titles!')
+
+        # clear any empty collections that are left over and set the sort title to match the title
+        print(f"├┬Checking Collections @ {cfg.Plex['ServerName']}/{library}")
+        for collection in section.collections():
+            if collection.smart: continue # ignore any smart collections as they are not managed by Shoko Relay
+            if collection.title not in collection_count: collection_count[collection.title] = 0
+            collection_count[collection.title] += collection.childCount # tabulate the item count for all collections by title
+            if collection.childCount != 0:
+                if collection.title != collection.titleSort:
+                    collection.editSortTitle(collection.title, locked=True)
+                    print(f'│├─Correcting Sort Title: {collection.title}')
+                continue
+            else:
+                collection.delete()
+                print(f'│├─Deleting Empty Entry: {collection.title}')
+        print('│╰─Finished Checking Collections!')
 print('╰Force Metadata Task Complete')
 
 # if there are collections with only a single item in them across the configured libraries list them
