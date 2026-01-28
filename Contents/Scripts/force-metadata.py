@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, argparse, requests, urllib.parse
+import os, argparse, requests
 import config as cfg; import common as cmn
 
 r"""
@@ -19,8 +19,8 @@ Usage:
   - Run in a terminal (force-metadata.py) to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
   - Append the "dance" flag (-d or --dance) if you want to do a time consuming full metadata clean up (Plex dance).
       - This will ask for (Y/N) confirmation for each configured library.
-  - Append the "logo" flag (-l or --logo) if you want to force add TMDB logos to a series.
-  - Append the "skip" flag (-s or --skip) if you want to skip library wide actions.
+  - Append the "logo" flag (-l or --logo) if you want to add clear logos (from TMDB) to a series.
+  - Append the "skip" flag (-s or --skip) if you want to skip default actions that are library wide.
   - Important: In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
       - You can tell if Plex is done by looking at the library in the desktop/web client or checking the logs in your "PMS Plugin Logs" folder for activity.
       - This may take a significant amount of time to complete with a large library so it is recommended to run the first step overnight.
@@ -45,7 +45,7 @@ parser = argparse.ArgumentParser(description='Remove empty collections, normalis
 parser.add_argument('-l', '--logo',  action='store_true', help='if you want to add clear logos (from TMDB) to series')
 parser.add_argument('-d', '--dance', action='store_true', help='if you want to do a time consuming full metadata clean up (Plex dance)')
 parser.add_argument('-f', '--force', action='store_true', help='ignore user confirmation prompts when running a dance')
-parser.add_argument('-s', '--skip',  action='store_true', help='skip default actions')
+parser.add_argument('-s', '--skip',  action='store_true', help='skip default actions that are library wide')
 parser.add_argument('-t', '--target', type=str, metavar='STR', default='', help='limit operations to series titles matching the entered string "STR"')
 args, failed_list, collection_count = parser.parse_args(), [], {}
 
@@ -105,7 +105,7 @@ for library, section in cmn.plex_library_sections(plex):
                 for episode in series.episodes():
                     file = episode.media[0].parts[0].file
                     break
-                count, filename = 0, urllib.parse.quote(os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)))
+                count, filename = 0, os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file))
                 file_data       = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith/{filename}?apikey={shoko_key}").json()
                 series_images   = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{file_data[0]['SeriesIDs'][0]['SeriesID']['ID']}/Images?includeDisabled=false&apikey={shoko_key}").json()
                 for logo in sorted(series_images['Logos'], key=lambda b: not b['Preferred']): # put preferred images first

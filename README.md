@@ -219,8 +219,8 @@ After installing the dependencies you must use a text editor to enter your Shoko
 - Run in a terminal `force-metadata.py` to remove empty collections, normalise collection sort titles, rename negative seasons and add original titles in Plex.
 - Append the "dance" flag (-d or --dance) if you want to do a time consuming full metadata clean up (Plex dance).
   - This will ask for (Y/N) confirmation for each configured library.
-- Append the "logo" flag (-l or --logo) if you want to force add TMDB logos to a series.
-- Append the "skip" flag (-s or --skip) if you want to skip library wide actions.
+- Append the "logo" flag (-l or --logo) if you want to add clear logos (from TMDB) to a series.
+- Append the "skip" flag (-s or --skip) if you want to skip default actions that are library wide.
 
 > :warning: **Important**  
 > In "dance" mode you must wait until the Plex activity queue is fully completed before advancing to the next step (with the enter key) or this will not function correctly.
