@@ -11,7 +11,7 @@ def Start():
     HTTP.CacheTime = 0.1 # Reduce the cache time as much as possible since Shoko has all the metadata
     ValidatePrefs()
     ordering = ' Single Season' if Prefs['SingleSeasonOrdering'] else ' Multi Seasons'
-    Log('===============[Shoko Relay Agent v1.2.34%s]===============' % ordering)
+    Log('===============[Shoko Relay Agent v1.2.35%s]===============' % ordering)
 
 def GetApiKey():
     global API_KEY
@@ -255,7 +255,7 @@ class ShokoRelayAgent:
                 ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
                 if   ep_type == 'Normal'    : season =  1
                 elif ep_type == 'Special'   : season =  0
-                elif ep_type == 'ThemeSong' : season = -1
+                elif ep_type == 'Credits'   : season = -1
                 elif ep_type == 'Trailer'   : season = -2
                 elif ep_type == 'Parody'    : season = -3
                 elif ep_type == 'Other'     : season = -4

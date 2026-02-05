@@ -5,7 +5,7 @@
         <key>CFBundleName</key>
         <string>Shoko Relay</string>
         <key>CFBundleVersion</key>
-        <string>1.2.34</string>
+        <string>1.2.35</string>
         <key>CFBundleIdentifier</key>
         <string>com.plexapp.agents.shokorelay</string>
         <key>PlexClientPlatforms</key>
@@ -18,7 +18,7 @@
         <string>Elevated</string>
         <key>PlexAgentAttributionText</key>
         <string>
-            &lt;a href=&quot;https://github.com/natyusha/ShokoRelay.bundle&quot;&gt;Shoko Relay&lt;/a&gt; [v1.2.34] is natyusha's fork of &lt;a href=&quot;https://github.com/Cazzar/ShokoMetadata.bundle&quot;&gt;Shoko Metadata&lt;/a&gt; (created by Cazzar) and its v3 API migration (spearheaded by Harshith Mohan). It utilizes &lt;a href=&quot;https://shokoanime.com/&quot;&gt;Shoko Server&lt;/a&gt; in conjunction with metadata sourced from &lt;a href=&quot;https://anidb.net/&quot;&gt;AniDB&lt;/a&gt;, &lt;a href=&quot;https://www.themoviedb.org/&quot;&gt;TMDB&lt;/a&gt;, and &lt;a href=&quot;https://animethemes.moe/&quot;&gt;AnimeThemes&lt;/a&gt;.
+            &lt;a href=&quot;https://github.com/natyusha/ShokoRelay.bundle&quot;&gt;Shoko Relay&lt;/a&gt; [v1.2.35] is natyusha's fork of &lt;a href=&quot;https://github.com/Cazzar/ShokoMetadata.bundle&quot;&gt;Shoko Metadata&lt;/a&gt; (created by Cazzar) and its v3 API migration (spearheaded by Harshith Mohan). It utilizes &lt;a href=&quot;https://shokoanime.com/&quot;&gt;Shoko Server&lt;/a&gt; in conjunction with metadata sourced from &lt;a href=&quot;https://anidb.net/&quot;&gt;AniDB&lt;/a&gt;, &lt;a href=&quot;https://www.themoviedb.org/&quot;&gt;TMDB&lt;/a&gt;, and &lt;a href=&quot;https://animethemes.moe/&quot;&gt;AnimeThemes&lt;/a&gt;.
         </string>
     </dict>
 </plist>

@@ -70,7 +70,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
     ordering = ' Single Season' if cfg.getboolean('Prefs', 'SingleSeasonOrdering') else ' Multi Seasons'
-    Log.info('===========================[Shoko Relay Scanner v1.2.34%s]%s' % (ordering, '=' * 230))
+    Log.info('===========================[Shoko Relay Scanner v1.2.35%s]%s' % (ordering, '=' * 230))
 
     if files:
         # Scan for video files
@@ -148,7 +148,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                         ep_source, season, episode = '(AniDB):         ', 0, ep_data['AniDB']['EpisodeNumber']
                         if   ep_type == 'Normal'    : season =  1
                         elif ep_type == 'Special'   : season =  0
-                        elif ep_type == 'ThemeSong' : season = -1
+                        elif ep_type == 'Credits'   : season = -1
                         elif ep_type == 'Trailer'   : season = -2
                         elif ep_type == 'Parody'    : season = -3
                         elif ep_type == 'Other'     : season = -4
