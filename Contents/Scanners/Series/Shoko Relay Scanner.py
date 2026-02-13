@@ -138,8 +138,8 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                     for group in range(tmdb_ep_group):
                         ep_type, tmdb_ep_data = ep_data['AniDB']['Type'], try_get(ep_data['TMDB']['Episodes'], group, None) if tmdb_title else None
 
-                        # Ignore multi episode files of differing types (AniDB episode relations) if they are not ThemeSongs
-                        if ep > 0 and ep_type != prev_ep_type and ep_type != 'ThemeSong' != prev_ep_type:
+                        # Ignore multi episode files of differing types (AniDB episode relations) if they are not Credits
+                        if ep > 0 and ep_type != prev_ep_type and ep_type != 'Credits' != prev_ep_type:
                             Log.info(' Skipping Multi Ep File:   An AniDB episode relation of a differing type was detected! [%s -> %s]' % (prev_ep_type, ep_type))
                             continue
                         prev_ep_type, ep_multi_log = ep_type, ' (Multi Episode File Detected!)' if ep_multi > 1 else ''
