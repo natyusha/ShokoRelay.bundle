@@ -83,7 +83,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
                 # Get file data using the filename
                 filename  = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
-                file_data = HttpReq('api/v3/File/PathEndsWith/%s' % (urllib.quote(filename))) # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Kowarekake%20no%20Orgel%5CKowarekake%20no%20Orgel%20-%2001.mkv
+                file_data = HttpReq('api/v3/File/PathEndsWith/%s?include=XRefs' % (urllib.quote(filename))) # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Kowarekake%20no%20Orgel%5CKowarekake%20no%20Orgel%20-%2001.mkv?include=XRefs
 
                 # Take the first file from the search - Searching with both parent folder and filename should only return a single result
                 if len(file_data) == 1:
