@@ -168,7 +168,7 @@ else:
     print('├┬Shoko')
     print(f'│├─File: {filepath}')
     # get the anidbid of a series by using the first filename present in its folder
-    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&limit=0&apikey={shoko_key}').json()
+    path_ends_with = requests.get(f'http://{cfg.Shoko["Hostname"]}:{cfg.Shoko["Port"]}/api/v3/File/PathEndsWith?path={urllib.parse.quote(filepath)}&include=XRefs&limit=0&apikey={shoko_key}').json()
     try:
         anidbID = path_ends_with[0]['SeriesIDs'][0]['SeriesID']['AniDB']
     except Exception as error:

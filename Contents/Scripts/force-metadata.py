@@ -106,7 +106,7 @@ for library, section in cmn.plex_library_sections(plex):
                     file = episode.media[0].parts[0].file
                     break
                 count, filename = 0, os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file))
-                file_data       = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith/{filename}?apikey={shoko_key}").json()
+                file_data       = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/File/PathEndsWith/{filename}?include=XRefs&apikey={shoko_key}").json()
                 series_images   = requests.get(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Series/{file_data[0]['SeriesIDs'][0]['SeriesID']['ID']}/Images?includeDisabled=false&apikey={shoko_key}").json()
                 for logo in sorted(series_images['Logos'], key=lambda b: not b['Preferred']): # put preferred images first
                     series.uploadLogo(f"http://{cfg.Shoko['Hostname']}:{cfg.Shoko['Port']}/api/v3/Image/TMDB/Logo{logo['RelativeFilepath']}"); count += 1
