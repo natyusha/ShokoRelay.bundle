@@ -70,7 +70,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
 
     for subdir in subdirs: Log.debug('[Folder]                  %s' % os.path.relpath(subdir, root))
     ordering = ' Single Season' if cfg.getboolean('Prefs', 'SingleSeasonOrdering') else ' Multi Seasons'
-    Log.info('===========================[Shoko Relay Scanner v1.2.35%s]%s' % (ordering, '=' * 230))
+    Log.info('===========================[Shoko Relay Scanner v1.2.36%s]%s' % (ordering, '=' * 230))
 
     if files:
         # Scan for video files
@@ -82,7 +82,7 @@ def Scan(path, files, mediaList, subdirs, language=None, root=None):
                 Log.info(' File:                     %s' % file)
 
                 # Get file data using the filename
-                filename  = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file)) # Parent folder + file name
+                filename  = os.path.join(os.path.split(os.path.dirname(file))[-1], os.path.basename(file))  # Parent folder + file name
                 file_data = HttpReq('api/v3/File/PathEndsWith/%s?include=XRefs' % (urllib.quote(filename))) # http://127.0.0.1:8111/api/v3/File/PathEndsWith/Kowarekake%20no%20Orgel%5CKowarekake%20no%20Orgel%20-%2001.mkv?include=XRefs
 
                 # Take the first file from the search - Searching with both parent folder and filename should only return a single result
