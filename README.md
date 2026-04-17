@@ -5,6 +5,9 @@
 -
 This is a bundle containing a Plex metadata agent, scanner, and automation scripts written to work with anything listed on AniDB. All you need to get started is a populated [Shoko Server](https://shokoanime.com/) v5.3.1 or newer and [Plex Media Server](https://www.plex.tv/media-server-downloads/) (Not running on an Nvidia Shield). Unlike the original metadata bundle for Shoko this one does not include a movie scanner and is intended to work with series of all types within a single "TV Shows" library.
 
+> [!CAUTION]
+> Due to legacy agents and scanners being on borrowed time this repository is in maintenance mode and no new features will be added to it. Users of Shoko Server (daily) who want to switch to the modern [Metadata Provider](https://forums.plex.tv/t/announcement-custom-metadata-providers/934384) plugin can download pre-release builds [here](https://github.com/natyusha/ShokoRelay).
+
 ## Installation
 > [!WARNING]
 > If you are running Plex Media Server v1.43.0.10346 or newer you must navigate to `Settings > Library` and ensure that "Show legacy agents during library setup" is enabled.
